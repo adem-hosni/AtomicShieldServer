@@ -1,0 +1,21 @@
+{
+    "emmet.includeLanguages": {
+        "django-html": "html",
+        "jinja-html": "html",
+    },
+    "files.associations": {
+        "*.jinja": "django-html"
+    },
+    "tailwindCSS.includeLanguages": {
+        "html": "html",
+        "jinja": "jinja",
+        "django-html": "django-html",
+        "jinja-html": "jinja-html",
+        "javascript": "javascript",
+        "css": "css"
+    },
+    "editor.quickSuggestions": {
+    "strings": true
+    }
+
+}

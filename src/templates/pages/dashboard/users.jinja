@@ -1,0 +1,37 @@
+{% extends "bases/dashboard.jinja" %}
+{% block content %}
+<div
+  class="p-4 rounded-lg transition-all duration-300 bg-purple-200 dark:bg-[#0c0c0c]"
+>
+  {% include "components/dashboard/breadcrumb.jinja" with current_page="Users" %}
+</div>
+<section
+    class="flex-1 px-4 rounded-lg transition-all duration-300 bg-purple-200 dark:bg-[#0c0c0c] grid grid-rows-[auto,1fr] my-4"
+  >
+    <div class="flex flex-wrap w-full flex grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 justify-center py-6 text-center gap-6">
+      <div class="bg-[#141414] h-max p-6 flex gap-4 rounded-xl">
+        <div
+          class="flex items-center justify-center w-12 h-12 rounded-xl bg-zinc-900"
+        >
+          <i class="fa-solid fa-users text-gray-200 text-lg"></i>
+        </div>
+        <div class="flex flex-col">
+          <p class="text-zinc-400 font-medium text-sm">Total Joined Users</p>
+          <p class="text-xl font-semibold text-white counter">78,4567</p>
+        </div>
+      </div>
+
+      <div class="bg-[#141414] h-max p-6 flex gap-4 rounded-xl">
+        <div
+          class="flex items-center justify-center w-12 h-12 rounded-xl bg-zinc-900"
+        >
+          <i class="fa-solid fa-ban text-gray-200 text-lg"></i>
+        </div>
+        <div class="flex flex-col">
+          <p class="text-zinc-400 font-medium text-sm">Detections</p>
+          <p class="text-xl font-semibold text-white counter">153,081</p>
+        </div>
+      </div>
+    </div>
+</section>
+{% endblock content %}

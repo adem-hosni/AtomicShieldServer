@@ -1,0 +1,21 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="{% static "vendor/tailwindcss.css" %}"></script>
+    <title>EagleAntiCheat | Welcome</title>
+</head>
+<body class="bg-black text-white flex flex-col min-h-screen">
+    
+    {% include "components/navbar.jinja" %}
+
+    <main class="flex-grow">
+        {% block content %}
+        {% endblock content %}
+    </main>
+    
+    {% include "components/footer.jinja" %}
+</body>
+</html>

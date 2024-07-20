@@ -255,13 +255,14 @@
 
     serverIp.addEventListener("input", function (ev) {
       if (!ipRegex.test(serverIp.value)) {
+        setStatusColor(false);
         serverStatusDiv.style.display = "block";
         serverStatus.innerText = "Invalid Server IP Address";
       } else {
         serverStatusDiv.style.display = "none";
         ipVerified = true;
+        checkServer();
       }
-      checkServer();
     });
 
     serverPort.addEventListener("input", function (ev) {
@@ -274,8 +275,8 @@
       } else {
         serverStatusDiv.style.display = "none";
         portVerified = true;
+        checkServer();
       }
-      checkServer();
     });
   });
 </script>

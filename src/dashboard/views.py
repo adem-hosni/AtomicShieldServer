@@ -83,7 +83,8 @@ def check_server(request: HttpRequest) -> HttpResponse:
     if request_body:
         try:
             request_body = json.loads(request.body.decode())
-        except Exception:
+        except Exception as err:
+            print(f"Failed to parse request body\nrequest body: {request_body}\nException: {err}")
             return HttpResponse(json.dumps({"success": False}))
 
     # check how many keys the json data have

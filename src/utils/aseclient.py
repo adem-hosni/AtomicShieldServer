@@ -115,11 +115,11 @@ class ASEQueryClient(socket.socket):
             self.send("r".encode())
 
             _buffer = self.recvfrom(1024)[0]
-            self.close()
         except Exception as err:
             print("Failed to get server query, ERROR: ", err)
             return False
 
+        self.close()
         return _buffer
 
     def clean_query(self, query: bytes) -> bytes:

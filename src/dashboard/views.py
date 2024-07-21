@@ -7,9 +7,6 @@ from .forms import AddServerForm
 from utils.aseclient import ASEQueryClient, ASEParser
 
 
-ase_client = ASEQueryClient()
-
-
 def render_maindashboard(request: HttpRequest) -> HttpResponse:
     if not request.user.is_authenticated:
         return redirect("/auth/signin")
@@ -120,6 +117,7 @@ def check_server(request: HttpRequest) -> HttpResponse:
     if not (port >= 1 and port <= 65535):
         return HttpResponse(json.dumps({"success": False}))
 
+    ase_client = ASEQueryClient()        
     query_buffer = ase_client.getquery((request_body["ip"], port))
 
     # server is offline ?

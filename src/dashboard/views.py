@@ -5,6 +5,7 @@ from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from .models import Announcements, PatchNotes, GameServers, ServerTypes, ServerStatus
 from .forms import AddServerForm
 import utils
+from typing import Dict, Union
 from utils.aseclient import ASEQueryClient, ASEParser
 
 
@@ -130,6 +131,7 @@ def render_servers(request: HttpRequest) -> HttpResponse:
             "form": form,
             "servers": [
                 {
+                    "id": server.id,
                     "key": server.key,
                     "address": f"{server.ip}:{server.port}",
                     "type": server.type,
@@ -137,6 +139,7 @@ def render_servers(request: HttpRequest) -> HttpResponse:
                 }
                 for server in servers.reverse()
             ],
+            "active": servers[0].id
         },
     )
 
@@ -211,3 +214,47 @@ def check_server(request: HttpRequest) -> HttpResponse:
     }
 
     return HttpResponse(json.dumps(response_body))
+
+def select_server(request: HttpRequest) -> HttpResponse:
+    request_body: Dict[str, Union[bool, str]] = request.body.decode()    
+    
+    # Check the request_body is a json
+    if request_body:
+        try:
+            request_body = json.loads(request.body.decode())
+        except Exception as err:
+            print(
+                f"Failed to parse request body\nrequest body: {request_body}\nException: {err}"
+            )
+            return HttpResponse(json.dumps({"success": False}))
+
+    # Check the request_body form
+    if len(request_body.keys()) != 2:
+        print(f"Invalid request body, got {request_body}")
+        return HttpResponse(json.dumps({"success": False}))
+
+    # Check the request_body keys
+    if not ("server_id" in request_body.keys() or "select" in request_body.keys()):
+        print(f"Invalid request body, got {request_body}")
+        return HttpResponse(json.dumps({"success": False}))
+    
+    # Check if the server_id has some character
+    if not request_body["server_id"].isnumeric():
+        return HttpResponse(json.dumps({"success": False, "message": "Invalid Server"}))
+
+    # Cast the server_id from str to int    
+    request_body["server_id"] = int(request_body["server_id"])
+
+    if not isinstance(request_body["select"], bool):
+        print(f"Invalid request body, got {request_body}")
+        return HttpResponse(json.dumps({"success": False}))
+    
+    # Find the server in the owner servers    
+    try:
+        target_server = GameServers.objects.get(owner=request.user, id=request_body["server_id"])
+    except GameServers.DoesNotExist:
+        return HttpResponse(json.dumps({"success": False, "message": "Invalid Server"}))
+    
+    request.session["selected_server"] = target_server.id
+    
+    return HttpResponse(json.dumps({"success": True}))

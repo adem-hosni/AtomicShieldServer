@@ -130,6 +130,7 @@
         var response = JSON.parse(xhr.responseText);
         if (response["success"]) {
           iziToast.success({title: "SUCCESS", message: "Successfuly Server UnSelected"});
+          setTimeout(() => location.reload(), 500);
         } else {
           console.log(response)
           iziToast.error({title: "Failure", message: response["message"] || "Unkown Error Occured"});

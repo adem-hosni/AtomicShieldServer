@@ -48,6 +48,8 @@ class GameServers(models.Model):
         db_table = "gameservers"
         verbose_name_plural = "gameservers"
 
+    def __str__(self) -> str:
+        return f"{self.ip}:{self.port} ({self.id})"
 
 class Announcements(models.Model):
     author = models.CharField(

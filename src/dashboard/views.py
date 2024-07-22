@@ -139,7 +139,11 @@ def render_servers(request: HttpRequest) -> HttpResponse:
                 }
                 for server in servers.reverse()
             ],
-            "active": servers[0].id
+            "active": (
+                request.session["selected_server"]
+                if "selected_server" in request.session.keys()
+                else servers[0].id if len(servers) >= 1 else -1
+            ),
         },
     )
 
@@ -215,9 +219,10 @@ def check_server(request: HttpRequest) -> HttpResponse:
 
     return HttpResponse(json.dumps(response_body))
 
+
 def select_server(request: HttpRequest) -> HttpResponse:
-    request_body: Dict[str, Union[bool, str]] = request.body.decode()    
-    
+    request_body: Dict[str, Union[bool, str]] = request.body.decode()
+
     # Check the request_body is a json
     if request_body:
         try:
@@ -237,24 +242,30 @@ def select_server(request: HttpRequest) -> HttpResponse:
     if not ("server_id" in request_body.keys() or "select" in request_body.keys()):
         print(f"Invalid request body, got {request_body}")
         return HttpResponse(json.dumps({"success": False}))
-    
+
     # Check if the server_id has some character
     if not request_body["server_id"].isnumeric():
         return HttpResponse(json.dumps({"success": False, "message": "Invalid Server"}))
 
-    # Cast the server_id from str to int    
+    # Cast the server_id from str to int
     request_body["server_id"] = int(request_body["server_id"])
 
     if not isinstance(request_body["select"], bool):
         print(f"Invalid request body, got {request_body}")
         return HttpResponse(json.dumps({"success": False}))
-    
-    # Find the server in the owner servers    
+
+    # Find the server in the owner servers
     try:
-        target_server = GameServers.objects.get(owner=request.user, id=request_body["server_id"])
+        target_server = GameServers.objects.get(
+            owner=request.user, id=request_body["server_id"]
+        )
     except GameServers.DoesNotExist:
         return HttpResponse(json.dumps({"success": False, "message": "Invalid Server"}))
-    
+
+    if request.session.get("selected_server", -1) == target_server.id:
+        del request.session["selected_server"]
+        return HttpResponse(json.dumps({"success": True}))
+
     request.session["selected_server"] = target_server.id
-    
+
     return HttpResponse(json.dumps({"success": True}))

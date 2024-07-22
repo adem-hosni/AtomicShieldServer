@@ -1,284 +1,218 @@
-{% extends "bases/dashboard.jinja" %} {% load static %} {% block content %}
-<div
-  class="p-4 rounded-lg transition-all duration-300 bg-red-200 dark:bg-[#0c0c0c]"
->
-  {% include "components/dashboard/breadcrumb.jinja" with current_page="Servers"%}
-</div>
+{% extends 'bases/dashboard.jinja' %} {% load static %} {% block content %}
+  <div class="p-4 rounded-lg transition-all duration-300 bg-purple-200 dark:bg-[#0c0c0c]">
+    {% include 'components/dashboard/breadcrumb.jinja' with current_page='Servers' %}
+  </div>
 
-<script src="{% static 'js/flowbite.js' %}"></script>
+  <script src="{% static 'js/flowbite.js' %}"></script>
+  <script src="{% static 'vendor/iziToast/js/iziToast.js' %}"></script>
 
-<div class="w-full bg-[#0D0D0D] p-6 rounded-xl mt-4" style="overflow-y: auto">
-  <div class="flex items-center mb-4 md:mb-0 gap-3">
-    <div>
-      <div
-        class="w-12 h-12 flex group items-center transition-all justify-center rounded-xl text-white group-hover:text-white bg-zinc-900 text-white transition-all duration-300"
-      >
-        <div
-          class="flex items-center justify-center relative w-8 h-8 undefined"
-        >
-          <i class="absolute fas fa-server opacity-20"></i>
-          <i class="absolute fa fa-server"></i>
+  <div class="w-full bg-[#0D0D0D] p-6 rounded-xl mt-4" style="overflow-y: auto">
+    <div class="flex items-center mb-4 md:mb-0 gap-3">
+      <div>
+        <div class="w-12 h-12 flex group items-center transition-all justify-center rounded-xl text-white group-hover:text-white bg-zinc-900 text-white transition-all duration-300">
+          <div class="flex items-center justify-center relative w-8 h-8 undefined">
+            <i class="absolute fas fa-server opacity-20"></i>
+            <i class="absolute fa fa-server"></i>
+          </div>
         </div>
       </div>
-    </div>
-    <div class="w-full">
-      <div class="flex items-center gap-1">
-        <h3
-          class="min-w-min text-white font-semibold text-sm md:text-lg line-clamp-1"
-        >
-          Servers
-        </h3>
+      <div class="w-full">
+        <div class="flex items-center gap-1">
+          <h3 class="min-w-min text-white font-semibold text-sm md:text-lg line-clamp-1">Servers</h3>
+        </div>
+        <h4 class="text-gray-400 text-sm">All your Eagle Servers are here</h4>
       </div>
-      <h4 class="text-gray-400 text-sm">All your Eagle Servers are here</h4>
     </div>
   </div>
-</div>
-<div class="w-full p-4 justify-end flex">
-  <button
-    data-modal-target="add-server-modal"
-    data-modal-toggle="add-server-modal"
-    class="border-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 text-gray-200 border-gray-200 hover:bg-gray-200 hover:text-black"
-  >
-    Add Server
-  </button>
-</div>
+  <div class="w-full p-4 justify-end flex">
+    <button data-modal-target="add-server-modal" data-modal-toggle="add-server-modal" class="border-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 text-gray-200 border-gray-200 hover:bg-gray-200 hover:text-black">Add Server</button>
+  </div>
 
-<div class="relative overflow-x-auto shadow-md sm:rounded-lg">
-  <table
-    class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400"
-  >
-    <thead
-      class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-[#0d0d0d] dark:text-gray-400"
-    >
-      <tr>
-        <th scope="col" class="px-6 py-3">License Key</th>
-        <th scope="col" class="px-6 py-3">Created At</th>
-        <th scope="col" class="px-6 py-3">Status</th>
-        <th scope="col" class="px-6 py-3">Duration</th>
-        <th scope="col" class="px-6 py-3">Used By</th>
-        <th scope="col" class="px-6 py-3">Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr
-        class="transition-all duration:300 bg-white border-b dark:bg-[#161616] dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-red-900"
-      >
-        <th
-          scope="row"
-          class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-gray-400 dark:hover:text-white"
-        >
-          <span class="blur-sm hover:blur-0 transition duration-300"
-            >XXXX-XXXX-XXXX</span
-          >
-        </th>
-        <td class="px-6 py-4">July 17, 2024, 5:15 a.m.</td>
-        <td class="px-6 py-4">
-          <span
-            class="border font-medium border-yellow-500 rounded p-1 text-yellow-500 transition-all duration-300 hover:bg-yellow-500 hover:text-black"
-            >USED</span
-          >
-        </td>
-        <td class="px-6 py-4">7 Days</td>
-        <td class="px-6 py-4">Hyper</td>
-        <td class="px-6 py-4">
-          <a
-            href="#"
-            class="font-medium text-blue-600 dark:text-blue-500 hover:underline"
-            >Edit</a
-          >
-        </td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+  <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
+    <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
+      <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-[#0d0d0d] dark:text-gray-400">
+        <tr>
+          <th scope="col" class="px-6 py-3">Key</th>
+          <th scope="col" class="px-6 py-3">Address</th>
+          <th scope="col" class="px-6 py-3">Type</th>
+          <th scope="col" class="px-6 py-3">Duration</th>
+          <th scope="col" class="px-6 py-3">Sub Status</th>
+          <th scope="col" class="px-6 py-3">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for server in servers %}
+          <tr class="transition-all duration:300 bg-white border-b dark:bg-[#161616] dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#212121]">
+            <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-gray-400 dark:hover:text-white cursor-pointer" onclick="navigator.clipboard.writeText('{{ server.key }}').then(() => iziToast.success({title: 'SUCCESS', message: 'Successfuly key copied to clipboard!'}))">
+              <span class="blur-sm hover:blur-0 transition duration-300">{{ server.key }}</span>
+            </th>
+            <td class="px-6 py-4">{{ server.address }}</td>
+            <td class="px-6 py-4">
+              {% if server.type == 1 %}
+                <span class="border font-medium border-orange-500 rounded p-1 text-orange-500 transition-all duration-300 hover:bg-orange-500 hover:text-black">MTA:SA</span>
+              {% endif %}
+            </td>
+            <td class="px-6 py-4">{{ server.duration }}</td>
+            <td class="px-6 py-4">Hyper</td>
+            <td class="px-6 py-4">
+              <button data-tooltip-target="tooltip-refresh" data-tooltip-style="dark" class="font-medium text-blue-600 dark:text-blue-500 hover:underline"><i class="fa-solid fa-arrows-rotate text-purple-600 transition-all duration-300 hover:bg-purple-600 hover:text-black rounded-full p-1"></i></button>
 
-<!-- Main modal -->
-<div
-  id="add-server-modal"
-  tabindex="-1"
-  aria-hidden="true"
-  class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full"
->
-  <div class="relative p-4 w-full max-w-md max-h-full">
-    <!-- Modal content -->
-    <div class="relative bg-white rounded-lg shadow dark:bg-[#0d0d0d]">
-      <!-- Modal header -->
-      <div
-        class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600"
-      >
-        <h3 class="text-xl font-semibold text-gray-900 dark:text-white mx-auto">
-          Add Server
-        </h3>
-        <button
-          type="button"
-          class="end-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-red-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-red-600 dark:hover:text-black"
-          data-modal-hide="add-server-modal"
-        >
-          <svg
-            class="w-3 h-3"
-            aria-hidden="true"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 14 14"
-          >
-            <path
-              stroke="currentColor"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"
-            />
-          </svg>
-          <span class="sr-only">Close modal</span>
-        </button>
-      </div>
-      <!-- Modal body -->
-      <div class="p-4 md:p-5">
-        <div
-          id="server-status-div"
-          class="hidden rounded-lg border-2 w-full text-center border-red-500 py-2 transition-all duration-300 hover:bg-red-500 group"
-        >
-          <h1
-            id="server-status"
-            class="font-medium text-red-500 group-hover:text-black select-none"
-          >
-            Invalid Server IP Address
-          </h1>
+              <div id="tooltip-refresh" role="tooltip" class="absolute z-10 invisible inline-block px-3 py-2 text-sm font-medium text-black bg-purple-600 rounded-lg shadow-sm opacity-0 tooltip transition-all duration-300">
+                Refresh key
+                <div class="tooltip-arrow" data-popper-arrow></div>
+            </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% if servers|length == 0 %}
+        <div class="transition-all duration:300 bg-white border-b dark:bg-[#161616] dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-purple-900 flex text-center">
+          <div scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-gray-400 dark:hover:text-white w-full">0 Servers</div>
         </div>
-        <form class="space-y-4" method="post">
-          {% csrf_token %}
-          <div class="flex">
-            <div class="relative mx-auto w-full">
-              {{ form.ip }}
-              <label
-                class="before:content[' '] after:content[' '] pointer-events-none absolute left-0 -top-1.5 flex h-full w-full select-none !overflow-visible truncate text-[11px] font-normal leading-tight text-gray-300 transition-all before:pointer-events-none before:mt-[6.5px] before:mr-1 before:box-border before:block before:h-1.5 before:w-2.5 before:rounded-tl-md before:border-t before:border-l before:border-gray-300 before:transition-all after:pointer-events-none after:mt-[6.5px] after:ml-1 after:box-border after:block after:h-1.5 after:w-2.5 after:flex-grow after:rounded-tr-md after:border-t after:border-r after:border-gray-300 after:transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:leading-[3.75] peer-placeholder-shown:text-gray-300 peer-placeholder-shown:before:border-transparent peer-placeholder-shown:after:border-transparent peer-focus:text-[12px] peer-focus:leading-tight peer-focus:text-gray-300 peer-focus:after:border-t-2 peer-focus:after:border-r-2 peer-focus:after:!border-gray-300 peer-disabled:text-transparent peer-disabled:before:border-transparent peer-disabled:after:border-transparent peer-disabled:peer-placeholder-shown:text-gray-300"
-              >
-                Server IP Address
-              </label>
-            </div>
-            <div class="relative w-18">
-              {{ form.port }}
-              <label
-                class="before:content[' '] after:content[' '] pointer-events-none absolute left-0 -top-1.5 flex h-full w-full select-none !overflow-visible truncate text-[11px] font-normal leading-tight text-gray-300 transition-all before:pointer-events-none before:mt-[6.5px] before:mr-1 before:box-border before:block before:h-1.5 before:w-2.5 before:rounded-tl-md before:border-t before:border-l before:border-gray-300 before:transition-all after:pointer-events-none after:mt-[6.5px] after:ml-1 after:box-border after:block after:h-1.5 after:w-2.5 after:flex-grow after:rounded-tr-md after:border-t after:border-r after:border-gray-300 after:transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:leading-[3.75] peer-placeholder-shown:text-gray-300 peer-placeholder-shown:before:border-transparent peer-placeholder-shown:after:border-transparent peer-focus:text-[12px] peer-focus:leading-tight peer-focus:text-gray-300 peer-focus:after:border-t-2 peer-focus:after:border-r-2 peer-focus:after:!border-gray-300 peer-disabled:text-transparent peer-disabled:before:border-transparent peer-disabled:after:border-transparent peer-disabled:peer-placeholder-shown:text-gray-300"
-              >
-                Server Port
-              </label>
-            </div>
-          </div>
-          <div class="relative mx-auto">
-            {{ form.server_type }}
-          </div>
-          <button
-            type="submit"
-            id="addserver-btn"
-            class="w-full border-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 text-red-600 border-red-600 hover:bg-red-600 hover:text-black"
-          >
-            Generate Key
+      {% endif %}
+  </div>
+
+  <!-- Main modal -->
+  <div id="add-server-modal" tabindex="-1" aria-hidden="true" class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
+    <div class="relative p-4 w-full max-w-md max-h-full">
+      <!-- Modal content -->
+      <div class="relative bg-white rounded-lg shadow dark:bg-[#0d0d0d]">
+        <!-- Modal header -->
+        <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
+          <h3 class="text-xl font-semibold text-gray-900 dark:text-white mx-auto">Add Server</h3>
+          <button type="button" class="end-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-purple-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-purple-600 dark:hover:text-black" data-modal-hide="add-server-modal">
+            <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
+            </svg>
+            <span class="sr-only">Close modal</span>
           </button>
-        </form>
+        </div>
+        <!-- Modal body -->
+        <div class="p-4 md:p-5">
+          <div id="server-status-div" class="hidden rounded-lg border-2 w-full text-center border-purple-500 py-2 transition-all duration-300 hover:bg-purple-500 group">
+            <h1 id="server-status" class="font-medium text-purple-500 group-hover:text-black select-none">Invalid Server IP Address</h1>
+          </div>
+          <form class="space-y-4" method="post" id="addserver-form">
+            {% csrf_token %}
+            <div class="flex">
+              <div class="relative mx-auto w-full">
+                {{ form.ip }}
+                <label class="before:content[' '] after:content[' '] pointer-events-none absolute left-0 -top-1.5 flex h-full w-full select-none !overflow-visible truncate text-[11px] font-normal leading-tight text-gray-300 transition-all before:pointer-events-none before:mt-[6.5px] before:mr-1 before:box-border before:block before:h-1.5 before:w-2.5 before:rounded-tl-md before:border-t before:border-l before:border-gray-300 before:transition-all after:pointer-events-none after:mt-[6.5px] after:ml-1 after:box-border after:block after:h-1.5 after:w-2.5 after:flex-grow after:rounded-tr-md after:border-t after:border-r after:border-gray-300 after:transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:leading-[3.75] peer-placeholder-shown:text-gray-300 peer-placeholder-shown:before:border-transparent peer-placeholder-shown:after:border-transparent peer-focus:text-[12px] peer-focus:leading-tight peer-focus:text-gray-300 peer-focus:after:border-t-2 peer-focus:after:border-r-2 peer-focus:after:!border-gray-300 peer-disabled:text-transparent peer-disabled:before:border-transparent peer-disabled:after:border-transparent peer-disabled:peer-placeholder-shown:text-gray-300">Server IP Address</label>
+              </div>
+              <div class="relative w-18">
+                {{ form.port }}
+                <label class="before:content[' '] after:content[' '] pointer-events-none absolute left-0 -top-1.5 flex h-full w-full select-none !overflow-visible truncate text-[11px] font-normal leading-tight text-gray-300 transition-all before:pointer-events-none before:mt-[6.5px] before:mr-1 before:box-border before:block before:h-1.5 before:w-2.5 before:rounded-tl-md before:border-t before:border-l before:border-gray-300 before:transition-all after:pointer-events-none after:mt-[6.5px] after:ml-1 after:box-border after:block after:h-1.5 after:w-2.5 after:flex-grow after:rounded-tr-md after:border-t after:border-r after:border-gray-300 after:transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:leading-[3.75] peer-placeholder-shown:text-gray-300 peer-placeholder-shown:before:border-transparent peer-placeholder-shown:after:border-transparent peer-focus:text-[12px] peer-focus:leading-tight peer-focus:text-gray-300 peer-focus:after:border-t-2 peer-focus:after:border-r-2 peer-focus:after:!border-gray-300 peer-disabled:text-transparent peer-disabled:before:border-transparent peer-disabled:after:border-transparent peer-disabled:peer-placeholder-shown:text-gray-300">Server Port</label>
+              </div>
+            </div>
+            <div class="relative mx-auto">{{ form.server_type }}</div>
+            <button type="submit" id="addserver-btn" onclick="this.disabled=true; this.form.submit();" class="w-full border-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 text-purple-600 border-purple-600 hover:bg-purple-600 hover:text-black">Generate Key</button>
+          </form>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const ipRegex =
-      /\b((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\b/;
-
-    const serverIp = document.getElementById("server-ip");
-    const serverPort = document.getElementById("server-port");
-    const serverStatusDiv = document.getElementById("server-status-div");
-    const serverStatus = document.getElementById("server-status");
-
-    var portVerified = false;
-    var ipVerified = false;
-
-    function setStatusColor(success) {
-      if (success) {
-        serverStatusDiv.classList.remove("hover:bg-red-500");
-        serverStatusDiv.classList.add("hover:bg-green-500");
-
-        serverStatus.classList.remove("text-red-500");
-        serverStatus.classList.add("text-green-500");
-
-        serverStatusDiv.classList.remove("border-red-500");
-        serverStatusDiv.classList.add("border-green-500");
-      } else {
-        serverStatusDiv.classList.remove("hover:bg-green-500");
-        serverStatusDiv.classList.add("hover:bg-red-500");
-
-        serverStatus.classList.remove("text-green-500");
-        serverStatus.classList.add("text-red-500");
-
-        serverStatusDiv.classList.remove("border-green-500");
-        serverStatusDiv.classList.add("border-red-500");
+  <script>
+    document.getElementById('addserver-form').addEventListener('submit', function (event) {
+      document.getElementById('addserver-btn').disabled = true
+    })
+    
+    document.addEventListener('DOMContentLoaded', function () {
+      const ipRegex = /\b((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\b/
+    
+      const serverIp = document.getElementById('server-ip')
+      const serverPort = document.getElementById('server-port')
+      const serverStatusDiv = document.getElementById('server-status-div')
+      const serverStatus = document.getElementById('server-status')
+    
+      var portVerified = false
+      var ipVerified = false
+    
+      function setStatusColor(success) {
+        if (success) {
+          serverStatusDiv.classList.remove('hover:bg-purple-500')
+          serverStatusDiv.classList.add('hover:bg-green-500')
+    
+          serverStatus.classList.remove('text-purple-500')
+          serverStatus.classList.add('text-green-500')
+    
+          serverStatusDiv.classList.remove('border-purple-500')
+          serverStatusDiv.classList.add('border-green-500')
+        } else {
+          serverStatusDiv.classList.remove('hover:bg-green-500')
+          serverStatusDiv.classList.add('hover:bg-purple-500')
+    
+          serverStatus.classList.remove('text-green-500')
+          serverStatus.classList.add('text-purple-500')
+    
+          serverStatusDiv.classList.remove('border-green-500')
+          serverStatusDiv.classList.add('border-purple-500')
+        }
       }
-    }
-
-    function checkServer() {
+    
+      function checkServer() {
         if (ipVerified && portVerified) {
-          const xhr = new XMLHttpRequest();
-          xhr.open("POST", "/dashboard/checkserver", true);
-          xhr.setRequestHeader("Content-Type", "application/json");
-          xhr.setRequestHeader("X-CSRFToken", "{{ csrf_token }}");
-
+          const xhr = new XMLHttpRequest()
+          xhr.open('POST', '/dashboard/checkserver', true)
+          xhr.setRequestHeader('Content-Type', 'application/json')
+          xhr.setRequestHeader('X-CSRFToken', '{{ csrf_token }}')
+    
           xhr.onload = function () {
             if (xhr.readyState === XMLHttpRequest.DONE) {
-              let response = JSON.parse(xhr.responseText);
-              serverStatusDiv.style.display = "block";
-
-              setStatusColor(response["success"]);
-
-              if (response["success"]) {
+              let response = JSON.parse(xhr.responseText)
+              serverStatusDiv.style.display = 'block'
+    
+              setStatusColor(response['success'])
+    
+              if (response['success']) {
                 serverStatus.innerText = `Server Online!
-              Server Name: ${response["servername"]}
-              Players: ${response["playercount"]}/${response["maxplayers"]}
-              Game Type: ${response["gametype"]}`;
+                  Server Name: ${response['servername']}
+                  Players: ${response['playercount']}/${response['maxplayers']}
+                  Game Type: ${response['gametype']}`
               } else {
-                serverStatus.innerText = "Server Offline";
+                serverStatus.innerText = 'Server Offline'
+                return
               }
             }
-          };
-
-          xhr.onerror = (err) => console.log(err);
-
+          }
+    
+          xhr.onerror = (err) => console.log(err)
           xhr.send(
             JSON.stringify({
               ip: serverIp.value,
               port: serverPort.value,
-              server_type: document.getElementById("server-type")?.value,
+              server_type: document.getElementById('server-type')?.value
             })
-          );
+          )
         }
-    }
-
-    serverIp.addEventListener("input", function (ev) {
-      if (!ipRegex.test(serverIp.value)) {
-        setStatusColor(false);
-        serverStatusDiv.style.display = "block";
-        serverStatus.innerText = "Invalid Server IP Address";
-      } else {
-        serverStatusDiv.style.display = "none";
-        ipVerified = true;
-        checkServer();
       }
-    });
-
-    serverPort.addEventListener("input", function (ev) {
-      const port = Number(serverPort.value);
-      if (!(Number.isInteger(port) && port >= 1 && port <= 65535)) {
-        serverStatusDiv.style.display = "block";
-        setStatusColor(false);
-
-        serverStatus.innerText = "Invalid Server IP Port";
-      } else {
-        serverStatusDiv.style.display = "none";
-        portVerified = true;
-        checkServer();
-      }
-    });
-  });
-</script>
-
-{% endblock content %}
+    
+      serverIp.addEventListener('input', function (ev) {
+        if (!ipRegex.test(serverIp.value)) {
+          setStatusColor(false)
+          serverStatusDiv.style.display = 'block'
+          serverStatus.innerText = 'Invalid Server IP Address'
+        } else {
+          serverStatusDiv.style.display = 'none'
+          ipVerified = true
+          checkServer()
+        }
+      })
+    
+      serverPort.addEventListener('input', function (ev) {
+        const port = Number(serverPort.value)
+        if (!(Number.isInteger(port) && port >= 1 && port <= 65535)) {
+          serverStatusDiv.style.display = 'block'
+          setStatusColor(false)
+    
+          serverStatus.innerText = 'Invalid Server IP Port'
+        } else {
+          serverStatusDiv.style.display = 'none'
+          portVerified = true
+          checkServer()
+        }
+      })
+    })
+  </script>
+{% endblock %}

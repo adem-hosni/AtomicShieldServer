@@ -113,7 +113,9 @@ def render_servers(request: HttpRequest) -> HttpResponse:
                     type=ServerTypes.MTASA,
                     status=ServerStatus.online,
                 )
-                print(f"Added New Server {ip}:{port} from {request.user.username}, license key: ({license_key})")
+                print(
+                    f"Added New Server {ip}:{port} from {request.user.username}, license key: ({license_key})"
+                )
                 return HttpResponseRedirect("/dashboard/servers")
 
     else:
@@ -134,7 +136,7 @@ def render_servers(request: HttpRequest) -> HttpResponse:
                     "duration": "30 Days",
                 }
                 for server in servers.reverse()
-            ],  
+            ],
         },
     )
 

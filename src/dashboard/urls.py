@@ -6,6 +6,7 @@ urlpatterns = [
     path("users", views.render_users),
     path("patch-notes", views.render_patchnotes),
     path("servers", views.render_servers),
+    path("servers/select", views.select_server),
     
     path("checkserver", views.check_server),
 ]

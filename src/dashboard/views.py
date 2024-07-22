@@ -104,7 +104,7 @@ def render_servers(request: HttpRequest) -> HttpResponse:
                 if GameServers.objects.filter(key=license_key).exists():
                     license_key = utils.generate_key(4)
 
-                server = GameServers.objects.create(
+                GameServers.objects.create(
                     ip=ip,
                     port=port,
                     owner=request.user,

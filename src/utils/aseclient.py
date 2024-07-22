@@ -86,18 +86,18 @@ class ASEParser:
         max_players = self.read_byte()
 
         return ASEQueryLightData(
-            server_name,
-            game_type,
-            map_name,
-            build_type,
-            build_number,
-            uptime,
-            http_port,
-            ase_version,
-            passworded,
-            serial_verification,
-            joined_players,
-            max_players,
+            server_name=server_name,
+            game_type=game_type,
+            map_name=map_name,
+            build_type=build_type,
+            build_number=build_number,
+            uptime=uptime,
+            http_port=http_port,
+            ase_version=ase_version,
+            passworded=passworded,
+            serial_verification=serial_verification,
+            joined_players=joined_players,
+            max_players=max_players,
         )
 
 

@@ -1,9 +1,10 @@
-from django.shortcuts import render, redirect
-from django.http import HttpRequest, HttpResponse
-from .models import Announcements, PatchNotes
 import re
 import json
+from django.shortcuts import render, redirect
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
+from .models import Announcements, PatchNotes, GameServers, ServerTypes, ServerStatus
 from .forms import AddServerForm
+import utils
 from utils.aseclient import ASEQueryClient, ASEParser
 
 
@@ -65,11 +66,76 @@ def render_servers(request: HttpRequest) -> HttpResponse:
 
     if request.method == "POST":
         form = AddServerForm(request.POST)
+
+        if form.is_valid():
+            ip = form.cleaned_data["ip"]
+            port = form.cleaned_data["port"]
+            server_type = form.cleaned_data["server_type"]
+
+            # Check if the server_type is of type string
+            if isinstance(server_type, str):
+                if not server_type.isnumeric():
+                    return form.add_error("server_type", "Invalid Server Type")
+                server_type = int(server_type)
+
+            # Check if the port is of type string
+            if isinstance(port, str):
+                if not port.isnumeric():
+                    return form.add_error("port", "Invalid Server Type")
+                port = int(port)
+
+            # Check port range (1 -> 65535)
+            if not (port >= 1 and port <= 65535):
+                return form.add_error("port", "Invalid port range")
+
+            if server_type == 1:  # Server Type: MTA:SA
+                ipv4_pattern = re.compile(
+                    r"^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
+                )
+
+                # Check if the ip is correct
+                if not ipv4_pattern.match(ip):
+                    return form.add_error("ip", "Invalid IPV4 IP")
+
+                # Generate a license key for the server
+                license_key = utils.generate_key(4)
+
+                # Check if key already exists, regenerate it
+                if GameServers.objects.filter(key=license_key).exists():
+                    license_key = utils.generate_key(4)
+
+                server = GameServers.objects.create(
+                    ip=ip,
+                    port=port,
+                    owner=request.user,
+                    key=license_key,
+                    subscriptions="",
+                    type=ServerTypes.MTASA,
+                    status=ServerStatus.online,
+                )
+                print(f"Added New Server {ip}:{port} from {request.user.username}, license key: ({license_key})")
+                return HttpResponseRedirect("/dashboard/servers")
+
     else:
         form = AddServerForm()
 
+    servers = GameServers.objects.filter(owner=request.user)
+
     return render(
-        request, "pages/dashboard/servers.jinja", {"form": form, "servers": []}
+        request,
+        "pages/dashboard/servers.jinja",
+        {
+            "form": form,
+            "servers": [
+                {
+                    "key": server.key,
+                    "address": f"{server.ip}:{server.port}",
+                    "type": server.type,
+                    "duration": "30 Days",
+                }
+                for server in servers.reverse()
+            ],  
+        },
     )
 
 
@@ -81,7 +147,9 @@ def check_server(request: HttpRequest) -> HttpResponse:
         try:
             request_body = json.loads(request.body.decode())
         except Exception as err:
-            print(f"Failed to parse request body\nrequest body: {request_body}\nException: {err}")
+            print(
+                f"Failed to parse request body\nrequest body: {request_body}\nException: {err}"
+            )
             return HttpResponse(json.dumps({"success": False}))
 
     # check how many keys the json data have
@@ -117,7 +185,7 @@ def check_server(request: HttpRequest) -> HttpResponse:
     if not (port >= 1 and port <= 65535):
         return HttpResponse(json.dumps({"success": False}))
 
-    ase_client = ASEQueryClient()        
+    ase_client = ASEQueryClient()
     query_buffer = ase_client.getquery((request_body["ip"], port))
 
     # server is offline ?

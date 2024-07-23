@@ -7,6 +7,9 @@ from django.contrib.auth.models import User
 from .forms import SignInForm, SignUpForm
 
 def render_signin(request: HttpRequest) -> HttpResponse:
+    if request.user.is_authenticated:
+        return redirect("/dashboard/main")
+    
     if request.method == "POST":
         form = SignInForm(request.POST)
         
@@ -31,6 +34,9 @@ def render_signin(request: HttpRequest) -> HttpResponse:
     return render(request, "pages/auth/signin.jinja", {"form": form})
 
 def render_signup(request: HttpRequest) -> HttpResponse:
+    if request.user.is_authenticated:
+        return redirect("/dashboard/main")
+    
     if request.method == "POST":
         form = SignUpForm(request.POST)
         

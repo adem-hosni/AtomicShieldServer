@@ -269,3 +269,35 @@ def select_server(request: HttpRequest) -> HttpResponse:
     request.session["selected_server"] = target_server.id
 
     return HttpResponse(json.dumps({"success": True}))
+
+
+def render_configurations(request: HttpRequest) -> HttpResponse:
+
+    return render(
+        request,
+        "pages/dashboard/configurations.jinja",
+        {
+            "configs": [
+                {
+                    "name": "Allow Banned players from eagle network to connect to server",
+                    "description": "Every player banned (for cheating reasons) on a server protected with EagleAntiCheat is added to a blacklist. With this feature, you can disallow them from connecting to your server",
+                    "active": False,
+                },
+                {
+                    "name": "AirBreak - NoClip",
+                    "description": "Detect players from flying without permissions",
+                    "active": True
+                },
+                {
+                    "name": "Invscible Mode (GodMode)",
+                    "description": "",
+                    "active": True
+                },
+                {
+                    "name": "AirBreak - NoClip",
+                    "description": "Detect players from flying without permissions",
+                    "active": True
+                },
+            ]
+        },
+    )

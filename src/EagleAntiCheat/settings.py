@@ -34,13 +34,17 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    # "channels",
+    "daphne",
     "jazzmin",
+    
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    
     "home",
     "auth_pages",
     "dashboard",
@@ -48,6 +52,8 @@ INSTALLED_APPS = [
 
 if DEBUG:
     INSTALLED_APPS.append("django_browser_reload")
+    
+ASGI_APPLICATION = "EagleAntiCheat.asgi.application"
 
 MIDDLEWARE = [
     "django_browser_reload.middleware.BrowserReloadMiddleware",  # Debug
@@ -114,6 +120,12 @@ AUTH_PASSWORD_VALIDATORS = [
         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    },
+}
 
 
 # Internationalization

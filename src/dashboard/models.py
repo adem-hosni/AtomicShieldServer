@@ -51,6 +51,7 @@ class GameServers(models.Model):
     def __str__(self) -> str:
         return f"{self.ip}:{self.port} ({self.id})"
 
+
 class Announcements(models.Model):
     author = models.CharField(
         max_length=32, default="EagleAntiCheat Development Team", null=False

@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     "home",
     "auth_pages",
     "dashboard",
+    "server_manager",
 ]
 
 if DEBUG:

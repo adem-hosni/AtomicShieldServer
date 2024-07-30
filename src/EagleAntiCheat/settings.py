@@ -49,10 +49,10 @@ INSTALLED_APPS = [
     "auth_pages",
     "dashboard",
     "server_manager",
+    
+    "django_browser_reload" if DEBUG else None,
 ]
 
-if DEBUG:
-    INSTALLED_APPS.append("django_browser_reload")
     
 ASGI_APPLICATION = "EagleAntiCheat.asgi.application"
 

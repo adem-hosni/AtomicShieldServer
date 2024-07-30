@@ -1,3 +1,6 @@
 from django.contrib import admin
+from .models import AntiCheatConfigTemplates, AntiCheatConfigurations
 
-# Register your models here.
+
+admin.site.register(AntiCheatConfigTemplates)
+admin.site.register(AntiCheatConfigurations)

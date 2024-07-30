@@ -1,10 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
-
-
-class ServerTypes(models.IntegerChoices):
-    MTASA = 1, "MTA:SA"
-
+from server_manager.models import AntiCheatConfigurations
+from shared.models import ServerTypes
 
 class ServerStatus(models.IntegerChoices):
     unsubscribed = 1, "UnSubscribed"
@@ -39,6 +36,9 @@ class GameServers(models.Model):
         max_length=16, null=False, default="UNREGISTRED", unique=True
     )
     subscriptions = models.TextField()
+    configurations = models.ForeignKey(
+        AntiCheatConfigurations, on_delete=models.CASCADE
+    )
     type = models.IntegerField(choices=ServerTypes.choices, null=True)
     status = models.IntegerField(
         choices=ServerStatus.choices, null=False, default=ServerStatus.unsubscribed

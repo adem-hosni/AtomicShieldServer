@@ -3,6 +3,7 @@ import json
 from django.shortcuts import render, redirect
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from .models import Announcements, PatchNotes, GameServers, ServerTypes, ServerStatus
+from server_manager.models import AntiCheatConfigTemplates
 from .forms import AddServerForm
 import utils
 from typing import Dict, Union
@@ -279,25 +280,13 @@ def render_configurations(request: HttpRequest) -> HttpResponse:
         {
             "configs": [
                 {
-                    "name": "Allow Banned players from eagle network to connect to server",
-                    "description": "Every player banned (for cheating reasons) on a server protected with EagleAntiCheat is added to a blacklist. With this feature, you can disallow them from connecting to your server",
-                    "active": False,
-                },
-                {
-                    "name": "AirBreak - NoClip",
-                    "description": "Detect players from flying without permissions",
-                    "active": True
-                },
-                {
-                    "name": "Invscible Mode (GodMode)",
-                    "description": "",
-                    "active": True
-                },
-                {
-                    "name": "AirBreak - NoClip",
-                    "description": "Detect players from flying without permissions",
-                    "active": True
-                },
+                    "name": config.name,
+                    "description": config.description,
+                    "active": True,
+                }
+                for config in AntiCheatConfigTemplates.objects.filter(
+                    type=ServerTypes.MTASA
+                )
             ]
         },
     )

@@ -37,24 +37,21 @@ INSTALLED_APPS = [
     # "channels",
     "daphne",
     "jazzmin",
-    
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    
     "home",
     "auth_pages",
     "dashboard",
     "server_manager",
-    
 ]
 
 if DEBUG:
     INSTALLED_APPS.append("django_browser_reload")
-    
+
 ASGI_APPLICATION = "EagleAntiCheat.asgi.application"
 
 MIDDLEWARE = [
@@ -124,8 +121,8 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",
     },
 }
 

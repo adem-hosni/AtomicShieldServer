@@ -10,8 +10,10 @@ logger = logging.getLogger(__name__)
 class EagleServerConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         await self.accept()
+        self.address = tuple(self.scope["client"])
 
         await self.send({"type": "connection_eastablished", "message": "Connected!"})
+        print(f"{self.address[0]}:{self.address[1]} asking for connection...")
 
     async def send(
         self, data: Union[Dict[Any, Any], str, bytes], bytes_data=None, close=False

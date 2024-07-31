@@ -34,4 +34,5 @@ async def handle_network_join(consumer: EagleServerConsumer, request: Dict[str, 
         print(f"Server port mismatch ({server.port} != {request['port']})")
         await consumer.send({"type": RequestType.NETWORK_JOIN.value, "success": False, "message": "Server port mismatch"})
         return await consumer.close()
-        
+
+    print(f"{consumer.address[0]}:{consumer.address[1]} Joined Eagle Servers Network!")        

@@ -326,6 +326,8 @@ def select_server(request: HttpRequest) -> HttpResponse:
 
 
 def render_configurations(request: HttpRequest) -> HttpResponse:
+    if not request.user.is_authenticated:
+        return redirect("/auth/signin")
 
     return render(
         request,

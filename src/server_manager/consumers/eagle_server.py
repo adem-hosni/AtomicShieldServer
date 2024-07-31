@@ -60,7 +60,7 @@ class EagleServerConsumer(AsyncWebsocketConsumer):
         return self._room_group_name
 
     @room_group_name.setter
-    def room_group_name_getter(self, value: Any) -> None:
+    def room_group_name(self, value: Any) -> None:
         if not isinstance(value, str):
             raise TypeError(
                 f"Invalid room group name value, expected 'str' got {type(value)}"

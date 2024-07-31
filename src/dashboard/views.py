@@ -331,7 +331,7 @@ def render_configurations(request: HttpRequest) -> HttpResponse:
                     "description": config.description,
                     "data": {
                         "type": config.config_type,
-                        "value": True,
+                        "value": True if config.config_type == 1 else "qsd" if config.config_type == 2 else 456,
                     }
                 }
                 for config in AntiCheatConfigTemplates.objects.filter(

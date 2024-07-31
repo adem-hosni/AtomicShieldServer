@@ -3,6 +3,7 @@ from enum import Enum
 
 class RequestType(Enum):
     NETWORK_JOIN = 1
+    REQUEST_ANTICHEAT_CONFIGS = 2
 
 
 class WebSocketGroupNames(Enum):

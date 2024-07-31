@@ -2,6 +2,7 @@ import json
 import logging
 from shared.ws import RequestType
 from channels.generic.websocket import AsyncWebsocketConsumer
+from django.contrib.auth.models import User
 from typing import Dict, Any, Union
 
 logger = logging.getLogger(__name__)
@@ -11,6 +12,7 @@ class EagleServerConsumer(AsyncWebsocketConsumer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._group_name = ""
+        self._owner: User = None
 
     async def connect(self):
         await self.accept()
@@ -66,3 +68,15 @@ class EagleServerConsumer(AsyncWebsocketConsumer):
                 f"Invalid room group name value, expected 'str' got {type(value)}"
             )
         self._group_name = value
+
+    @property
+    def owner(self) -> None:
+        return self._owner
+
+    @owner.setter
+    def owner(self, value: Any) -> None:
+        if not isinstance(value, User):
+            raise TypeError(
+                f"Invalid room group name value, expected 'User' got {type(value)}"
+            )
+        self._owner = value

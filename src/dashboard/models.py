@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from server_manager.models import AntiCheatConfigurations
 from shared.models import ServerTypes
 
+
 class ServerStatus(models.IntegerChoices):
     unsubscribed = 1, "UnSubscribed"
     online = 2, "Online"
@@ -37,7 +38,7 @@ class GameServers(models.Model):
     )
     subscriptions = models.TextField()
     configurations = models.ForeignKey(
-        AntiCheatConfigurations, on_delete=models.CASCADE
+        AntiCheatConfigurations, on_delete=models.CASCADE, null=False, blank=False
     )
     type = models.IntegerField(choices=ServerTypes.choices, null=True)
     status = models.IntegerField(

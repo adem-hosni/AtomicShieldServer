@@ -77,6 +77,7 @@ class PatchNotes(models.Model):
     patchnotes = models.TextField(blank=False)
     mention_everyone = models.BooleanField(default=False)
     date = models.DateTimeField(auto_now_add=True, null=True)
+    seen_by = models.ManyToManyField(User, blank=True)
 
     class Meta:
         db_table = "patchnotes"

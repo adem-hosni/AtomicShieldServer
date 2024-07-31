@@ -3,7 +3,7 @@ import json
 from django.shortcuts import render, redirect
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from .models import Announcements, PatchNotes, GameServers, ServerTypes, ServerStatus
-from server_manager.models import AntiCheatConfigTemplates
+from server_manager.models import AntiCheatConfigTemplates, AntiCheatConfigurations
 from .forms import AddServerForm
 import utils
 from typing import Dict, Union
@@ -151,6 +151,12 @@ def render_servers(request: HttpRequest) -> HttpResponse:
                 # Check if key already exists, regenerate it
                 if GameServers.objects.filter(key=license_key).exists():
                     license_key = utils.generate_key(4)
+                    
+                # Create the server configs
+                configurations = AntiCheatConfigurations()
+                for config in AntiCheatConfigTemplates.objects.filter(server_type=ServerTypes.MTASA):
+                    configurations.config[config.id] = config.default_value
+                configurations.save()
 
                 GameServers.objects.create(
                     ip=ip,
@@ -158,6 +164,7 @@ def render_servers(request: HttpRequest) -> HttpResponse:
                     owner=request.user,
                     key=license_key,
                     subscriptions="",
+                    configurations=configurations,
                     type=ServerTypes.MTASA,
                     status=ServerStatus.online,
                 )

@@ -326,12 +326,16 @@ def render_configurations(request: HttpRequest) -> HttpResponse:
         {
             "configs": [
                 {
+                    "id": config.id,
                     "name": config.name,
                     "description": config.description,
-                    "active": True,
+                    "data": {
+                        "type": config.config_type,
+                        "value": True,
+                    }
                 }
                 for config in AntiCheatConfigTemplates.objects.filter(
-                    type=ServerTypes.MTASA
+                    server_type=ServerTypes.MTASA
                 )
             ]
         },

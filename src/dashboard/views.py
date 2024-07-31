@@ -44,7 +44,7 @@ def render_maindashboard(request: HttpRequest) -> HttpResponse:
                     "title": announcement.title,
                     "announcement": announcement.announcement,
                     "dataid": announcement.id,
-                    "seen": announcement.seens.filter(id=request.user.id).exists()
+                    "seen": announcement.seens.filter(id=request.user.id).exists(),
                 }
             )
         announcements.reverse()
@@ -67,7 +67,7 @@ def render_users(request: HttpRequest) -> HttpResponse:
 def render_patchnotes(request: HttpRequest) -> HttpResponse:
     if not request.user.is_authenticated:
         return redirect("/auth/signin")
-    
+
     patchnotes = []
     if request.method == "POST":
         request_body = request.body.decode()
@@ -98,7 +98,7 @@ def render_patchnotes(request: HttpRequest) -> HttpResponse:
                     "title": patchnote.title,
                     "patchnotes": patchnote.patchnotes,
                     "dataid": patchnote.id,
-                    "seen": patchnote.seens.filter(id=request.user.id).exists()
+                    "seen": patchnote.seens.filter(id=request.user.id).exists(),
                 }
             )
         patchnotes.reverse()

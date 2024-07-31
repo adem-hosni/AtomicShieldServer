@@ -81,7 +81,8 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 
-                "dashboard.context_preprocessor.preprocess_patchnote_notifpins"
+                "dashboard.context_preprocessor.preprocess_patchnote_notifpins",
+                "dashboard.context_preprocessor.preprocess_announcement_notifpins"
             ],
         },
     },

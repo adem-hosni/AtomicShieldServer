@@ -60,6 +60,7 @@ class Announcements(models.Model):
     announcement = models.TextField(max_length=4096)
     mention_everyone = models.BooleanField(default=False)
     date = models.DateTimeField(auto_now_add=True, null=True)
+    seens = models.ManyToManyField(User, blank=True)
 
     class Meta:
         db_table = "announcements"

@@ -15,16 +15,39 @@ def render_maindashboard(request: HttpRequest) -> HttpResponse:
         return redirect("/auth/signin")
 
     announcements = []
-    for announcement in Announcements.objects.all():
-        announcements.append(
-            {
-                "date": announcement.date,
-                "author": announcement.author,
-                "title": announcement.title,
-                "announcement": announcement.announcement,
-            }
-        )
-    announcements.reverse()
+    if request.method == "POST":
+        request_body = request.body.decode()
+
+        # check the request body health
+        if request_body:
+            try:
+                request_body = json.loads(request.body.decode())
+            except Exception as err:
+                print(
+                    f"Failed to parse request body\nrequest body: {request_body}\nException: {err}"
+                )
+            if "seenAnnouncement" in request_body.keys():
+                announcement_id = int(request_body["seenAnnouncement"])
+                try:
+                    seen_announcement = Announcements.objects.get(id=announcement_id)
+                except Announcements.DoesNotExist:
+                    ...
+                else:
+                    seen_announcement.seens.add(request.user)
+                    seen_announcement.save()
+    else:
+        for announcement in Announcements.objects.all():
+            announcements.append(
+                {
+                    "date": announcement.date,
+                    "author": announcement.author,
+                    "title": announcement.title,
+                    "announcement": announcement.announcement,
+                    "dataid": announcement.id,
+                    "seen": announcement.seens.filter(id=request.user.id).exists()
+                }
+            )
+        announcements.reverse()
     return render(
         request,
         "pages/dashboard/main.jinja",

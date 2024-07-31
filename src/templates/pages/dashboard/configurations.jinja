@@ -1,53 +1,91 @@
-{% extends 'bases/dashboard.jinja' %}
+{% extends 'bases/dashboard.jinja' %} {% block content %}
+<div
+  class="p-4 rounded-lg transition-all duration-300 bg-purple-200 dark:bg-[#0c0c0c]"
+>
+  {% include 'components/dashboard/breadcrumb.jinja' with
+  current_page='Configurations' %}
+</div>
 
-{% block content %}
-  <div class="p-4 rounded-lg transition-all duration-300 bg-purple-200 dark:bg-[#0c0c0c]">
-    {% include 'components/dashboard/breadcrumb.jinja' with current_page='Configurations' %}
-  </div>
-
-  <div class="w-full bg-[#0D0D0D] p-6 rounded-xl mt-4" style="overflow-y: auto">
-    <div class="flex items-center mb-4 md:mb-0 gap-3">
-      <div>
-        <div class="w-12 h-12 flex group items-center transition-all justify-center rounded-xl text-white group-hover:text-white bg-zinc-900 text-white transition-all duration-300">
-          <div class="flex items-center justify-center relative w-8 h-8 undefined">
-            <i class="absolute fas fa-gear opacity-20"></i>
-            <i class="absolute fa fa-gear"></i>
-          </div>
+<div class="w-full bg-[#0D0D0D] p-6 rounded-xl mt-4" style="overflow-y: auto">
+  <div class="flex items-center mb-4 md:mb-0 gap-3">
+    <div>
+      <div
+        class="w-12 h-12 flex group items-center transition-all justify-center rounded-xl text-white group-hover:text-white bg-zinc-900 text-white transition-all duration-300"
+      >
+        <div
+          class="flex items-center justify-center relative w-8 h-8 undefined"
+        >
+          <i class="absolute fas fa-gear opacity-20"></i>
+          <i class="absolute fa fa-gear"></i>
         </div>
-      </div>
-      <div class="w-full">
-        <div class="flex items-center gap-1">
-          <div class="flex items-center justify-center mr-3 bg-input rounded-full text-lg bg-transparent">
-            <i class="fa fa-brackets-curly text-blue-500"></i>
-          </div>
-          <h3 class="min-w-min text-white font-semibold text-sm md:text-lg line-clamp-1">Configurations</h3>
-        </div>
-        <h4 class="text-gray-400 text-sm">Configure your selected server anticheats</h4>
       </div>
     </div>
+    <div class="w-full">
+      <div class="flex items-center gap-1">
+        <div
+          class="flex items-center justify-center mr-3 bg-input rounded-full text-lg bg-transparent"
+        >
+          <i class="fa fa-brackets-curly text-blue-500"></i>
+        </div>
+        <h3
+          class="min-w-min text-white font-semibold text-sm md:text-lg line-clamp-1"
+        >
+          Configurations
+        </h3>
+      </div>
+      <h4 class="text-gray-400 text-sm">
+        Configure your selected server anticheats
+      </h4>
+    </div>
   </div>
-  <div class="mt-4 flex flex-col items-stretch">
-    <div class="gap-3 rounded-xl bg-[#0D0D0D] px-6 py-2.5 space-y-2">
-      {% for config in configs %}
-      <div class="flex flex-col w-full p-4">
-        
-        <label for="checkbox" class="font-medium text-gray-300">{{ config.name }}</label>
+</div>
+<div class="mt-4 flex flex-col items-stretch">
+  <div class="gap-3 rounded-xl bg-[#0D0D0D] px-6 py-2.5 space-y-2">
+    {% for config in configs %}
+    <div class="flex flex-col w-full p-4">
+      <label for="checkbox" class="font-medium text-gray-300">{{
+        config.name
+      }}</label>
 
-        {% if config.active %}
-        <input checked type="checkbox" class="border-gray-200 rounded text-blue-600 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-800 dark:border-neutral-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800 ml-auto" id="checkbox">
+      <div class="flex">
+        <p class="text-gray-400 font-medium text-sm px-2">
+          {{ config.description }}
+        </p>
+
+        {% if config.data.type == 1 %} {% if config.data.value %}
+        <input
+          checked
+          type="checkbox"
+          class="border-gray-200 rounded text-blue-600 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-800 dark:border-neutral-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800 ml-auto"
+          id="checkbox"
+        />
         {% else %}
-        <input type="checkbox" class="border-gray-200 rounded text-blue-600 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-800 dark:border-neutral-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800 ml-auto" id="checkbox">
-        {% endif %}
-        
-        <p class="text-gray-400 font-medium text-sm px-2">{{ config.description }}</p>        
-      </div>
-      
-      {% if forloop.counter < configs|length %}
-      <hr class="my-4 border-t-2 border-gray-600 w-[100%] mx-auto">
-      {% endif %}
+        <input
+          type="checkbox"
+          class="border-gray-200 rounded text-blue-600 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-800 dark:border-neutral-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800 ml-auto"
+          id="checkbox"
+        />
+        {% endif %} {% elif config.data.type == 2 %}
 
-      {% endfor %}
+        <div class="relative h-10 w-64 min-w-[200px] ml-auto">
+          <input
+            value="{{ config.data.value }}"
+            placeholder="Type Here..."
+            class="peer h-full w-full rounded-lg border border-gray-200 border-t-transparent bg-transparent px-3 py-2.5 font-sans text-sm font-normal text-gray-300 outline outline-0 transition-all placeholder-shown:border placeholder-shown:border-gray-300 placeholder-shown:border-t-gray-200 focus:border-gray-300 focus:border-t-transparent focus:outline-0 disabled:border-0 disabled:bg-gray-300 placeholder:opacity-0 focus:placeholder:opacity-100 focus:placeholder-transparent selection:bg-purple-600 selection:text-black"
+          />
+          <label
+            class="before:content[' '] after:content[' '] pointer-events-none absolute left-0 -top-1.5 flex h-full w-full select-none !overflow-visible truncate text-[11px] font-normal leading-tight text-gray-300 transition-all before:pointer-events-none before:mt-[6.5px] before:mr-1 before:box-border before:block before:h-1.5 before:w-2.5 before:rounded-tl-md before:border-t before:border-l before:border-gray-300 before:transition-all after:pointer-events-none after:mt-[6.5px] after:ml-1 after:box-border after:block after:h-1.5 after:w-2.5 after:flex-grow after:rounded-tr-md after:border-t after:border-r after:border-gray-300 after:transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:leading-[3.75] peer-placeholder-shown:text-gray-300 peer-placeholder-shown:before:border-transparent peer-placeholder-shown:after:border-transparent peer-focus:text-[12px] peer-focus:leading-tight peer-focus:text-gray-300 peer-focus:after:border-t-2 peer-focus:after:border-r-2 peer-focus:after:!border-gray-300 peer-disabled:text-transparent peer-disabled:before:border-transparent peer-disabled:after:border-transparent peer-disabled:peer-placeholder-shown:text-gray-300"
+          >
+            Type Here...
+          </label>
+        </div>
+        {% endif %}
+      </div>
     </div>
-    
+
+    {% if forloop.counter < configs|length %}
+    <hr class="my-4 border-t-2 border-gray-600 w-[100%] mx-auto" />
+    {% endif %} {% endfor %}
   </div>
+</div>
 {% endblock %}

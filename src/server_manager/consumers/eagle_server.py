@@ -8,6 +8,10 @@ logger = logging.getLogger(__name__)
 
 
 class EagleServerConsumer(AsyncWebsocketConsumer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._room_group_name = ""
+
     async def connect(self):
         await self.accept()
         self.address = tuple(self.scope["client"])
@@ -50,3 +54,15 @@ class EagleServerConsumer(AsyncWebsocketConsumer):
         match request_body["type"]:
             case RequestType.NETWORK_JOIN:
                 await handle_network_join(self, request_body)
+
+    @property
+    def room_group_name(self) -> None:
+        return self._room_group_name
+
+    @room_group_name.setter
+    def room_group_name_getter(self, value: Any) -> None:
+        if not isinstance(value, str):
+            raise TypeError(
+                f"Invalid room group name value, expected 'str' got {type(value)}"
+            )
+        self._room_group_name = value

@@ -4,10 +4,20 @@ from django.db import models
 
 
 class AntiCheatConfigTemplates(models.Model):
+    class AntiCheatConfigDataTypes(models.IntegerChoices):
+        BOOLEAN = 1, "Boolean"
+        STRING = 2, "String"
+        INTEGER = 3, "Integer"
+
     name = models.CharField(max_length=64)
     description = models.TextField(null=True, default=None, blank=True)
-    type = models.IntegerField(
+    server_type = models.IntegerField(
         choices=ServerTypes, null=False, default=ServerTypes.MTASA
+    )
+    config_type = models.IntegerField(
+        choices=AntiCheatConfigDataTypes,
+        null=False,
+        default=AntiCheatConfigDataTypes.BOOLEAN,
     )
 
     class Meta:

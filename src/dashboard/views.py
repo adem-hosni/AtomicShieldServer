@@ -64,7 +64,7 @@ def render_patchnotes(request: HttpRequest) -> HttpResponse:
                 except PatchNotes.DoesNotExist:
                     ...
                 else:
-                    seen_patchnote.seen_by.add(request.user)
+                    seen_patchnote.seens.add(request.user)
                     seen_patchnote.save()
     else:
         for patchnote in PatchNotes.objects.all():
@@ -75,7 +75,7 @@ def render_patchnotes(request: HttpRequest) -> HttpResponse:
                     "title": patchnote.title,
                     "patchnotes": patchnote.patchnotes,
                     "dataid": patchnote.id,
-                    "seen": patchnote.seen_by.filter(id=request.user.id).exists()
+                    "seen": patchnote.seens.filter(id=request.user.id).exists()
                 }
             )
         patchnotes.reverse()

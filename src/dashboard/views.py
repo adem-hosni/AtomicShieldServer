@@ -44,18 +44,41 @@ def render_users(request: HttpRequest) -> HttpResponse:
 def render_patchnotes(request: HttpRequest) -> HttpResponse:
     if not request.user.is_authenticated:
         return redirect("/auth/signin")
-
+    
     patchnotes = []
-    for patchnote in PatchNotes.objects.all():
-        patchnotes.append(
-            {
-                "date": patchnote.date,
-                "author": patchnote.author,
-                "title": patchnote.title,
-                "patchnotes": patchnote.patchnotes,
-            }
-        )
-    patchnotes.reverse()
+    if request.method == "POST":
+        request_body = request.body.decode()
+
+        # check the request body health
+        if request_body:
+            try:
+                request_body = json.loads(request.body.decode())
+            except Exception as err:
+                print(
+                    f"Failed to parse request body\nrequest body: {request_body}\nException: {err}"
+                )
+            if "seenPatchNote" in request_body.keys():
+                patchnote_id = int(request_body["seenPatchNote"])
+                try:
+                    seen_patchnote = PatchNotes.objects.get(id=patchnote_id)
+                except PatchNotes.DoesNotExist:
+                    ...
+                else:
+                    seen_patchnote.seen_by.add(request.user)
+                    seen_patchnote.save()
+    else:
+        for patchnote in PatchNotes.objects.all():
+            patchnotes.append(
+                {
+                    "date": patchnote.date,
+                    "author": patchnote.author,
+                    "title": patchnote.title,
+                    "patchnotes": patchnote.patchnotes,
+                    "dataid": patchnote.id,
+                    "seen": patchnote.seen_by.filter(id=request.user.id).exists()
+                }
+            )
+        patchnotes.reverse()
 
     return render(
         request, "pages/dashboard/patchnotes.jinja", {"patchnotes": patchnotes}

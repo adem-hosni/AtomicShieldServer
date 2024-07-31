@@ -18,7 +18,7 @@ class AntiCheatConfigTemplates(models.Model):
         null=False,
         default=AntiCheatConfigDataTypes.BOOLEAN,
     )
-    default_value = models.TextField(blank=True)
+    default_value = models.CharField(blank=True, max_length=50)
 
     class Meta:
         db_table = "anticheat_config_templates"

@@ -54,5 +54,5 @@ async def handle_network_join(consumer: EagleServerConsumer, request: Dict[str, 
         )
         return await consumer.close()
 
-    consumer.room_group_name = WebSocketGroupNames.EAGLE_SERVERS.value
+    consumer.group_name = WebSocketGroupNames.EAGLE_SERVERS.value
     print(f"{consumer.address[0]}:{consumer.address[1]} Joined Eagle Servers Network!")

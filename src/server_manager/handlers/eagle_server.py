@@ -62,7 +62,9 @@ async def handle_network_join(consumer: EagleServerConsumer, request: Dict[str, 
 
     consumer.group_name = WebSocketGroupNames.EAGLE_SERVERS.value
     consumer.channel_layer.group_add(consumer.group_name, consumer.channel_name)
-    logger.info(f"{consumer.address[0]}:{consumer.address[1]} Joined Eagle Servers Network!")
+    logger.info(
+        f"{consumer.address[0]}:{consumer.address[1]} Joined Eagle Servers Network!"
+    )
 
     queryset = await sync_to_async(list)(
         AntiCheatConfigTemplates.objects.filter(server_type=ServerTypes.MTASA)
@@ -84,8 +86,8 @@ async def handle_network_join(consumer: EagleServerConsumer, request: Dict[str, 
     # Iterate throught config templates
     for config in config_templates:
         # Override config_templates with existing server configs
-        if config["id"] in server_configs.keys():
-            config["value"] = server_configs[config["id"]]
+        if str(config["id"]) in server_configs.keys():
+            config["value"] = server_configs[str(config["id"])]
 
     # Sync Server Settings
     await consumer.send(

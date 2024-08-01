@@ -51,11 +51,13 @@ class EagleServerConsumer(AsyncWebsocketConsumer):
             print(f"Undefined request type (given: {request_body['type']})")
             return self.close()
 
-        from ..handlers.eagle_server import handle_network_join
+        from ..handlers.eagle_server import handle_network_join, handle_request_anticheat_configs
 
         match request_body["type"]:
             case RequestType.NETWORK_JOIN:
                 await handle_network_join(self, request_body)
+            case RequestType.SYNC_ANTICHEAT_CONFIGS:
+                await handle_request_anticheat_configs(self, request_body)
 
     @property
     def group_name(self) -> None:

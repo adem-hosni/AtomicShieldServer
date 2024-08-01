@@ -330,7 +330,7 @@ def select_server(request: HttpRequest) -> HttpResponse:
 def render_configurations(request: HttpRequest) -> HttpResponse:
     if not request.user.is_authenticated:
         return redirect("/auth/signin")
-    
+
     if request.method == "POST":
         request_body = request.POST
 

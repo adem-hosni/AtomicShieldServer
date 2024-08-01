@@ -26,7 +26,7 @@ class AddServerForm(forms.Form):
             }
         ),
     )
-    
+
     server_type = forms.ChoiceField(
         required=True,
         label="Server Type",

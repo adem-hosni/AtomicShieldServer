@@ -151,10 +151,12 @@ def render_servers(request: HttpRequest) -> HttpResponse:
                 # Check if key already exists, regenerate it
                 if GameServers.objects.filter(key=license_key).exists():
                     license_key = utils.generate_key(4)
-                    
+
                 # Create the server configs
                 configurations = AntiCheatConfigurations()
-                for config in AntiCheatConfigTemplates.objects.filter(server_type=ServerTypes.MTASA):
+                for config in AntiCheatConfigTemplates.objects.filter(
+                    server_type=ServerTypes.MTASA
+                ):
                     configurations.config[config.id] = config.default_value
                 configurations.save()
 
@@ -328,24 +330,68 @@ def select_server(request: HttpRequest) -> HttpResponse:
 def render_configurations(request: HttpRequest) -> HttpResponse:
     if not request.user.is_authenticated:
         return redirect("/auth/signin")
+    
+    if request.method == "POST":
+        request_body = request.POST
+
+        # check the request body health
+        if request_body:
+            selected_server = request.session.get("selected_server", -1)
+            if selected_server > 0:
+                try:
+                    target_server = GameServers.objects.get(id=selected_server)
+                except GameServers.DoesNotExist:
+                    ...
+                else:
+                    allowed_configs = AntiCheatConfigTemplates.objects.filter(
+                        server_type=ServerTypes.MTASA
+                    )
+                    allowed_ids = allowed_configs.values_list("id", flat=True)
+                    server_configurations = target_server.configurations
+                    print(request_body.keys())
+                    for key, value in request_body.items():
+                        if key != "csrfmiddlewaretoken":
+                            target_config_id = int(key)
+                            if target_config_id in allowed_ids:
+                                server_configurations.config[target_config_id] = value
+                    server_configurations.save()
+                    return redirect(request.path)
+
+    selected_server_id = request.session.get("selected_server", -1)
+    configs = []
+
+    if selected_server_id > 0:
+        try:
+            server = GameServers.objects.get(owner=request.user, id=selected_server_id)
+        except GameServers.DoesNotExist:
+            ...
+        else:
+            server_configs = server.configurations.config
+
+            for template_config in AntiCheatConfigTemplates.objects.filter(
+                server_type=ServerTypes.MTASA
+            ):
+                # Added each config per templates
+                # if the config is not registred on the server configs table, get the default config value from configs templates
+                configs.append(
+                    {
+                        "id": template_config.id,
+                        "name": template_config.name,
+                        "description": template_config.description,
+                        "data": {
+                            "type": template_config.config_type,
+                            "value": server_configs.get(
+                                str(template_config.id),
+                                template_config.get_default_value(),
+                            ),
+                        },
+                    }
+                )
 
     return render(
         request,
         "pages/dashboard/configurations.jinja",
         {
-            "configs": [
-                {
-                    "id": config.id,
-                    "name": config.name,
-                    "description": config.description,
-                    "data": {
-                        "type": config.config_type,
-                        "value": True if config.config_type == 1 else "qsd" if config.config_type == 2 else 456,
-                    }
-                }
-                for config in AntiCheatConfigTemplates.objects.filter(
-                    server_type=ServerTypes.MTASA
-                )
-            ]
+            "configs": configs,
         },
     )

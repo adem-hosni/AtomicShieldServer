@@ -10,9 +10,12 @@ def preprocess_patchnote_notifpins(request: HttpRequest) -> Dict[str, Any]:
         }
     return {}
 
+
 def preprocess_announcement_notifpins(request: HttpRequest) -> Dict[str, Any]:
     if request.user.is_authenticated:
         return {
-            "unseen_announcements": Announcements.objects.exclude(seens=request.user).count()
+            "unseen_announcements": Announcements.objects.exclude(
+                seens=request.user
+            ).count()
         }
     return {}

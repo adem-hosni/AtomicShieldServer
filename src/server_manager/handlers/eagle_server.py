@@ -3,7 +3,7 @@ from utils import check_request_body_key
 from asgiref.sync import sync_to_async
 from dashboard.models import GameServers
 from ..models import AntiCheatConfigTemplates
-from shared.ws import RequestType, WebSocketGroupNames
+from shared.ws import PacketID, WebSocketGroupNames
 from shared.models import ServerTypes
 from ..consumers.eagle_server import EagleServerConsumer
 import logging
@@ -29,7 +29,7 @@ async def handle_network_join(consumer: EagleServerConsumer, request: Dict[str, 
         logging.warn(f"Invalid server key requested! (Key: {request['server_key']})")
         await consumer.send(
             {
-                "type": RequestType.NETWORK_JOIN.value,
+                "type": PacketID.NETWORK_JOIN.value,
                 "success": False,
                 "message": "Invalid server key!",
             }
@@ -41,7 +41,7 @@ async def handle_network_join(consumer: EagleServerConsumer, request: Dict[str, 
         print(f"Server ip address mismatch ({server.ip} != {request['ip']})")
         await consumer.send(
             {
-                "type": RequestType.NETWORK_JOIN.value,
+                "type": PacketID.NETWORK_JOIN.value,
                 "success": False,
                 "message": "Server ip address mismatch",
             }
@@ -53,7 +53,7 @@ async def handle_network_join(consumer: EagleServerConsumer, request: Dict[str, 
         print(f"Server port mismatch ({server.port} != {request['port']})")
         await consumer.send(
             {
-                "type": RequestType.NETWORK_JOIN.value,
+                "type": PacketID.NETWORK_JOIN.value,
                 "success": False,
                 "message": "Server port mismatch",
             }
@@ -87,7 +87,7 @@ async def handle_network_join(consumer: EagleServerConsumer, request: Dict[str, 
 
     # Sync Server Settings
     await consumer.send({
-        "type": RequestType.SYNC_ANTICHEAT_CONFIGS.value,
+        "type": PacketID.SYNC_ANTICHEAT_CONFIGS.value,
         "configurations": config_templates
     })
     

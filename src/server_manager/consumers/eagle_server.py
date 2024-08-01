@@ -1,6 +1,6 @@
 import json
 import logging
-from shared.ws import RequestType
+from shared.ws import PacketID
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.contrib.auth.models import User
 from typing import Dict, Any, Union
@@ -46,7 +46,7 @@ class EagleServerConsumer(AsyncWebsocketConsumer):
             return self.close()
 
         try:
-            request_body["type"] = RequestType(request_body["type"])
+            request_body["type"] = PacketID(request_body["type"])
         except ValueError:
             print(f"Undefined request type (given: {request_body['type']})")
             return self.close()
@@ -54,9 +54,9 @@ class EagleServerConsumer(AsyncWebsocketConsumer):
         from ..handlers.eagle_server import handle_network_join, handle_request_anticheat_configs
 
         match request_body["type"]:
-            case RequestType.NETWORK_JOIN:
+            case PacketID.NETWORK_JOIN:
                 await handle_network_join(self, request_body)
-            case RequestType.SYNC_ANTICHEAT_CONFIGS:
+            case PacketID.SYNC_ANTICHEAT_CONFIGS:
                 await handle_request_anticheat_configs(self, request_body)
 
     @property

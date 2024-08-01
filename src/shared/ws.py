@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class RequestType(Enum):
+class PacketID(Enum):
     NETWORK_JOIN = 1
     SYNC_ANTICHEAT_CONFIGS = 2
 

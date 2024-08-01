@@ -22,7 +22,6 @@ async def handle_network_join(consumer: EagleServerConsumer, request: Dict[str, 
     if not check_request_body_key(request, "port", int):
         return await consumer.close()
 
-    logging.warn(f"Invalid server key requested! (Key: {request['server_key']})")
     # Get the target server, send error message if it doesnt exists
     try:
         server = await GameServers.objects.aget(key=request["server_key"])
@@ -39,7 +38,7 @@ async def handle_network_join(consumer: EagleServerConsumer, request: Dict[str, 
 
     # Security Key Rule: Check if the server ip matches the registred ip
     if server.ip != request["ip"]:
-        print(f"Server ip address mismatch ({server.ip} != {request['ip']})")
+        logger.warn(f"Server ip address mismatch ({server.ip} != {request['ip']})")
         await consumer.send(
             {
                 "type": PacketID.NETWORK_JOIN.value,
@@ -51,7 +50,7 @@ async def handle_network_join(consumer: EagleServerConsumer, request: Dict[str, 
 
     # Security Key Rule: Check if the server port matches the registred port
     if server.port != request["port"]:
-        print(f"Server port mismatch ({server.port} != {request['port']})")
+        logger.warn(f"Server port mismatch ({server.port} != {request['port']})")
         await consumer.send(
             {
                 "type": PacketID.NETWORK_JOIN.value,
@@ -63,7 +62,7 @@ async def handle_network_join(consumer: EagleServerConsumer, request: Dict[str, 
 
     consumer.group_name = WebSocketGroupNames.EAGLE_SERVERS.value
     consumer.channel_layer.group_add(consumer.group_name, consumer.channel_name)
-    print(f"{consumer.address[0]}:{consumer.address[1]} Joined Eagle Servers Network!")
+    logger.info(f"{consumer.address[0]}:{consumer.address[1]} Joined Eagle Servers Network!")
 
     queryset = await sync_to_async(list)(
         AntiCheatConfigTemplates.objects.filter(server_type=ServerTypes.MTASA)

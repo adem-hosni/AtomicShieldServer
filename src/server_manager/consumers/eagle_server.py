@@ -19,7 +19,7 @@ class EagleServerConsumer(AsyncWebsocketConsumer):
         self.address = tuple(self.scope["client"])
 
         await self.send({"type": "connection_eastablished", "message": "Connected!"})
-        print(f"{self.address[0]}:{self.address[1]} asking for connection...")
+        logger.info(f"{self.address[0]}:{self.address[1]} asking for connection...")
 
     async def send(
         self, data: Union[Dict[Any, Any], str, bytes], bytes_data=None, close=False
@@ -37,18 +37,18 @@ class EagleServerConsumer(AsyncWebsocketConsumer):
         try:
             request_body: Dict[str, Any] = json.loads(text_data)
         except json.decoder.JSONDecodeError:
-            print(f"Failed to parse request. (request body: {request_body})")
+            logger.warn(f"Failed to parse request. (request body: {request_body})")
             return self.close()
 
         # Check if the request body have a type
         if not "type" in request_body.keys():
-            print(f"Failed to get request type. (given request: {request_body})")
+            logger.warn(f"Failed to get request type. (given request: {request_body})")
             return self.close()
 
         try:
             request_body["type"] = PacketID(request_body["type"])
         except ValueError:
-            print(f"Undefined request type (given: {request_body['type']})")
+            logger.warn(f"Undefined request type (given: {request_body['type']})")
             return self.close()
 
         from ..handlers.eagle_server import (

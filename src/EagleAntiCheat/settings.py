@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 from django.conf import settings
 from django.conf.urls.static import static
 from pathlib import Path
+
 import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -80,9 +81,8 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
-                
                 "dashboard.context_preprocessor.preprocess_patchnote_notifpins",
-                "dashboard.context_preprocessor.preprocess_announcement_notifpins"
+                "dashboard.context_preprocessor.preprocess_announcement_notifpins",
             ],
         },
     },
@@ -155,6 +155,29 @@ STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "class": "rich.logging.RichHandler",  # <-- this
+            "rich_tracebacks": True,
+            "show_time": True,
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "INFO",
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "level": os.getenv("DJANGO_LOG_LEVEL", "INFO"),
+            "propagate": False,
+        },
+    },
+}
 
 JAZZMIN_UI_TWEAKS = {
     "site title": "Eagle AntiCheat",

@@ -348,7 +348,6 @@ def render_configurations(request: HttpRequest) -> HttpResponse:
                     )
                     allowed_ids = allowed_configs.values_list("id", flat=True)
                     server_configurations = target_server.configurations
-                    print(request_body.keys())
                     for key, value in request_body.items():
                         if key != "csrfmiddlewaretoken":
                             target_config_id = int(key)

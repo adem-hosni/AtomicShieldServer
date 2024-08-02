@@ -66,39 +66,18 @@ async def handle_network_join(consumer: EagleServerConsumer, request: Dict[str, 
         f"{consumer.address[0]}:{consumer.address[1]} Joined Eagle Servers Network!"
     )
 
-    queryset = await sync_to_async(list)(
-        AntiCheatConfigTemplates.objects.filter(server_type=ServerTypes.MTASA)
-    )
-    config_templates = [
-        {"id": config.id, "value": config.default_value} for config in queryset
-    ]
-
-    # Select target server configurations (asynchronously)
-    try:
-        target_server = await GameServers.objects.select_related("configurations").aget(
-            id=server.id
-        )
-        server_configs = target_server.configurations.config
-    except GameServers.DoesNotExist:
-        # Set Server configs emmpty
-        server_configs = {}
-
-    # Iterate throught config templates
-    for config in config_templates:
-        # Override config_templates with existing server configs
-        if str(config["id"]) in server_configs.keys():
-            config["value"] = server_configs[str(config["id"])]
+    configs = await server.get_anticheat_configurations()
 
     # Sync Server Settings
     await consumer.send(
         {
             "type": PacketID.SYNC_ANTICHEAT_CONFIGS.value,
-            "configurations": config_templates,
+            "configurations": configs,
         }
     )
 
     logger.info(
-        f"Synced {len(config_templates)} anticheat configurations to the server!"
+        f"Synced {len(configs)} anticheat configurations to the server!"
     )
 
 

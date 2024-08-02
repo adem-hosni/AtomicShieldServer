@@ -51,21 +51,27 @@
                 {{ config.description }}
               </p>
 
-              {% if config.data.type == 1 %}
-                {% if config.data.value == "on" %}
-                <input
-                checked
-                name="{{ config.id }}"
-                type="checkbox"
-                class="border-gray-200 rounded text-blue-600 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-800 dark:border-neutral-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800 ml-auto"
-                />
-                {% else %}
-                <input
+              <label class="inline-flex items-center cursor-pointer ml-auto">
+                {% if config.data.type == 1 %}
+                  {% if config.data.value == "on" %}
+                  <input
+                  checked
                   name="{{ config.id }}"
                   type="checkbox"
-                  class="border-gray-200 rounded text-blue-600 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-800 dark:border-neutral-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800 ml-auto"
-                />
-                {% endif %}
+                  class="sr-only peer"
+                  />
+                  <div class="relative w-10 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-purple-700"></div>
+                
+                  {% else %}
+                  <input
+                    name="{{ config.id }}"
+                    type="checkbox"
+                    class="sr-only peer"
+                  />
+                  <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-purple-700"></div>
+                  {% endif %}
+                </label>
+
 
               {% elif config.data.type == 2 %}
                 <div class="relative h-10 w-64 min-w-[200px] ml-auto">

@@ -336,6 +336,7 @@ def render_configurations(request: HttpRequest) -> HttpResponse:
 
         # check the request body health
         if request_body:
+            print(request_body)
             selected_server = request.session.get("selected_server", -1)
             if selected_server > 0:
                 try:
@@ -370,7 +371,6 @@ def render_configurations(request: HttpRequest) -> HttpResponse:
             for template_config in AntiCheatConfigTemplates.objects.filter(
                 server_type=ServerTypes.MTASA
             ):
-                print(server_configs.get(str(template_config.id), template_config.get_default_value()))
                 # Added each config per templates
                 # if the config is not registred on the server configs table, get the default config value from configs templates
                 configs.append(

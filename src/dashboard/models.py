@@ -1,7 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import User
-from server_manager.models import AntiCheatConfigurations
+from asgiref.sync import sync_to_async
+from server_manager.models import AntiCheatConfigurations, AntiCheatConfigTemplates
 from shared.models import ServerTypes
+from typing import Dict, Any
 
 
 class ServerStatus(models.IntegerChoices):
@@ -48,6 +50,29 @@ class GameServers(models.Model):
     class Meta:
         db_table = "gameservers"
         verbose_name_plural = "gameservers"
+        
+    async def get_anticheat_configurations(self) -> Dict[str, Any]:
+        try:
+            target_server = await GameServers.objects.select_related("configurations").aget(
+                id=self.id
+            )
+            server_configs = target_server.configurations.config
+        except GameServers.DoesNotExist:
+            # Set Server configs emmpty
+            server_configs = {}
+            
+        queryset = await sync_to_async(list)(AntiCheatConfigTemplates.objects.filter(server_type=ServerTypes.MTASA))
+        config_templates = [
+            {"id": config.id, "value": config.default_value} for config in queryset
+        ]
+
+        # Iterate throught config templates
+        for config in config_templates:
+            # Override config_templates with existing server configs
+            if str(config["id"]) in server_configs.keys():
+                config["value"] = server_configs[str(config["id"])]
+                
+        return config_templates
 
     def __str__(self) -> str:
         return f"{self.ip}:{self.port} ({self.id})"

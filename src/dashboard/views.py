@@ -4,7 +4,7 @@ from django.shortcuts import render, redirect
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from .models import Announcements, PatchNotes, GameServers, ServerTypes, ServerStatus
 from server_manager.models import AntiCheatConfigTemplates, AntiCheatConfigurations
-from .forms import AddServerForm
+from .forms import AddServerForm, ConfigurationsForm
 import utils
 from typing import Dict, Union
 from utils.aseclient import ASEQueryClient, ASEParser
@@ -333,9 +333,10 @@ def render_configurations(request: HttpRequest) -> HttpResponse:
 
     if request.method == "POST":
         request_body = request.POST
+        form = ConfigurationsForm(request.POST)
 
         # check the request body health
-        if request_body:
+        if form.is_valid():
             print(request_body)
             selected_server = request.session.get("selected_server", -1)
             if selected_server > 0:
@@ -349,7 +350,7 @@ def render_configurations(request: HttpRequest) -> HttpResponse:
                     )
                     allowed_ids = allowed_configs.values_list("id", flat=True)
                     server_configurations = target_server.configurations
-                    for key, value in request_body.items():
+                    for key, value in form.cleaned_data.items():
                         if key != "csrfmiddlewaretoken":
                             target_config_id = int(key)
                             if target_config_id in allowed_ids:
@@ -382,16 +383,23 @@ def render_configurations(request: HttpRequest) -> HttpResponse:
                             "type": template_config.config_type,
                             "value": server_configs.get(
                                 str(template_config.id),
-                                server_configs.get(str(template_config.id), template_config.get_default_value()),
+                                server_configs.get(
+                                    str(template_config.id),
+                                    template_config.get_default_value(),
+                                ),
                             ),
                         },
                     }
                 )
 
+
+    form = ConfigurationsForm()
+    form.set_configurations(configs)
     return render(
         request,
         "pages/dashboard/configurations.jinja",
         {
-            "configs": configs,
+            "form": form,
+            "configs_count": len(configs),
         },
     )

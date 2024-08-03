@@ -50,8 +50,9 @@ class ConfigurationsForm(forms.Form):
                     form_input = forms.BooleanField(
                         required=False,
                         initial=config["data"]["value"] == "on",
+                        label=config["name"],
                         widget=forms.CheckboxInput(
-                            attrs={"class": "sr-only peer", "name": config["id"]}
+                            attrs={"class": "sr-only peer", "name": config["id"], "description": config["description"]}
                         ),
                     )
                 case 2:
@@ -76,4 +77,4 @@ class ConfigurationsForm(forms.Form):
                         ),
                     )
 
-            self.__setattr__(f"conf_{config['id']}", form_input)
+            self.fields[str(config['id'])] = form_input

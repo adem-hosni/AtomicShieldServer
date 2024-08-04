@@ -1,5 +1,5 @@
 """
-ASE Query Parser for MTA:SA by Eagle Developers
+ASE Query Parser for MTA:SA by EagleAntiCheat
 
 Code Example:
 ```

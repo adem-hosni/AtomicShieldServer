@@ -3,7 +3,7 @@ from utils import check_request_body_key
 from asgiref.sync import sync_to_async
 from dashboard.models import GameServers
 from ..models import AntiCheatConfigTemplates
-from shared.ws import PacketID, WebSocketGroupNames
+from shared.ws import EagleServerPacketID, WebSocketGroupNames
 from shared.models import ServerTypes
 from ..consumers.eagle_server import EagleServerConsumer
 import logging
@@ -39,7 +39,7 @@ async def handle_network_join(consumer: EagleServerConsumer, request: Dict[str, 
         logger.warning(f"Invalid server key requested! (Key: {request['server_key']})")
         await consumer.send(
             {
-                "type": PacketID.NETWORK_JOIN.value,
+                "type": EagleServerPacketID.NETWORK_JOIN.value,
                 "success": False,
                 "message": "Invalid server key!",
             }
@@ -51,7 +51,7 @@ async def handle_network_join(consumer: EagleServerConsumer, request: Dict[str, 
         logger.warning(f"Server IP address mismatch ({server.ip} != {request['ip']})")
         await consumer.send(
             {
-                "type": PacketID.NETWORK_JOIN.value,
+                "type": EagleServerPacketID.NETWORK_JOIN.value,
                 "success": False,
                 "message": "Server IP address mismatch",
             }
@@ -63,7 +63,7 @@ async def handle_network_join(consumer: EagleServerConsumer, request: Dict[str, 
         logger.warning(f"Server port mismatch ({server.port} != {request['port']})")
         await consumer.send(
             {
-                "type": PacketID.NETWORK_JOIN.value,
+                "type": EagleServerPacketID.NETWORK_JOIN.value,
                 "success": False,
                 "message": "Server port mismatch",
             }
@@ -83,7 +83,7 @@ async def handle_network_join(consumer: EagleServerConsumer, request: Dict[str, 
     # Send configurations to the consumer
     await consumer.send(
         {
-            "type": PacketID.SYNC_ANTICHEAT_CONFIGS.value,
+            "type": EagleServerPacketID.SYNC_ANTICHEAT_CONFIGS.value,
             "configurations": configs,
         }
     )

@@ -50,18 +50,20 @@ class GameServers(models.Model):
     class Meta:
         db_table = "gameservers"
         verbose_name_plural = "gameservers"
-        
+
     async def get_anticheat_configurations(self) -> Dict[str, Any]:
         try:
-            target_server = await GameServers.objects.select_related("configurations").aget(
-                id=self.id
-            )
+            target_server = await GameServers.objects.select_related(
+                "configurations"
+            ).aget(id=self.id)
             server_configs = target_server.configurations.config
         except GameServers.DoesNotExist:
             # Set Server configs emmpty
             server_configs = {}
-            
-        queryset = await sync_to_async(list)(AntiCheatConfigTemplates.objects.filter(server_type=ServerTypes.MTASA))
+
+        queryset = await sync_to_async(list)(
+            AntiCheatConfigTemplates.objects.filter(server_type=ServerTypes.MTASA)
+        )
         config_templates = [
             {"id": config.id, "value": config.default_value} for config in queryset
         ]
@@ -71,7 +73,7 @@ class GameServers(models.Model):
             # Override config_templates with existing server configs
             if str(config["id"]) in server_configs.keys():
                 config["value"] = server_configs[str(config["id"])]
-                
+
         return config_templates
 
     def __str__(self) -> str:

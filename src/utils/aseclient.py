@@ -3,10 +3,10 @@ ASE Query Parser for MTA:SA by Eagle Developers
 
 Code Example:
 ```
-    client = ASEQueryClient()
-    buffer = client.clean_query(client.getquery(("127.0.0.1", 22003)))
-    parser = ASEParser(buffer)
-    print(parser.get_server())
+client = ASEQueryClient()
+buffer = client.clean_query(client.getquery(("127.0.0.1", 22003)))
+parser = ASEParser(buffer)
+print(parser.get_server())
 ```
 """
 

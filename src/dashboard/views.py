@@ -160,7 +160,7 @@ def render_servers(request: HttpRequest) -> HttpResponse:
                     configurations.config[config.id] = config.default_value
                 configurations.save()
 
-                GameServers.objects.create(
+                new_server = GameServers.objects.create(
                     ip=ip,
                     port=port,
                     owner=request.user,
@@ -170,6 +170,7 @@ def render_servers(request: HttpRequest) -> HttpResponse:
                     type=ServerTypes.MTASA,
                     status=ServerStatus.online,
                 )
+                request.session["selected_server"] = new_server.id
                 print(
                     f"Added New Server {ip}:{port} from {request.user.username}, license key: ({license_key})"
                 )

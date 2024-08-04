@@ -98,11 +98,11 @@
 
         {% if configs_count == 0 %}
           <div scope="row" class="transition-all duration-300 py-4 text-center font-medium text-gray-900 whitespace-nowrap dark:text-gray-400 dark:hover:text-white w-full">The Selected Server Doesn't Exists!</div>
-        {% endif %}
-
+        {% else %}
         <div class="flex p-4">
            <button class="bg-purple-600 rounded-lg min-w-16 py-1 text-black font-medium transition-all duration-300 hover:bg-purple-700 ml-auto">Save</button>
         </div>
+        {% endif %}
       </div>
     </form>
   </div>

@@ -48,3 +48,6 @@ class AntiCheatConfigurations(models.Model):
         db_table = "anticheat_configurations"
         verbose_name = "AntiCheat Configuration"
         verbose_name_plural = "AntiCheat Configurations"
+        
+    def __str__(self) -> str:
+        return f"AntiCheat Configuration ({self.id})"

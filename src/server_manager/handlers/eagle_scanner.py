@@ -18,13 +18,20 @@ async def handle_network_join(consumer: EagleScanner, request: Dict[str, Any]):
     logger.info(
         f"{consumer.address[0]}:{consumer.address[1]} agent joined network successfuly!"
     )
-    
+
+
 async def handle_signatures_sync(consumer: EagleScanner, request: Dict[str, Any]):
-    signatures = await sync_to_async(list)(MaliciousSignatures.objects.filter(type=ServerTypes.MTASA))
-    await consumer.send({
-        "type": EagleScannerPacketID.SYNC_SIGNATURES.value,
-        "signatures": {
-            signature.name: signature.signatures for signature in signatures
+    signatures = await sync_to_async(list)(
+        MaliciousSignatures.objects.filter(type=ServerTypes.MTASA)
+    )
+    await consumer.send(
+        {
+            "type": EagleScannerPacketID.SYNC_SIGNATURES.value,
+            "signatures": {
+                signature.name: signature.signatures for signature in signatures
+            },
         }
-    })
-    logger.info(f"{consumer.address[0]}:{consumer.address[1]} Signatures Synced Successfuly!")
+    )
+    logger.info(
+        f"{consumer.address[0]}:{consumer.address[1]} Signatures Synced Successfuly!"
+    )

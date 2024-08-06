@@ -51,3 +51,17 @@ class AntiCheatConfigurations(models.Model):
         
     def __str__(self) -> str:
         return f"AntiCheat Configuration ({self.id})"
+
+
+class MaliciousSignatures(models.Model):
+    name = models.CharField(max_length=64, unique=True)
+    signatures = models.JSONField(blank=False, default=list)
+    type = models.IntegerField(choices=ServerTypes, default=ServerTypes.MTASA, blank=False)
+    
+    class Meta:
+        db_table = "malicious_signatures"
+        verbose_name = "Malicious Signature"
+        verbose_name_plural = "Malicious Signatures"
+
+    def __str__(self) -> str:
+        return f"{self.name} ({self.id})"

@@ -9,6 +9,8 @@ class EagleServerPacketID(Enum):
 class EagleScannerPacketID(Enum):
     NETWORK_JOIN = 1
     SYNC_SIGNATURES = 2
+    MALICIOUS_SIGNATURE_DETECTION = 3
+
 
 class WebSocketGroupNames(Enum):
     EAGLE_SERVERS = "EAGLE_SERVERS"

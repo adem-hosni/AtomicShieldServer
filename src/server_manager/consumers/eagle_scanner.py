@@ -22,7 +22,10 @@ class EagleScanner(AsyncWebsocketConsumer):
         )
 
     async def send(
-        self, data: Union[Dict[Any, Any], List[Any], str, bytes], bytes_data=None, close=False
+        self,
+        data: Union[Dict[Any, Any], List[Any], str, bytes],
+        bytes_data=None,
+        close=False,
     ):
         """
         Sends data over the WebSocket connection.
@@ -58,7 +61,7 @@ class EagleScanner(AsyncWebsocketConsumer):
                 f"Invalid room group name value, expected 'User' got {type(value)}"
             )
         self._group_name = value
-        
+
     async def receive(self, text_data=None, bytes_data=None):
         try:
             # Attempt to parse the incoming message as JSON
@@ -66,7 +69,7 @@ class EagleScanner(AsyncWebsocketConsumer):
         except json.decoder.JSONDecodeError:
             logger.warn(f"Failed to parse request. (request body: {request_body})")
             return self.close()
-        
+
         # Check if the request body contains a 'type' key
         if not "type" in request_body.keys():
             logger.warn(f"Failed to get request type. (given request: {request_body})")
@@ -78,9 +81,9 @@ class EagleScanner(AsyncWebsocketConsumer):
         except ValueError:
             logger.warn(f"Undefined request type (given: {request_body['type']})")
             return self.close()
-        
+
         from ..handlers.eagle_scanner import handle_network_join, handle_signatures_sync
-        
+
         match request_body["type"]:
             case EagleScannerPacketID.NETWORK_JOIN:
                 await handle_network_join(self, request_body)

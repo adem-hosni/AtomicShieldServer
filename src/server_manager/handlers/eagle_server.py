@@ -70,8 +70,9 @@ async def handle_network_join(consumer: EagleServerConsumer, request: Dict[str, 
         )
         return await consumer.close()
 
-    # Successfully joined, add consumer to the WebSocket group
+    # Successfully joined, add consumer to the WebSocket group and set it's game server
     consumer.group_name = WebSocketGroupNames.EAGLE_SERVERS.value
+    consumer.game_server = server
     consumer.channel_layer.group_add(consumer.group_name, consumer.channel_name)
     logger.info(
         f"{consumer.address[0]}:{consumer.address[1]} joined Eagle Servers Network!"

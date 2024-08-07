@@ -186,7 +186,7 @@ class EagleServerConsumer(AsyncWebsocketConsumer):
         self._owner = value
 
     @property
-    def game_server(self) -> None:
+    def game_server(self) -> GameServers:
         """
         Get the game server.
 

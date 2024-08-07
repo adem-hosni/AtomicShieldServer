@@ -28,7 +28,7 @@ class EagleServerConsumer(AsyncWebsocketConsumer):
         group_name: Property for getting and setting the group name.
         owner: Property for getting and setting the owner of the connection.
     """
-    
+
     def __init__(self, *args, **kwargs):
         """
         Initializes the WebSocket consumer.
@@ -56,13 +56,18 @@ class EagleServerConsumer(AsyncWebsocketConsumer):
         logger.info(f"{self.address[0]}:{self.address[1]} asking for connection...")
 
     async def send(
-        self, data: Union[Dict[Any, Any], str, bytes], bytes_data=None, close=False
+        self,
+        packet_id: EagleServerPacketID,
+        data: Union[Dict[Any, Any], str, bytes],
+        bytes_data=None,
+        close=False,
     ):
         """
         Sends data over the WebSocket connection.
 
         Args:
         -----
+            packet_id (EagleServerPacketID): The packet id to send
             data (Union[Dict[Any, Any], str, bytes]): The data to be sent. Can be a dictionary, string, or bytes.
             bytes_data: Optional bytes data to be sent.
             close (bool): Whether to close the connection after sending the data.
@@ -71,13 +76,17 @@ class EagleServerConsumer(AsyncWebsocketConsumer):
         --------
             Awaitable: An awaitable object for the send operation.
         """
+        # Check the packet id belongs to our registred packet ids
+        if not packet_id in EagleServerPacketID.__members__.values():
+            raise ValueError(f"Invalid Packet ID, got {packet_id}")
+
         # If data is bytes, decode it to a string
         if isinstance(data, bytes):
             data = data.decode()
 
-        # If data is a dictionary, convert it to a JSON string
-        if isinstance(data, dict):
-            data = json.dumps(data)
+        data["type"] = packet_id.value
+
+        data = json.dumps(data)
 
         return await super().send(data, bytes_data, close)
 
@@ -100,7 +109,7 @@ class EagleServerConsumer(AsyncWebsocketConsumer):
         except json.decoder.JSONDecodeError:
             logger.warn(f"Failed to parse request. (request body: {request_body})")
             return self.close()
-        
+
         # Check if the request body contains a 'type' key
         if not "type" in request_body.keys():
             logger.warn(f"Failed to get request type. (given request: {request_body})")

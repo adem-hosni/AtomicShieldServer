@@ -11,7 +11,10 @@ import logging
 # Set up logging for this module
 logger = logging.getLogger(__name__)
 
-async def handle_network_join(consumer: EagleServerConsumer, request: Dict[str, Any]) -> None:
+
+async def handle_network_join(
+    consumer: EagleServerConsumer, request: Dict[str, Any]
+) -> None:
     """
     Handles the network join request from an EagleServerConsumer.
 
@@ -38,11 +41,11 @@ async def handle_network_join(consumer: EagleServerConsumer, request: Dict[str, 
         # Log a warning and send an error message if the server key is invalid
         logger.warning(f"Invalid server key requested! (Key: {request['server_key']})")
         await consumer.send(
+            EagleServerPacketID.NETWORK_JOIN,
             {
-                "type": EagleServerPacketID.NETWORK_JOIN.value,
                 "success": False,
                 "message": "Invalid server key!",
-            }
+            },
         )
         return await consumer.close()
 
@@ -50,11 +53,11 @@ async def handle_network_join(consumer: EagleServerConsumer, request: Dict[str, 
     if server.ip != request["ip"]:
         logger.warning(f"Server IP address mismatch ({server.ip} != {request['ip']})")
         await consumer.send(
+            EagleServerPacketID.NETWORK_JOIN,
             {
-                "type": EagleServerPacketID.NETWORK_JOIN.value,
                 "success": False,
                 "message": "Server IP address mismatch",
-            }
+            },
         )
         return await consumer.close()
 
@@ -62,8 +65,8 @@ async def handle_network_join(consumer: EagleServerConsumer, request: Dict[str, 
     if server.port != request["port"]:
         logger.warning(f"Server port mismatch ({server.port} != {request['port']})")
         await consumer.send(
+            EagleServerPacketID.NETWORK_JOIN,
             {
-                "type": EagleServerPacketID.NETWORK_JOIN.value,
                 "success": False,
                 "message": "Server port mismatch",
             }
@@ -83,15 +86,14 @@ async def handle_network_join(consumer: EagleServerConsumer, request: Dict[str, 
 
     # Send configurations to the consumer
     await consumer.send(
+        EagleServerPacketID.SYNC_ANTICHEAT_CONFIGS,
         {
-            "type": EagleServerPacketID.SYNC_ANTICHEAT_CONFIGS.value,
             "configurations": configs,
-        }
+        },
     )
 
-    logger.info(
-        f"Synced {len(configs)} anti-cheat configurations to the server!"
-    )
+    logger.info(f"Synced {len(configs)} anti-cheat configurations to the server!")
+
 
 async def handle_request_anticheat_configs(
     consumer: EagleServerConsumer, request: Dict[str, Any]

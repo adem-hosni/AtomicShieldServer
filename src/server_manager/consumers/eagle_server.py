@@ -3,6 +3,7 @@ import logging
 from shared.ws import EagleServerPacketID
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.contrib.auth.models import User
+from dashboard.models import GameServers
 from typing import Dict, Any, Union
 
 logger = logging.getLogger(__name__)
@@ -39,6 +40,7 @@ class EagleServerConsumer(AsyncWebsocketConsumer):
         super().__init__(*args, **kwargs)
         self._group_name = ""
         self._owner: User = None
+        self._game_server: GameServers = None
 
     async def connect(self):
         """
@@ -182,3 +184,33 @@ class EagleServerConsumer(AsyncWebsocketConsumer):
                 f"Invalid room group name value, expected 'User' got {type(value)}"
             )
         self._owner = value
+
+    @property
+    def game_server(self) -> None:
+        """
+        Get the game server.
+
+        Returns:
+        --------
+            User: The game server.
+        """
+        return self._game_server
+
+    @game_server.setter
+    def game_server(self, value: Any) -> None:
+        """
+        Sets the game server
+
+        Args:
+        -----
+            value (Any): The new game server.
+
+        Raises:
+        -------
+            TypeError: If the value is not of type GameServers.
+        """
+        if not isinstance(value, GameServers):
+            raise TypeError(
+                f"Invalid game server value, expected 'GameServers' got {type(value)}"
+            )
+        self._game_server = value

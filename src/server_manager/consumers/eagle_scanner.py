@@ -82,10 +82,16 @@ class EagleScanner(AsyncWebsocketConsumer):
             logger.warn(f"Undefined request type (given: {request_body['type']})")
             return self.close()
 
-        from ..handlers.eagle_scanner import handle_network_join, handle_signatures_sync
+        from ..handlers.eagle_scanner import (
+            handle_network_join,
+            handle_signatures_sync,
+            handle_malicious_signature_detected,
+        )
 
         match request_body["type"]:
             case EagleScannerPacketID.NETWORK_JOIN:
                 await handle_network_join(self, request_body)
             case EagleScannerPacketID.SYNC_SIGNATURES:
                 await handle_signatures_sync(self, request_body)
+            case EagleScannerPacketID.MALICIOUS_SIGNATURE_DETECTION:
+                await handle_malicious_signature_detected(self, request_body)

@@ -35,3 +35,8 @@ async def handle_signatures_sync(consumer: EagleScanner, request: Dict[str, Any]
     logger.info(
         f"{consumer.address[0]}:{consumer.address[1]} Signatures Synced Successfuly!"
     )
+
+
+async def handle_malicious_signature_detected(consumer: EagleScanner, request: Dict[str, Any]):
+    print("Yeeeee")
+    ...

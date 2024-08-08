@@ -41,5 +41,9 @@ async def handle_signatures_sync(consumer: EagleScanner, request: Dict[str, Any]
 async def handle_malicious_signature_detected(
     consumer: EagleScanner, request: Dict[str, Any]
 ):
-    print("Yeeeee")
-    ...
+    if not check_request_body_key(request, "signature", str):
+        return consumer.close()
+
+    logger.warn(
+        f"SIGNATURE \"{request['signature']}\" DETECTED ON {consumer.address[0]}:{consumer.address[1]}!"
+    )

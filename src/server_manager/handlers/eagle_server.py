@@ -1,10 +1,7 @@
 from typing import Dict, Any
 from utils import check_request_body_key
-from asgiref.sync import sync_to_async
 from dashboard.models import GameServers
-from ..models import AntiCheatConfigTemplates
 from shared.ws import EagleServerPacketID, WebSocketGroupNames
-from shared.models import ServerTypes
 from ..consumers.eagle_server import EagleServerConsumer
 import logging
 

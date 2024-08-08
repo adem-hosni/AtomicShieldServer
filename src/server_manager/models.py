@@ -57,6 +57,7 @@ class MaliciousSignatures(models.Model):
     name = models.CharField(max_length=64, unique=True)
     signatures = models.JSONField(blank=False, default=list)
     type = models.IntegerField(choices=ServerTypes, default=ServerTypes.MTASA, blank=False)
+    priority = models.IntegerField(null=True, default=None)
     
     class Meta:
         db_table = "malicious_signatures"

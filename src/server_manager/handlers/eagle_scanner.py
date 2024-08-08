@@ -1,5 +1,6 @@
 from ..consumers.eagle_scanner import EagleScanner
 from shared.ws import WebSocketGroupNames, EagleScannerPacketID
+from utils import check_request_body_key
 from asgiref.sync import sync_to_async
 from ..models import MaliciousSignatures, ServerTypes
 from typing import Dict, Any
@@ -22,7 +23,7 @@ async def handle_network_join(consumer: EagleScanner, request: Dict[str, Any]):
 
 async def handle_signatures_sync(consumer: EagleScanner, request: Dict[str, Any]):
     signatures = await sync_to_async(list)(
-        MaliciousSignatures.objects.filter(type=ServerTypes.MTASA)
+        MaliciousSignatures.objects.filter(type=ServerTypes.MTASA).order_by("priority")
     )
     await consumer.send(
         {
@@ -37,6 +38,8 @@ async def handle_signatures_sync(consumer: EagleScanner, request: Dict[str, Any]
     )
 
 
-async def handle_malicious_signature_detected(consumer: EagleScanner, request: Dict[str, Any]):
+async def handle_malicious_signature_detected(
+    consumer: EagleScanner, request: Dict[str, Any]
+):
     print("Yeeeee")
     ...

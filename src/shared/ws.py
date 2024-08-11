@@ -4,6 +4,7 @@ from enum import Enum
 class EagleServerPacketID(Enum):
     NETWORK_JOIN = 1
     SYNC_ANTICHEAT_CONFIGS = 2
+    REQUEST_STATUS = 3
 
 
 class EagleScannerPacketID(Enum):

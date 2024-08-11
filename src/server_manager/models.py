@@ -44,7 +44,7 @@ class AntiCheatConfigTemplates(models.Model):
 class AntiCheatConfigurationCategories(models.Model):
     name = models.CharField(max_length=32)
     description = models.TextField()
-    
+
     def __str__(self) -> str:
         return self.name
 

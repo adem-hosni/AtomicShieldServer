@@ -2,6 +2,7 @@ from shared.models import ServerTypes
 from django.db import models
 from typing import Union
 
+
 class AntiCheatConfigTemplates(models.Model):
     class AntiCheatConfigDataTypes(models.IntegerChoices):
         BOOLEAN = 1, "Boolean"
@@ -24,11 +25,11 @@ class AntiCheatConfigTemplates(models.Model):
         db_table = "anticheat_config_templates"
         verbose_name = "AntiCheat Config Template"
         verbose_name_plural = "AntiCheat Config Templates"
-        
+
     def get_default_value(self) -> Union[bool, str, int]:
         """Convert `default_value` to the correct type based on `config_type`."""
         if self.config_type == 1:
-            return self.default_value.strip().lower() in ('true', '1')
+            return self.default_value.strip().lower() in ("true", "1")
         elif self.config_type == 2:
             return self.default_value
         elif self.config_type == 3:
@@ -36,7 +37,14 @@ class AntiCheatConfigTemplates(models.Model):
         # Handle other types
         return self.default_value
 
+    def __str__(self) -> str:
+        return self.name
 
+
+class AntiCheatConfigurationCategories(models.Model):
+    name = models.CharField(max_length=32)
+    description = models.TextField()
+    
     def __str__(self) -> str:
         return self.name
 
@@ -48,7 +56,7 @@ class AntiCheatConfigurations(models.Model):
         db_table = "anticheat_configurations"
         verbose_name = "AntiCheat Configuration"
         verbose_name_plural = "AntiCheat Configurations"
-        
+
     def __str__(self) -> str:
         return f"AntiCheat Configuration ({self.id})"
 
@@ -56,9 +64,12 @@ class AntiCheatConfigurations(models.Model):
 class MaliciousSignatures(models.Model):
     name = models.CharField(max_length=64, unique=True)
     signatures = models.JSONField(blank=False, default=list)
-    type = models.IntegerField(choices=ServerTypes, default=ServerTypes.MTASA, blank=False)
+    type = models.IntegerField(
+        choices=ServerTypes, default=ServerTypes.MTASA, blank=False
+    )
     priority = models.IntegerField(null=True, default=None)
-    
+    ban_message = models.CharField(null=True, blank=True, max_length=64)
+
     class Meta:
         db_table = "malicious_signatures"
         verbose_name = "Malicious Signature"

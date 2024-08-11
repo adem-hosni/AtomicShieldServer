@@ -92,7 +92,7 @@ async def handle_network_join(
     logger.info(f"Synced {len(configs)} anti-cheat configurations to the server!")
 
 
-async def handle_request_anticheat_configs(
+async def handle_sync_anticheat_configs(
     consumer: EagleServerConsumer, request: Dict[str, Any]
 ):
     """

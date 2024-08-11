@@ -3,6 +3,14 @@ from django.db import models
 from typing import Union
 
 
+class AntiCheatConfigurationCategories(models.Model):
+    name = models.CharField(max_length=32)
+    description = models.TextField()
+
+    def __str__(self) -> str:
+        return self.name
+
+
 class AntiCheatConfigTemplates(models.Model):
     class AntiCheatConfigDataTypes(models.IntegerChoices):
         BOOLEAN = 1, "Boolean"
@@ -36,14 +44,6 @@ class AntiCheatConfigTemplates(models.Model):
             return int(self.default_value)
         # Handle other types
         return self.default_value
-
-    def __str__(self) -> str:
-        return self.name
-
-
-class AntiCheatConfigurationCategories(models.Model):
-    name = models.CharField(max_length=32)
-    description = models.TextField()
 
     def __str__(self) -> str:
         return self.name

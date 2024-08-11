@@ -1,10 +1,13 @@
 {
+    "editor.defaultFormatter": "ms-python.black-formatter",
     "emmet.includeLanguages": {
         "django-html": "html",
         "jinja-html": "html",
     },
+    
     "files.associations": {
-        "*.jinja": "django-html"
+        "*.jinja": "html",
+        "*.css": "tailwindcss"
     },
     "tailwindCSS.includeLanguages": {
         "html": "html",
@@ -16,6 +19,7 @@
     },
     "editor.quickSuggestions": {
     "strings": true
-    }
+    },
+    "search.useIgnoreFiles": false
 
 }

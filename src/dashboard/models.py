@@ -64,16 +64,17 @@ class GameServers(models.Model):
         queryset = await sync_to_async(list)(
             AntiCheatConfigTemplates.objects.filter(server_type=ServerTypes.MTASA)
         )
-        config_templates = [
-            {"id": config.id, "value": config.default_value} for config in queryset
-        ]
+        
+        config_templates = {
+            config.id: config.default_value  for config in queryset
+        }
 
         # Iterate throught config templates
-        for config in config_templates:
+        for config_id, config_value in config_templates.items():
             # Override config_templates with existing server configs
-            if str(config["id"]) in server_configs.keys():
-                config["value"] = server_configs[str(config["id"])]
-
+            if str(config_id) in server_configs.keys():
+                config_templates[config_id] = server_configs[str(config_id)]
+                
         return config_templates
 
     def __str__(self) -> str:

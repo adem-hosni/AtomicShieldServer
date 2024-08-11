@@ -7,6 +7,11 @@ class AntiCheatConfigurationCategories(models.Model):
     name = models.CharField(max_length=32)
     description = models.TextField()
 
+    class Meta:
+        db_table = "anticheat_configuration_categories"
+        verbose_name = "AntiCheat Config Category"
+        verbose_name_plural = "AntiCheat Config Categories"
+
     def __str__(self) -> str:
         return self.name
 

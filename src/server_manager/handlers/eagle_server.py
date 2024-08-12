@@ -77,20 +77,14 @@ async def handle_network_join(
     logger.info(
         f"{consumer.address[0]}:{consumer.address[1]} joined Eagle Servers Network!"
     )
-
+    
+    await consumer.send(EagleServerPacketID.NETWORK_JOIN, {
+        "success": True,
+        "message": "SUCCESS"
+    })
+    return
     # Retrieve and sync anti-cheat configurations
-    configs = await server.get_anticheat_configurations()
-
-    # Send configurations to the consumer
-    await consumer.send(
-        EagleServerPacketID.SYNC_ANTICHEAT_CONFIGS,
-        {
-            "configurations": configs,
-        },
-    )
-
-    logger.info(f"Synced {len(configs)} anti-cheat configurations to the server!")
-
+    
 
 async def handle_sync_anticheat_configs(
     consumer: EagleServerConsumer, request: Dict[str, Any]
@@ -107,4 +101,34 @@ async def handle_sync_anticheat_configs(
     --------
         None: Implementation needed for handling anti-cheat config requests.
     """
-    ...
+    logger.info(f"Syncing AntiCheat configurations for {consumer.address[0]}:{consumer.address[1]}...")
+    configs = await consumer.game_server.get_anticheat_configurations()
+
+    # Send configurations to the consumer
+    await consumer.send(
+        EagleServerPacketID.SYNC_ANTICHEAT_CONFIGS,
+        {
+            "success": True,
+            "configurations": configs,
+        },
+    )
+
+    logger.info(f"Synced {len(configs)} anti-cheat configurations to the server!")
+    
+async def handle_request_player_join(consumer: EagleServerConsumer, request: Dict[str, Any]):
+    if not check_request_body_key(request, "ip", str):
+        return
+    
+    if not check_request_body_key(request, "serial", str):
+        return
+    
+    if not check_request_body_key(request, "name", str):
+        return
+    
+    logger.info(f'"{request["name"]}" (IP: {request["ip"]}, Serial: {request["serial"]}) wants to join {consumer.address[0]}:{consumer.address[1]}')
+    
+    return await consumer.send(EagleServerPacketID.REQUEST_PLAYER_JOIN, {
+        "ip": request["ip"],
+        "join": False,
+        "message": "HeHehe booooy"
+    })

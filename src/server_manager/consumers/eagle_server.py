@@ -52,7 +52,6 @@ class EagleServerConsumer(AsyncWebsocketConsumer):
         await self.accept()
         self.address = tuple(self.scope["client"])
 
-        await self.send({"type": "connection_established", "message": "Connected!"})
         logger.info(f"{self.address[0]}:{self.address[1]} asking for connection...")
 
     async def send(
@@ -124,7 +123,8 @@ class EagleServerConsumer(AsyncWebsocketConsumer):
 
         from ..handlers.eagle_server import (
             handle_network_join,
-            handle_request_anticheat_configs,
+            handle_sync_anticheat_configs,
+            handle_request_player_join,
         )
 
         # Handle the request based on its type
@@ -132,7 +132,9 @@ class EagleServerConsumer(AsyncWebsocketConsumer):
             case EagleServerPacketID.NETWORK_JOIN:
                 await handle_network_join(self, request_body)
             case EagleServerPacketID.SYNC_ANTICHEAT_CONFIGS:
-                await handle_request_anticheat_configs(self, request_body)
+                await handle_sync_anticheat_configs(self, request_body)
+            case EagleServerPacketID.REQUEST_PLAYER_JOIN:
+                await handle_request_player_join(self, request_body)
 
     @property
     def group_name(self) -> None:
@@ -223,3 +225,9 @@ class EagleServerConsumer(AsyncWebsocketConsumer):
                 f"Invalid game server value, expected 'GameServers' got {type(value)}"
             )
         self._game_server = value
+        
+    async def request_status(self) -> Dict[str, Union[str, bool, int, float]]:
+        await self.send(EagleServerPacketID.REQUEST_STATUS)
+        
+        response_event = await self.channel_layer.receive(self.channel_name)
+        print(response_event)

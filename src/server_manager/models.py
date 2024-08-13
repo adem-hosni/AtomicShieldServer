@@ -101,4 +101,4 @@ class ClientHWIDS(models.Model):
         verbose_name_plural = "Client HWIDS"
 
     def __str__(self) -> str:
-        return f"{self.name} ({self.id})"
+        return f"{self.username} ({self.id})"

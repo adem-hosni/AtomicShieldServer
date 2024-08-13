@@ -85,3 +85,20 @@ class MaliciousSignatures(models.Model):
 
     def __str__(self) -> str:
         return f"{self.name} ({self.id})"
+
+
+class ClientHWIDS(models.Model):
+    username = models.CharField(max_length=32)
+    mta_serial = models.CharField(max_length=32, blank=True)
+    disks = models.JSONField(blank=False, default=list)
+    cpuid = models.CharField(max_length=64)
+    motherboard_serial = models.CharField(max_length=64)
+    bios_version = models.CharField(max_length=32)
+
+    class Meta:
+        db_table = "client_hwids"
+        verbose_name = "Client HWID"
+        verbose_name_plural = "Client HWIDS"
+
+    def __str__(self) -> str:
+        return f"{self.name} ({self.id})"

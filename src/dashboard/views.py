@@ -3,7 +3,11 @@ import json
 from django.shortcuts import render, redirect
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from .models import Announcements, PatchNotes, GameServers, ServerTypes, ServerStatus
-from server_manager.models import AntiCheatConfigTemplates, AntiCheatConfigurations
+from server_manager.models import (
+    AntiCheatConfigTemplates,
+    AntiCheatConfigurations,
+    AntiCheatConfigurationCategories,
+)
 from .forms import AddServerForm, ConfigurationsForm
 import utils
 from typing import Dict, Union
@@ -393,7 +397,6 @@ def render_configurations(request: HttpRequest) -> HttpResponse:
                     }
                 )
 
-
     form = ConfigurationsForm()
     form.set_configurations(configs)
     return render(
@@ -402,5 +405,13 @@ def render_configurations(request: HttpRequest) -> HttpResponse:
         {
             "form": form,
             "configs_count": len(configs),
+            "categories": [
+                {
+                    "id": category.id,
+                    "name": category.name,
+                    "description": category.description,
+                }
+                for category in AntiCheatConfigurationCategories.objects.all()
+            ],
         },
     )

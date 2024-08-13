@@ -38,12 +38,30 @@
     </div>
   </div>
 </div>
-<div class="mt-4 flex flex-col items-stretch">
-    <div class="gap-3 rounded-xl bg-[#0D0D0D] px-6 py-2.5 space-y-2">
+<div class="mt-4 flex flex-col items-stretch item-center justify-center">
+    <div class="gap-3 rounded-xl bg-[#0D0D0D] px-6 py-2.5 space-y-2 items-center">
+      <div class="mb-4 border-b border-gray-200 dark:border-gray-700">
+        <ul class="flex flex-wrap -mb-px text-sm font-medium text-center w-full" id="default-tab" data-tabs-toggle="#default-tab-content" role="tablist">
+            {% for category in categories %}
+              <li role="presentation">
+                  <button class="transition-all duration-300 inline-block p-4 border-b-2 rounded-t-lg hover:text-purple-600 hover:border-purple-600 dark:hover:text-purple-500" id="c{{ category.id }}-tab" data-tabs-target="#c{{ category.id }}" type="button" role="tab" aria-controls="c{{ category.id }}" aria-selected="false">{{ category.name }}</button>
+              </li>
+            {% endfor %}
+        </ul>
+    </div>
+    <div id="default-tab-content">
+        {% for category in categories %}
+          <div class="hidden p-4 rounded-lg bg-gray-50 dark:bg-gray-800" id="c{{ category.id }}" role="tabpanel" aria-labelledby="c{{ category.id }}-tab">
+              <p class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ category.description }}</p>
+          </div>
+        {% endfor %}
+    </div>
+
+
       <form method="POST">
         {% csrf_token %}
         {% for field in form %}
-          <div class="flex flex-col w-full p-4">
+          <div class="flex flex-col w-full px-4 py-3">
             <label for="{{ config.id }}" class="font-medium text-gray-300">{{ field.label }}</label>
 
             <div class="flex">
@@ -51,12 +69,11 @@
                 {{ field.field.widget.attrs.description }}
               </p>
 
-              <label class="inline-flex items-center cursor-pointer ml-auto">
+              <label class="transition-all duration-300 inline-flex items-center cursor-pointer ml-auto">
                 {% if field.field.widget.input_type == "checkbox" %}
                   {{ field }}
                   <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-zinc-900 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-purple-700"></div>
                 </label>
-
 
               {% elif config.data.type == 2 %}
                 <div class="relative h-10 w-64 min-w-[200px] ml-auto">
@@ -97,7 +114,7 @@
         {% endfor %}
 
         {% if configs_count == 0 %}
-          <div scope="row" class="transition-all duration-300 py-4 text-center font-medium text-gray-900 whitespace-nowrap dark:text-gray-400 dark:hover:text-white w-full">The Selected Server Doesn't Exists!</div>
+          <div scope="row" class="transition-all duration-300 py-4 text-center font-medium text-gray-900 whitespace-nowrap dark:text-gray-400 dark:hover:text-white w-full">Couldn't Load Settings!</div>
         {% else %}
         <div class="flex p-4">
            <button class="bg-purple-600 rounded-lg min-w-16 py-1 text-black font-medium transition-all duration-300 hover:bg-purple-700 ml-auto">Save</button>

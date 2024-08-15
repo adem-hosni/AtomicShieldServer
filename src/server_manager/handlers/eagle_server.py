@@ -2,6 +2,7 @@ from typing import Dict, Any
 from utils import check_request_body_key
 from dashboard.models import GameServers
 from shared.ws import EagleServerPacketID, WebSocketGroupNames
+from eagle_manager.manager import eagle_manager
 from ..consumers.eagle_server import EagleServerConsumer
 import logging
 
@@ -66,7 +67,7 @@ async def handle_network_join(
             {
                 "success": False,
                 "message": "Server port mismatch",
-            }
+            },
         )
         return await consumer.close()
 
@@ -74,17 +75,17 @@ async def handle_network_join(
     consumer.group_name = WebSocketGroupNames.EAGLE_SERVERS.value
     consumer.game_server = server
     consumer.channel_layer.group_add(consumer.group_name, consumer.channel_name)
+    eagle_manager.add_eagle_server(consumer)
     logger.info(
         f"{consumer.address[0]}:{consumer.address[1]} joined Eagle Servers Network!"
     )
-    
-    await consumer.send(EagleServerPacketID.NETWORK_JOIN, {
-        "success": True,
-        "message": "SUCCESS"
-    })
+
+    await consumer.send(
+        EagleServerPacketID.NETWORK_JOIN, {"success": True, "message": "SUCCESS"}
+    )
     return
     # Retrieve and sync anti-cheat configurations
-    
+
 
 async def handle_sync_anticheat_configs(
     consumer: EagleServerConsumer, request: Dict[str, Any]
@@ -101,7 +102,9 @@ async def handle_sync_anticheat_configs(
     --------
         None: Implementation needed for handling anti-cheat config requests.
     """
-    logger.info(f"Syncing AntiCheat configurations for {consumer.address[0]}:{consumer.address[1]}...")
+    logger.info(
+        f"Syncing AntiCheat configurations for {consumer.address[0]}:{consumer.address[1]}..."
+    )
     configs = await consumer.game_server.get_anticheat_configurations()
 
     # Send configurations to the consumer
@@ -114,21 +117,42 @@ async def handle_sync_anticheat_configs(
     )
 
     logger.info(f"Synced {len(configs)} anti-cheat configurations to the server!")
-    
-async def handle_request_player_join(consumer: EagleServerConsumer, request: Dict[str, Any]):
+
+
+async def handle_request_player_join(
+    consumer: EagleServerConsumer, request: Dict[str, Any]
+):
     if not check_request_body_key(request, "ip", str):
         return
-    
+
     if not check_request_body_key(request, "serial", str):
         return
-    
+
     if not check_request_body_key(request, "name", str):
         return
+
+    logger.info(
+        f'"{request["name"]}" (IP: {request["ip"]}, Serial: {request["serial"]}) wants to join {consumer.address[0]}:{consumer.address[1]}'
+    )
+
+    response = {"join": False, "message": "None"}
     
-    logger.info(f'"{request["name"]}" (IP: {request["ip"]}, Serial: {request["serial"]}) wants to join {consumer.address[0]}:{consumer.address[1]}')
-    
-    return await consumer.send(EagleServerPacketID.REQUEST_PLAYER_JOIN, {
-        "ip": request["ip"],
-        "join": False,
-        "message": "HeHehe booooy"
-    })
+    player_scanner = eagle_manager.get_scanner_by_ip(request["ip"])
+
+    response["join"] = player_scanner != None
+    if not response["join"]:
+        response["message"] = "PLEASE OPEN EAGLE ANTICHEAT AGENT"
+        logger.info('Connection refused: "Eagle Agent Not Connected"')
+    else:
+        player_scanner.connected_server = consumer
+
+    return await consumer.send(
+        EagleServerPacketID.REQUEST_PLAYER_JOIN, {"ip": request["ip"], **response}
+    )
+
+
+async def handle_server_disconnect(consumer: EagleServerConsumer):
+    logger.info(
+        f"{consumer.address[0]}:{consumer.address[1]} disconnected from eagle servers network."
+    )
+    eagle_manager.remove_eagle_server(consumer)

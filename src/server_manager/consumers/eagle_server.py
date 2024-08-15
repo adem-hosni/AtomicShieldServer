@@ -1,10 +1,10 @@
 import json
 import logging
-from shared.ws import EagleServerPacketID
+from shared.ws import EagleServerPacketID, WebSocketGroupNames
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.contrib.auth.models import User
 from dashboard.models import GameServers
-from typing import Dict, Any, Union
+from typing import Dict, Any, Union, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -136,6 +136,13 @@ class EagleServerConsumer(AsyncWebsocketConsumer):
             case EagleServerPacketID.REQUEST_PLAYER_JOIN:
                 await handle_request_player_join(self, request_body)
 
+    async def disconnect(self, code):
+        if self._group_name == WebSocketGroupNames.EAGLE_SERVERS.value:
+            from ..handlers.eagle_server import handle_server_disconnect
+
+            await handle_server_disconnect(self)
+        return await super().disconnect(code)
+
     @property
     def group_name(self) -> None:
         """
@@ -225,9 +232,16 @@ class EagleServerConsumer(AsyncWebsocketConsumer):
                 f"Invalid game server value, expected 'GameServers' got {type(value)}"
             )
         self._game_server = value
-        
+
+    async def kick_player(self, player_scanner, reason: Optional[str] = ""):
+        if player_scanner.connected_server == self:
+            await self.send(
+                EagleServerPacketID.PLAYER_KICK,
+                {"ip": player_scanner.address[0], "reason": reason},
+            )
+
     async def request_status(self) -> Dict[str, Union[str, bool, int, float]]:
         await self.send(EagleServerPacketID.REQUEST_STATUS)
-        
+
         response_event = await self.channel_layer.receive(self.channel_name)
         print(response_event)

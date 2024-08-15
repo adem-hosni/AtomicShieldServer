@@ -1,7 +1,9 @@
 from channels.generic.websocket import AsyncWebsocketConsumer
-from shared.ws import EagleScannerPacketID
+from .eagle_server import EagleServerConsumer
+from ..models import ClientHWIDS
+from shared.ws import EagleScannerPacketID, EagleServerPacketID, WebSocketGroupNames
 import json
-from typing import Union, Dict, List, Any
+from typing import Union, Dict, List, Optional, Any
 import logging
 
 
@@ -12,6 +14,8 @@ class EagleScanner(AsyncWebsocketConsumer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._group_name = ""
+        self._hwid: ClientHWIDS = None
+        self._connected_server: EagleServerConsumer = None
 
     async def connect(self):
         await self.accept()
@@ -95,3 +99,40 @@ class EagleScanner(AsyncWebsocketConsumer):
                 await handle_signatures_sync(self, request_body)
             case EagleScannerPacketID.MALICIOUS_SIGNATURE_DETECTION:
                 await handle_malicious_signature_detected(self, request_body)
+                
+    async def disconnect(self, code):
+        if self._group_name == WebSocketGroupNames.EAGLE_CLIENTSCANNER.value:
+            from ..handlers.eagle_scanner import handle_scanner_disconnect
+            await handle_scanner_disconnect(self)
+            
+        return await super().disconnect(code)
+    
+    @property
+    def hwid(self):
+        return self._hwid
+    
+    @hwid.setter
+    def hwid(self, hwid: Union[ClientHWIDS, Any]):
+        if not isinstance(hwid, ClientHWIDS):
+            raise TypeError(f"Can't convert type {type(hwid)} to type ClientHWIDs")
+        self._hwid = hwid
+
+
+    @property
+    def connected_server(self) -> EagleServerConsumer:
+        return self._connected_server
+    
+    @connected_server.setter
+    def connected_server(self, server: Union[EagleServerConsumer, None]):
+        if not isinstance(server, EagleServerConsumer):
+            raise TypeError(f"Unable to convert type {type(server)} to 'EagleServerConsumer'")
+        self._connected_server = server
+        
+    async def kick(self, reason: Optional[str] = "") -> bool:
+        if self._connected_server:
+            await self._connected_server.send(
+                EagleServerPacketID.PLAYER_KICK,
+                {"ip": self.address[0], "reason": reason},
+            )
+            return True
+        return False

@@ -6,12 +6,14 @@ class EagleServerPacketID(Enum):
     SYNC_ANTICHEAT_CONFIGS = 2
     REQUEST_STATUS = 3
     REQUEST_PLAYER_JOIN = 4
+    PLAYER_KICK = 5
 
 
 class EagleScannerPacketID(Enum):
     NETWORK_JOIN = 1
     SYNC_SIGNATURES = 2
     MALICIOUS_SIGNATURE_DETECTION = 3
+    SCANNER_DISCONNECT = 4
 
 
 class WebSocketGroupNames(Enum):

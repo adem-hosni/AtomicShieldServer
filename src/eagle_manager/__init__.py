@@ -1,0 +1,1 @@
+from .manager import EagleManager

@@ -136,7 +136,7 @@ async def handle_request_player_join(
     )
 
     response = {"join": False, "message": "None"}
-    
+
     player_scanner = eagle_manager.get_scanner_by_ip(request["ip"])
 
     response["join"] = player_scanner != None

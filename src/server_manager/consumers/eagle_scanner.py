@@ -99,35 +99,37 @@ class EagleScanner(AsyncWebsocketConsumer):
                 await handle_signatures_sync(self, request_body)
             case EagleScannerPacketID.MALICIOUS_SIGNATURE_DETECTION:
                 await handle_malicious_signature_detected(self, request_body)
-                
+
     async def disconnect(self, code):
         if self._group_name == WebSocketGroupNames.EAGLE_CLIENTSCANNER.value:
             from ..handlers.eagle_scanner import handle_scanner_disconnect
+
             await handle_scanner_disconnect(self)
-            
+
         return await super().disconnect(code)
-    
+
     @property
     def hwid(self):
         return self._hwid
-    
+
     @hwid.setter
     def hwid(self, hwid: Union[ClientHWIDS, Any]):
         if not isinstance(hwid, ClientHWIDS):
             raise TypeError(f"Can't convert type {type(hwid)} to type ClientHWIDs")
         self._hwid = hwid
 
-
     @property
     def connected_server(self) -> EagleServerConsumer:
         return self._connected_server
-    
+
     @connected_server.setter
     def connected_server(self, server: Union[EagleServerConsumer, None]):
         if not isinstance(server, EagleServerConsumer):
-            raise TypeError(f"Unable to convert type {type(server)} to 'EagleServerConsumer'")
+            raise TypeError(
+                f"Unable to convert type {type(server)} to 'EagleServerConsumer'"
+            )
         self._connected_server = server
-        
+
     async def kick(self, reason: Optional[str] = "") -> bool:
         if self._connected_server:
             await self._connected_server.send(

@@ -185,6 +185,7 @@ async def handle_load_anticheat_scripts(
                     ).hexdigest()
                     components[component_hash] = component_buffer
 
+    logger.info(f"Synced {len(components)} AntiCheat components for {consumer.address[0]}:{consumer.address[1]}")
     return await consumer.send(
         EagleServerPacketID.SYNC_ANTICHEAT_COMPONENTS, components
     )

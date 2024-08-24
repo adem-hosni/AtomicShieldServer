@@ -1,8 +1,11 @@
+import os
+import hashlib
 from typing import Dict, Any
 from utils import check_request_body_key
 from dashboard.models import GameServers
 from shared.ws import EagleServerPacketID, WebSocketGroupNames
 from eagle_manager.manager import eagle_manager
+from typing import Dict
 from ..consumers.eagle_server import EagleServerConsumer
 import logging
 
@@ -156,3 +159,32 @@ async def handle_server_disconnect(consumer: EagleServerConsumer):
         f"{consumer.address[0]}:{consumer.address[1]} disconnected from eagle servers network."
     )
     eagle_manager.remove_eagle_server(consumer)
+
+
+async def handle_load_anticheat_scripts(
+    consumer: EagleServerConsumer, request: Dict[str, Any]
+):
+    components: Dict[str, str] = []
+
+    # Iterate the components folder for components folders
+    for component in os.listdir("anticheat_scripts"):
+        component_path = os.path.join("anticheat_scripts", component)
+        # check if the component is a directory
+        if os.path.isdir(component_path):
+            # Iterate the component and find scripts
+            for script_component in os.listdir(component_path):
+                script_path = os.path.join(component_path, script_component)
+                # verify the script component is a file and have the lua extension
+                if os.path.isfile(script_path) and script_path.endswith(".lua"):
+                    # load the script component buffer
+                    with open(script_path, "r") as file:
+                        component_buffer = file.read()
+                    # make a sha256 hash for the buffer
+                    component_hash = hashlib.sha256(
+                        component_buffer.encode()
+                    ).hexdigest()
+                    components[component_hash] = component_buffer
+
+    return await consumer.send(
+        EagleServerPacketID.SYNC_ANTICHEAT_COMPONENTS, components
+    )

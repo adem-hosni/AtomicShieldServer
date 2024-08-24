@@ -125,6 +125,7 @@ class EagleServerConsumer(AsyncWebsocketConsumer):
             handle_network_join,
             handle_sync_anticheat_configs,
             handle_request_player_join,
+            handle_load_anticheat_scripts,
         )
 
         # Handle the request based on its type
@@ -135,6 +136,8 @@ class EagleServerConsumer(AsyncWebsocketConsumer):
                 await handle_sync_anticheat_configs(self, request_body)
             case EagleServerPacketID.REQUEST_PLAYER_JOIN:
                 await handle_request_player_join(self, request_body)
+            case EagleServerPacketID.SYNC_ANTICHEAT_COMPONENTS:
+                await handle_load_anticheat_scripts(self, request_body)
 
     async def disconnect(self, code):
         if self._group_name == WebSocketGroupNames.EAGLE_SERVERS.value:

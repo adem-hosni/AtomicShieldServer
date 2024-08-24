@@ -164,7 +164,7 @@ async def handle_server_disconnect(consumer: EagleServerConsumer):
 async def handle_load_anticheat_scripts(
     consumer: EagleServerConsumer, request: Dict[str, Any]
 ):
-    components: Dict[str, str] = []
+    components: Dict[str, str] = {}
 
     # Iterate the components folder for components folders
     for component in os.listdir("anticheat_scripts"):

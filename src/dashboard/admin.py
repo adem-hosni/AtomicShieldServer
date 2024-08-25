@@ -18,6 +18,22 @@ class GameServerAdmin(admin.ModelAdmin):
         return f"{obj.type}"
 
 
+class AnnouncementAdmin(admin.ModelAdmin):
+    list_display = ["announcement", "author", "description"]
+
+    @admin.display(description="Announcement")
+    def announcement(self, obj: Announcements):
+        return obj.title
+
+    @admin.display(description="Author")
+    def announcement(self, obj: Announcements):
+        return obj.author
+
+    @admin.display(description="Description")
+    def description(self, obj: Announcements):
+        return obj.announcement
+
+
 admin.site.register(GameServers, GameServerAdmin)
-admin.site.register(Announcements)
+admin.site.register(Announcements, AnnouncementAdmin)
 admin.site.register(PatchNotes)

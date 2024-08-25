@@ -34,6 +34,22 @@ class AnnouncementAdmin(admin.ModelAdmin):
         return obj.announcement
 
 
+class PatchNotesAdmin(admin.ModelAdmin):
+    list_display = ["patchnote", "author", "description"]
+
+    @admin.display(description="Patchnote")
+    def patchnote(self, obj: PatchNotes):
+        return obj.title
+
+    @admin.display(description="Author")
+    def announcement(self, obj: PatchNotes):
+        return obj.author
+
+    @admin.display(description="Description")
+    def description(self, obj: PatchNotes):
+        return obj.patchnotes
+
+
 admin.site.register(GameServers, GameServerAdmin)
 admin.site.register(Announcements, AnnouncementAdmin)
-admin.site.register(PatchNotes)
+admin.site.register(PatchNotes, PatchNotesAdmin)

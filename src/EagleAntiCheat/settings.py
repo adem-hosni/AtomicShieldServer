@@ -175,3 +175,7 @@ LOGGING = {
         },
     },
 }
+
+UNFOLD = {
+    "SITE_HEADER": "Eagle STAFF",
+}

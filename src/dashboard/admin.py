@@ -1,8 +1,22 @@
 from django.contrib import admin
 from .models import GameServers, Announcements, PatchNotes
+from django.contrib.auth.models import User
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+
+from unfold.admin import ModelAdmin
+from unfold.forms import AdminPasswordChangeForm, UserChangeForm, UserCreationForm
 
 
-class GameServerAdmin(admin.ModelAdmin):
+admin.site.unregister(User)
+
+@admin.register(User)
+class UserAdmin(BaseUserAdmin, ModelAdmin):
+    form = UserChangeForm
+    add_form = UserCreationForm
+    change_password_form = AdminPasswordChangeForm
+
+
+class GameServerAdmin(ModelAdmin):
     list_display = ["address", "owner", "type"]
 
     @admin.display(description="Address")
@@ -18,7 +32,7 @@ class GameServerAdmin(admin.ModelAdmin):
         return f"{obj.type}"
 
 
-class AnnouncementAdmin(admin.ModelAdmin):
+class AnnouncementAdmin(ModelAdmin):
     list_display = ["announcement", "author", "description"]
 
     @admin.display(description="Announcement")
@@ -34,7 +48,7 @@ class AnnouncementAdmin(admin.ModelAdmin):
         return obj.announcement
 
 
-class PatchNotesAdmin(admin.ModelAdmin):
+class PatchNotesAdmin(ModelAdmin):
     list_display = ["patchnote", "author", "description"]
 
     @admin.display(description="Patchnote")

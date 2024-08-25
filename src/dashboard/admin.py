@@ -4,7 +4,7 @@ from .models import GameServers, Announcements, PatchNotes
 
 class GameServerAdmin(admin.ModelAdmin):
     list_display = ["address", "owner", "type"]
-    
+
     @admin.display(description="Address")
     def address(self, obj: GameServers):
         return f"{obj.ip}:{obj.port}"
@@ -16,6 +16,7 @@ class GameServerAdmin(admin.ModelAdmin):
     @admin.display(description="Type")
     def address(self, obj: GameServers):
         return f"{obj.type}"
+
 
 admin.site.register(GameServers, GameServerAdmin)
 admin.site.register(Announcements)

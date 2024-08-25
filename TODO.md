@@ -1,3 +1,3 @@
 - Implement Authentication Middleware
 - See Server Logs
-- 
+- Add captcha to the authentication

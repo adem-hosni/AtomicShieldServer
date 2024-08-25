@@ -5,7 +5,6 @@ from .models import GameServers, Announcements, PatchNotes
 class GameServerAdmin(admin.ModelAdmin):
     list_display = ["address", "owner", "type"]
 
-
     @admin.display(description="Address")
     def address(self, obj: GameServers):
         return f"{obj.ip}:{obj.port}"

@@ -175,18 +175,3 @@ LOGGING = {
         },
     },
 }
-
-JAZZMIN_UI_TWEAKS = {
-    "site title": "Eagle AntiCheat",
-    "theme": "darkly",
-    "site header": "Eagle AntiCheat",
-    "dark_mode_theme": "darkly",
-    "button_classes": {
-        "primary": "btn-outline-primary",
-        "secondary": "btn-outline-secondary",
-        "info": "btn-info",
-        "warning": "btn-outline-warning",
-        "danger": "btn-danger",
-        "success": "btn-outline-success",
-    },
-}

@@ -158,7 +158,7 @@ LOGGING = {
     "disable_existing_loggers": False,
     "handlers": {
         "console": {
-            "class": "rich.logging.RichHandler",  # <-- this
+            "class": "rich.logging.RichHandler",
             "rich_tracebacks": True,
             "show_time": True,
         },

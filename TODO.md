@@ -1,3 +1,7 @@
+# Authentication
 - Implement Authentication Middleware
-- See Server Logs
 - Add captcha to the authentication
+
+# Sections
+- Add Server Logs Section
+- Add Setup Section

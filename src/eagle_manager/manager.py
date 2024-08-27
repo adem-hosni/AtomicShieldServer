@@ -6,7 +6,7 @@ from typing import List, Union, Any
 
 class EagleManager(object):
     """
-    EagleManager is responsible for managing Eagle servers and scanners. 
+    EagleManager is responsible for managing Eagle servers and scanners.
     It provides functionalities to add, remove, and check the status of servers and scanners.
     """
 

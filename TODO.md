@@ -4,6 +4,7 @@
 
 # Sections
 - Add Server Logs Section
+- Add Discord Webhook Logs
 - Add Setup Section
 
 # Eagle Server

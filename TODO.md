@@ -1,5 +1,6 @@
 # Authentication
 - Implement Authentication Middleware
+- Add 2FA Security
 - ~~Add captcha to the authentication~~
 
 # Sections

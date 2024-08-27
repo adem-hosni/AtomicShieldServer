@@ -11,6 +11,7 @@ def render_signin(request: HttpRequest) -> HttpResponse:
         return redirect("/dashboard/main")
     
     if request.method == "POST":
+        print(request.POST)
         form = SignInForm(request.POST)
         
         if form.is_valid():

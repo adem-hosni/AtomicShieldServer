@@ -1,4 +1,6 @@
 from django import forms
+from django_recaptcha.fields import ReCaptchaField
+from django_recaptcha.widgets import ReCaptchaV3
 
 
 class SignInForm(forms.Form):
@@ -20,6 +22,9 @@ class SignInForm(forms.Form):
         )
     )
 
+    recaptcha = ReCaptchaField(widget=ReCaptchaV3)
+
+
 class SignUpForm(forms.Form):
     email = forms.CharField(
         widget=forms.EmailInput(
@@ -29,7 +34,7 @@ class SignUpForm(forms.Form):
             }
         )
     )
-    
+
     username = forms.CharField(
         widget=forms.TextInput(
             attrs={
@@ -47,3 +52,5 @@ class SignUpForm(forms.Form):
             }
         )
     )
+
+    recaptcha = ReCaptchaField(widget=ReCaptchaV3)

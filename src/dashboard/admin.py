@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import GameServers, Announcements, PatchNotes
+from .models import GameServers, Announcements, PatchNotes, ServerSubscription
 from django.contrib.auth.models import User
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
@@ -65,6 +65,26 @@ class PatchNotesAdmin(ModelAdmin):
         return obj.patchnotes
 
 
+class ServerSubscriptionAdmin(ModelAdmin):
+    list_display = ["name", "owner", "type", "status"]
+    
+    @admin.display(description="Name")
+    def name(self, obj: ServerSubscription):
+        return obj.name
+
+    @admin.display(description="Owner")
+    def owner(self, obj: ServerSubscription):
+        return obj.owner.username
+
+    @admin.display(description="Type")
+    def type(self, obj: ServerSubscription):
+        return obj.type
+
+    @admin.display(description="Status")
+    def status(self, obj: ServerSubscription):
+        return obj.status
+
 admin.site.register(GameServers, GameServerAdmin)
 admin.site.register(Announcements, AnnouncementAdmin)
 admin.site.register(PatchNotes, PatchNotesAdmin)
+admin.site.register(ServerSubscription, ServerSubscriptionAdmin)

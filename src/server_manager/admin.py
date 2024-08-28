@@ -53,10 +53,30 @@ class AntiCheatConfigurationsCategoriesAdmin(ModelAdmin):
         return obj.description
 
 
+class MaliciousSignaturesAdmin(ModelAdmin):
+    list_display = ["name", "signatures_count", "type", "priority"]
+
+    @admin.display(description="Name")
+    def name(self, obj: MaliciousSignatures):
+        return obj.name
+
+    @admin.display(description="Signatures")
+    def signatures_count(self, obj: MaliciousSignatures):
+        return f"{len(obj.signatures)} Signatures"
+
+    @admin.display(description="Type")
+    def type(self, obj: MaliciousSignatures):
+        return obj.type
+
+    @admin.display(description="Priority")
+    def priority(self, obj: MaliciousSignatures):
+        return obj.priority
+
+
 admin.site.register(
     AntiCheatConfigurationCategories, AntiCheatConfigurationsCategoriesAdmin
 )
 admin.site.register(AntiCheatConfigTemplates, AntiCheatConfigurationsAdmin)
 admin.site.register(AntiCheatConfigurations, ModelAdmin)
-admin.site.register(MaliciousSignatures)
+admin.site.register(MaliciousSignatures, MaliciousSignaturesAdmin)
 admin.site.register(ClientHWIDS, ClientHWIDAdmin)

@@ -32,7 +32,7 @@ class ServerSubscription(models.Model):
 
 class GameServers(models.Model):
 
-    ip = models.CharField(max_length=49, unique=True)
+    ip = models.CharField(max_length=49)
     port = models.IntegerField()
     owner = models.ForeignKey(User, on_delete=models.CASCADE, default=None)
     key = models.CharField(

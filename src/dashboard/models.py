@@ -17,6 +17,7 @@ class ServerSubscription(models.Model):
         ACTIVE = 0, "Active"
         INACTIVE = 1, "Inactive"
 
+    name = models.TextField(null=True)
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
     started_at = models.DateTimeField(null=True)
     expires_at = models.IntegerField(null=False)  # Started At + Expires At

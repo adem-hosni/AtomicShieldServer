@@ -2,7 +2,14 @@ import re
 import json
 from django.shortcuts import render, redirect
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
-from .models import Announcements, PatchNotes, GameServers, ServerTypes, ServerStatus
+from .models import (
+    Announcements,
+    PatchNotes,
+    GameServers,
+    ServerTypes,
+    ServerStatus,
+    ServerSubscription,
+)
 from server_manager.models import (
     AntiCheatConfigTemplates,
     AntiCheatConfigurations,
@@ -157,7 +164,7 @@ def render_servers(request: HttpRequest) -> HttpResponse:
                 if GameServers.objects.filter(ip=ip, port=port).exists():
                     form.add_error("ip", "Server Address Already been used!")
                     return HttpResponseRedirect("/dashboard/servers")
-                
+
                 # Generate a license key for the server
                 license_key = utils.generate_key(4)
 
@@ -422,5 +429,25 @@ def render_configurations(request: HttpRequest) -> HttpResponse:
                 }
                 for category in AntiCheatConfigurationCategories.objects.all()
             ],
+        },
+    )
+
+
+def render_subscriptions(request: HttpRequest) -> HttpResponse:
+    return render(
+        request,
+        "pages/dashboard/subscriptions.jinja",
+        {
+            "subscriptions": [
+                {
+                    "type": subscription.type,
+                    "started_at": subscription.started_at,
+                    "name": subscription.name,
+                    "status": subscription.status,
+                }
+                for subscription in ServerSubscription.objects.filter(
+                    owner=request.user
+                )
+            ]
         },
     )

@@ -6,6 +6,7 @@
 # Dashboard
 - Add Discord Webhook Logs
 - Add Setup Section
+- ~~Add Subscriptions Section~~
 
 # Eagle Server
 - Compile client scripts

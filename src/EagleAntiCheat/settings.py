@@ -41,8 +41,9 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django_recaptcha",
     "home",
-    "auth_pages",
+    "authentication",
     "dashboard",
     "server_manager",
 ]
@@ -179,3 +180,8 @@ LOGGING = {
 UNFOLD = {
     "SITE_HEADER": "Eagle STAFF",
 }
+
+# Captcha Settings
+RECAPTCHA_PUBLIC_KEY = "6Ld5FS8qAAAAADYrdex9VsqXwRmEcbDonIBywDOZ"
+RECAPTCHA_PRIVATE_KEY = "6Ld5FS8qAAAAAGq5JUx7rsAAL2rFOPHeV9WAwYA4"
+RECAPTCHA_REQUIRED_SCORE = 0.9

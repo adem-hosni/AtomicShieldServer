@@ -54,6 +54,6 @@ class AntiCheatConfigurationsCategoriesAdmin(ModelAdmin):
 
 admin.site.register(AntiCheatConfigurationCategories, AntiCheatConfigurationsCategoriesAdmin)
 admin.site.register(AntiCheatConfigTemplates, AntiCheatConfigurationsAdmin)
-admin.site.register(AntiCheatConfigurations)
+admin.site.register(AntiCheatConfigurations, ModelAdmin)
 admin.site.register(MaliciousSignatures)
 admin.site.register(ClientHWIDS, ClientHWIDAdmin)

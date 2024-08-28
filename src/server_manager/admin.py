@@ -31,7 +31,7 @@ class ClientHWIDAdmin(ModelAdmin):
 
 class AntiCheatConfigurationsAdmin(ModelAdmin):
     list_display = ["title", "description"]
-    
+
     @admin.display(description="Title")
     def title(self, obj: AntiCheatConfigTemplates):
         return obj.name
@@ -43,7 +43,7 @@ class AntiCheatConfigurationsAdmin(ModelAdmin):
 
 class AntiCheatConfigurationsCategoriesAdmin(ModelAdmin):
     list_display = ["category", "description"]
-    
+
     @admin.display(description="Category")
     def category(self, obj: AntiCheatConfigurationCategories):
         return obj.name
@@ -52,7 +52,10 @@ class AntiCheatConfigurationsCategoriesAdmin(ModelAdmin):
     def description(self, obj: AntiCheatConfigurationCategories):
         return obj.description
 
-admin.site.register(AntiCheatConfigurationCategories, AntiCheatConfigurationsCategoriesAdmin)
+
+admin.site.register(
+    AntiCheatConfigurationCategories, AntiCheatConfigurationsCategoriesAdmin
+)
 admin.site.register(AntiCheatConfigTemplates, AntiCheatConfigurationsAdmin)
 admin.site.register(AntiCheatConfigurations, ModelAdmin)
 admin.site.register(MaliciousSignatures)

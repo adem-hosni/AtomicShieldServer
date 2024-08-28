@@ -1,4 +1,5 @@
 from django.contrib import admin
+from unfold.admin import ModelAdmin
 from .models import (
     AntiCheatConfigTemplates,
     AntiCheatConfigurations,
@@ -8,7 +9,7 @@ from .models import (
 )
 
 
-class ClientHWIDAdmin(admin.ModelAdmin):
+class ClientHWIDAdmin(ModelAdmin):
     list_display = ["username", "serial", "motherboard_serial", "bios_version"]
 
     @admin.display(description="Username")
@@ -28,8 +29,19 @@ class ClientHWIDAdmin(admin.ModelAdmin):
         return obj.bios_version
 
 
+class AntiCheatConfigurationsAdmin(ModelAdmin):
+    list_display = ["title", "description"]
+    
+    @admin.display(description="Title")
+    def title(self, obj: AntiCheatConfigTemplates):
+        return obj.name
+
+    @admin.display(description="Description")
+    def description(self, obj: AntiCheatConfigTemplates):
+        return obj.description
+
 admin.site.register(AntiCheatConfigurationCategories)
-admin.site.register(AntiCheatConfigTemplates)
+admin.site.register(AntiCheatConfigTemplates, AntiCheatConfigurationsAdmin)
 admin.site.register(AntiCheatConfigurations)
 admin.site.register(MaliciousSignatures)
 admin.site.register(ClientHWIDS, ClientHWIDAdmin)

@@ -127,18 +127,21 @@ def render_servers(request: HttpRequest) -> HttpResponse:
             # Check if the server_type is of type string
             if isinstance(server_type, str):
                 if not server_type.isnumeric():
-                    return form.add_error("server_type", "Invalid Server Type")
+                    form.add_error("server_type", "Invalid Server Type")
+                    return HttpResponseRedirect("/dashboard/servers")
                 server_type = int(server_type)
 
             # Check if the port is of type string
             if isinstance(port, str):
                 if not port.isnumeric():
-                    return form.add_error("port", "Invalid Server Type")
+                    form.add_error("port", "Invalid Server Type")
+                    return HttpResponseRedirect("/dashboard/servers")
                 port = int(port)
 
             # Check port range (1 -> 65535)
             if not (port >= 1 and port <= 65535):
-                return form.add_error("port", "Invalid port range")
+                form.add_error("port", "Invalid port range")
+                return HttpResponseRedirect("/dashboard/servers")
 
             if server_type == 1:  # Server Type: MTA:SA
                 ipv4_pattern = re.compile(
@@ -147,11 +150,13 @@ def render_servers(request: HttpRequest) -> HttpResponse:
 
                 # Check if the ip is correct
                 if not ipv4_pattern.match(ip):
-                    return form.add_error("ip", "Invalid IPV4 IP")
+                    form.add_error("ip", "Invalid IPV4 IP")
+                    return HttpResponseRedirect("/dashboard/servers")
 
                 # Check if the server address already used
                 if GameServers.objects.filter(ip=ip, port=port).exists():
-                    return form.add_error("ip", "Server Address Already been used!")
+                    form.add_error("ip", "Server Address Already been used!")
+                    return HttpResponseRedirect("/dashboard/servers")
                 
                 # Generate a license key for the server
                 license_key = utils.generate_key(4)

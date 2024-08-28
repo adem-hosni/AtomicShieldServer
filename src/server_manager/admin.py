@@ -40,7 +40,19 @@ class AntiCheatConfigurationsAdmin(ModelAdmin):
     def description(self, obj: AntiCheatConfigTemplates):
         return obj.description
 
-admin.site.register(AntiCheatConfigurationCategories)
+
+class AntiCheatConfigurationsCategoriesAdmin(ModelAdmin):
+    list_display = ["category", "description"]
+    
+    @admin.display(description="Category")
+    def category(self, obj: AntiCheatConfigurationCategories):
+        return obj.name
+
+    @admin.display(description="Description")
+    def description(self, obj: AntiCheatConfigurationCategories):
+        return obj.description
+
+admin.site.register(AntiCheatConfigurationCategories, AntiCheatConfigurationsCategoriesAdmin)
 admin.site.register(AntiCheatConfigTemplates, AntiCheatConfigurationsAdmin)
 admin.site.register(AntiCheatConfigurations)
 admin.site.register(MaliciousSignatures)

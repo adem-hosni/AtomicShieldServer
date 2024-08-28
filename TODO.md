@@ -3,7 +3,7 @@
 - Add 2FA Security
 - ~~Add captcha to the authentication~~
 
-# Sections
+# Dashboard
 - Add Server Logs Section
 - Add Discord Webhook Logs
 - Add Setup Section

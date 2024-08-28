@@ -149,12 +149,12 @@ def render_servers(request: HttpRequest) -> HttpResponse:
                 if not ipv4_pattern.match(ip):
                     return form.add_error("ip", "Invalid IPV4 IP")
 
-                # Generate a license key for the server
-                license_key = utils.generate_key(4)
-                
                 # Check if the server address already used
                 if GameServers.objects.filter(ip=ip, port=port).exists():
                     return form.add_error("ip", "Server Address Already been used!")
+                
+                # Generate a license key for the server
+                license_key = utils.generate_key(4)
 
                 # Check if key already exists, regenerate it
                 if GameServers.objects.filter(key=license_key).exists():

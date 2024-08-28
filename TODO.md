@@ -4,7 +4,6 @@
 - ~~Add captcha to the authentication~~
 
 # Dashboard
-- Add Server Logs Section
 - Add Discord Webhook Logs
 - Add Setup Section
 

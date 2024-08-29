@@ -13,6 +13,7 @@
 - Inject Anticheat scripts components to the client
 - Check Eagle Agent disconnect
 - Open Live Eagle Master Server RPCs
+- Implement server subscription duration (eagle master server side)
 
 # Eagle Agent
 - Implement UI (with ImGui)

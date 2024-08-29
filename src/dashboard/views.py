@@ -2,6 +2,7 @@ import re
 import json
 from django.shortcuts import render, redirect
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
+from django.contrib.auth.decorators import login_required
 from .models import (
     Announcements,
     PatchNotes,
@@ -20,11 +21,8 @@ import utils
 from typing import Dict, Union
 from utils.aseclient import ASEQueryClient, ASEParser
 
-
+@login_required
 def render_maindashboard(request: HttpRequest) -> HttpResponse:
-    if not request.user.is_authenticated:
-        return redirect("/auth/signin")
-
     announcements = []
     if request.method == "POST":
         request_body = request.body.decode()
@@ -65,20 +63,14 @@ def render_maindashboard(request: HttpRequest) -> HttpResponse:
         {"username": request.user.username, "announcements": announcements},
     )
 
-
+@login_required
 def render_users(request: HttpRequest) -> HttpResponse:
-    if not request.user.is_authenticated:
-        return redirect("/auth/signin")
-
     return render(
         request, "pages/dashboard/users.jinja", {"username": request.user.username}
     )
 
-
+@login_required
 def render_patchnotes(request: HttpRequest) -> HttpResponse:
-    if not request.user.is_authenticated:
-        return redirect("/auth/signin")
-
     patchnotes = []
     if request.method == "POST":
         request_body = request.body.decode()
@@ -118,11 +110,8 @@ def render_patchnotes(request: HttpRequest) -> HttpResponse:
         request, "pages/dashboard/patchnotes.jinja", {"patchnotes": patchnotes}
     )
 
-
+@login_required
 def render_servers(request: HttpRequest) -> HttpResponse:
-    if not request.user.is_authenticated:
-        return redirect("/auth/signin")
-
     if request.method == "POST":
         form = AddServerForm(request.POST)
 
@@ -225,7 +214,7 @@ def render_servers(request: HttpRequest) -> HttpResponse:
         },
     )
 
-
+@login_required
 def check_server(request: HttpRequest) -> HttpResponse:
     request_body = request.body.decode()
 
@@ -297,7 +286,7 @@ def check_server(request: HttpRequest) -> HttpResponse:
 
     return HttpResponse(json.dumps(response_body))
 
-
+@login_required
 def select_server(request: HttpRequest) -> HttpResponse:
     request_body: Dict[str, Union[bool, str]] = request.body.decode()
 
@@ -348,11 +337,8 @@ def select_server(request: HttpRequest) -> HttpResponse:
 
     return HttpResponse(json.dumps({"success": True}))
 
-
+@login_required
 def render_configurations(request: HttpRequest) -> HttpResponse:
-    if not request.user.is_authenticated:
-        return redirect("/auth/signin")
-
     if request.method == "POST":
         request_body = request.POST
         form = ConfigurationsForm(request.POST)
@@ -433,7 +419,7 @@ def render_configurations(request: HttpRequest) -> HttpResponse:
         },
     )
 
-
+@login_required
 def render_subscriptions(request: HttpRequest) -> HttpResponse:
     return render(
         request,

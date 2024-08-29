@@ -14,6 +14,7 @@
 - Check Eagle Agent disconnect
 - Open Live Eagle Master Server RPCs
 - Implement server subscription duration (eagle master server side)
+- Implement HTTP request encryption
 
 # Eagle Agent
 - Implement UI (with ImGui)
@@ -26,3 +27,4 @@
 - VM Verification
 - HWID Checks
 - HWID Caching
+- Implement HTTP request encryption

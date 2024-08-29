@@ -55,9 +55,9 @@
             <td class="px-6 py-4">{{ server.duration }}</td>
             <td class="px-6 py-4">{{ server.subscription_status }}</td>
             {% if active == server.id %}
-            <td class="px-6 py-4"><button onclick="select('{{ server.id }}', false)" class="border py-1 px-2 rounded font-medium text-blue-500 border-blue-500 transition-all duration-300 hover:text-black hover:bg-blue-500 w-20">UnSelect</button></td>
+              <td class="px-6 py-4"><button onclick="select('{{ server.id }}', false)" class="border py-1 px-2 rounded font-medium text-blue-500 border-blue-500 transition-all duration-300 hover:text-black hover:bg-blue-500 w-20">UnSelect</button></td>
             {% else %}
-            <td class="px-6 py-4"><button onclick="select('{{ server.id }}', true)" class="border py-1 px-2 rounded font-medium text-red-500 border-red-500 transition-all duration-300 hover:text-black hover:bg-red-500 w-20">Select</button></td>
+              <td class="px-6 py-4"><button onclick="select('{{ server.id }}', true)" class="border py-1 px-2 rounded font-medium text-red-500 border-red-500 transition-all duration-300 hover:text-black hover:bg-red-500 w-20">Select</button></td>
             {% endif %}
             <td class="px-6 py-4">
               <button data-tooltip-target="tooltip-refresh-{{ server.id }}" data-tooltip-style="dark" class="font-medium text-blue-600 dark:text-blue-500 hover:underline"><i class="fa-solid fa-arrows-rotate text-purple-600 transition-all duration-300 hover:bg-purple-600 hover:text-black rounded-full p-1"></i></button>

@@ -213,6 +213,7 @@ def render_servers(request: HttpRequest) -> HttpResponse:
                     "address": f"{server.ip}:{server.port}",
                     "type": server.type,
                     "duration": "30 Days",
+                    "subscription_status": server.subscriptions.last(),
                 }
                 for server in servers.reverse()
             ],

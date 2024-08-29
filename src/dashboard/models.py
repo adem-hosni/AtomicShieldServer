@@ -42,7 +42,7 @@ class GameServers(models.Model):
     key = models.CharField(
         max_length=16, null=False, default="UNREGISTRED", unique=True
     )
-    subscriptions = models.ManyToManyField(ServerSubscription, null=True)
+    subscriptions = models.ManyToManyField(ServerSubscription)
     configurations = models.ForeignKey(
         AntiCheatConfigurations, on_delete=models.CASCADE, null=False, blank=False
     )

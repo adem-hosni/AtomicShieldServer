@@ -29,7 +29,7 @@ class ServerSubscription(models.Model):
     class Meta:
         db_table = "subscriptions"
         verbose_name_plural = "subscriptions"
-        
+
     def __str__(self) -> str:
         return self.name
 

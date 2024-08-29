@@ -181,22 +181,14 @@ UNFOLD = {
     "SITE_HEADER": "Eagle STAFF",
 }
 
-# ----------------------------
-# -- Authentication Settings-- 
-# ----------------------------
-
+# Authentication Settings
 LOGIN_URL = "/auth/signin"
 PASSWORD_RESET_TIMEOUT = 60 * 60 * 24 * 1  # 1 Day
 
-# --------------
-# -- Sessions --
-# --------------
+# Sessions
 SESSION_COOKIE_AGE = 60 * 60 * 24 * 1  # 1 Day
 
-# ----------------------
-# -- Captcha Settings --
-# ----------------------
-
+# Captcha Settings
 RECAPTCHA_PUBLIC_KEY = "6Ld5FS8qAAAAADYrdex9VsqXwRmEcbDonIBywDOZ"
 RECAPTCHA_PRIVATE_KEY = "6Ld5FS8qAAAAAGq5JUx7rsAAL2rFOPHeV9WAwYA4"
 RECAPTCHA_REQUIRED_SCORE = 0.9

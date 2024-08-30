@@ -2,6 +2,7 @@ import re
 import logging
 import json
 from django.shortcuts import render, redirect
+from django.urls import reverse
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
 from .models import (
@@ -370,6 +371,36 @@ def select_server(request: HttpRequest) -> HttpResponse:
     request.session["selected_server"] = target_server.id
 
     return HttpResponse(json.dumps({"success": True}))
+
+
+@login_required
+def refresh_server_key(request: HttpRequest) -> HttpResponse:
+    if request.method == "POST":
+        request_body = request.POST
+
+        if len(request_body.keys()) != 2:
+            return HttpResponse(json.dumps({"success": False}))
+
+        if not "server" in request_body.keys():
+            return HttpResponse(json.dumps({"success": False}))
+
+        try:
+            target_server = GameServers.objects.get(
+                owner=request.user, id=int(request_body["server"])
+            )
+        except GameServers.DoesNotExist:
+            return HttpResponse(json.dumps({"success": False}))
+
+        new_key = utils.generate_key(4)
+        if new_key == target_server.key:
+            new_key = utils.generate_key(4)
+        target_server.key = new_key
+        target_server.save()
+
+        print(request.path)
+        return redirect(reverse("servers"))
+
+    return HttpResponse(json.dumps({"success": False}))
 
 
 @login_required

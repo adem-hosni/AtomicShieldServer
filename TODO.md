@@ -2,6 +2,7 @@
 - ~~Implement Authentication Middleware~~
 - Add 2FA Security
 - ~~Add captcha to the authentication~~
+- Add captcha to the admin authentication form
 
 # Dashboard
 - Add Discord Webhook Logs

@@ -206,11 +206,11 @@ def render_servers(request: HttpRequest) -> HttpResponse:
                     port=port,
                     owner=request.user,
                     key=license_key,
-                    subscriptions=subscription,
                     configurations=configurations,
                     type=ServerTypes.MTASA,
                     status=ServerStatus.online,
                 )
+                new_server.subscriptions.add(subscription)
                 request.session["selected_server"] = new_server.id
                 print(
                     f"Added New Server {ip}:{port} from {request.user.username}, license key: ({license_key})"

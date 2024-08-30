@@ -7,7 +7,7 @@
 # Dashboard
 - Add Discord Webhook Logs
 - Add Setup Section
-- Add refresh server key functionality
+- ~~Add refresh server key functionality~~
 - ~~Integrating Server Creation with active subscriptions~~
 - ~~Add Subscriptions Section~~
 

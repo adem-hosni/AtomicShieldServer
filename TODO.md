@@ -18,6 +18,7 @@
 - Open Live Eagle Master Server RPCs
 - Implement server subscription duration (eagle master server side)
 - Implement HTTP request encryption
+- Implement Eagle Server watermark on server name
 
 # Eagle Agent
 - Implement UI (with ImGui)

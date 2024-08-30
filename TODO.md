@@ -7,8 +7,8 @@
 # Dashboard
 - Add Discord Webhook Logs
 - Add Setup Section
-- ~~Integrating Server Creation with active subscriptions~~
 - Add refresh server key functionality
+- ~~Integrating Server Creation with active subscriptions~~
 - ~~Add Subscriptions Section~~
 
 # Eagle Server

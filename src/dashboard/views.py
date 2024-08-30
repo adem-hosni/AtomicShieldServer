@@ -397,7 +397,6 @@ def refresh_server_key(request: HttpRequest) -> HttpResponse:
         target_server.key = new_key
         target_server.save()
 
-        print(request.path)
         return redirect(reverse("servers"))
 
     return HttpResponse(json.dumps({"success": False}))

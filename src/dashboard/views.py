@@ -37,7 +37,7 @@ def render_maindashboard(request: HttpRequest) -> HttpResponse:
             try:
                 request_body = json.loads(request.body.decode())
             except Exception as err:
-                print(
+                logger.error(
                     f"Failed to parse request body\nrequest body: {request_body}\nException: {err}"
                 )
             if "seenAnnouncement" in request_body.keys():
@@ -87,7 +87,7 @@ def render_patchnotes(request: HttpRequest) -> HttpResponse:
             try:
                 request_body = json.loads(request.body.decode())
             except Exception as err:
-                print(
+                logger.error(
                     f"Failed to parse request body\nrequest body: {request_body}\nException: {err}"
                 )
             if "seenPatchNote" in request_body.keys():
@@ -212,7 +212,7 @@ def render_servers(request: HttpRequest) -> HttpResponse:
                 )
                 new_server.subscriptions.add(subscription)
                 request.session["selected_server"] = new_server.id
-                print(
+                logger.info(
                     f"Added New Server {ip}:{port} from {request.user.username}, license key: ({license_key})"
                 )
                 return HttpResponseRedirect("/dashboard/servers")
@@ -256,7 +256,7 @@ def check_server(request: HttpRequest) -> HttpResponse:
         try:
             request_body = json.loads(request.body.decode())
         except Exception as err:
-            print(
+            logger.error(
                 f"Failed to parse request body\nrequest body: {request_body}\nException: {err}"
             )
             return HttpResponse(json.dumps({"success": False}))
@@ -329,19 +329,19 @@ def select_server(request: HttpRequest) -> HttpResponse:
         try:
             request_body = json.loads(request.body.decode())
         except Exception as err:
-            print(
+            logger.error(
                 f"Failed to parse request body\nrequest body: {request_body}\nException: {err}"
             )
             return HttpResponse(json.dumps({"success": False}))
 
     # Check the request_body form
     if len(request_body.keys()) != 2:
-        print(f"Invalid request body, got {request_body}")
+        logger.error(f"Invalid request body, got {request_body}")
         return HttpResponse(json.dumps({"success": False}))
 
     # Check the request_body keys
     if not ("server_id" in request_body.keys() or "select" in request_body.keys()):
-        print(f"Invalid request body, got {request_body}")
+        logger.error(f"Invalid request body, got {request_body}")
         return HttpResponse(json.dumps({"success": False}))
 
     # Check if the server_id has some character
@@ -352,7 +352,7 @@ def select_server(request: HttpRequest) -> HttpResponse:
     request_body["server_id"] = int(request_body["server_id"])
 
     if not isinstance(request_body["select"], bool):
-        print(f"Invalid request body, got {request_body}")
+        logger.error(f"Invalid request body, got {request_body}")
         return HttpResponse(json.dumps({"success": False}))
 
     # Find the server in the owner servers
@@ -380,7 +380,6 @@ def render_configurations(request: HttpRequest) -> HttpResponse:
 
         # check the request body health
         if form.is_valid():
-            print(request_body)
             selected_server = request.session.get("selected_server", -1)
             if selected_server > 0:
                 try:

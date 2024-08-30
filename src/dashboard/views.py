@@ -398,7 +398,7 @@ def refresh_server_key(request: HttpRequest) -> HttpResponse:
         target_server.save()
 
         logger.info(
-            f"{request.user.username} has refreshed his server {target_server.ip}:{target_server.port}'s key"
+            f'"{request.user.username}" has refreshed his server {target_server.ip}:{target_server.port}\'s key'
         )
 
         return redirect(reverse("servers"))

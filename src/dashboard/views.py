@@ -1,4 +1,5 @@
 import re
+import logging
 import json
 from django.shortcuts import render, redirect
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
@@ -20,6 +21,10 @@ from .forms import AddServerForm, ConfigurationsForm
 import utils
 from typing import Dict, Union
 from utils.aseclient import ASEQueryClient, ASEParser
+
+
+logger = logging.getLogger(__name__)
+
 
 @login_required
 def render_maindashboard(request: HttpRequest) -> HttpResponse:
@@ -63,11 +68,13 @@ def render_maindashboard(request: HttpRequest) -> HttpResponse:
         {"username": request.user.username, "announcements": announcements},
     )
 
+
 @login_required
 def render_users(request: HttpRequest) -> HttpResponse:
     return render(
         request, "pages/dashboard/users.jinja", {"username": request.user.username}
     )
+
 
 @login_required
 def render_patchnotes(request: HttpRequest) -> HttpResponse:
@@ -110,22 +117,26 @@ def render_patchnotes(request: HttpRequest) -> HttpResponse:
         request, "pages/dashboard/patchnotes.jinja", {"patchnotes": patchnotes}
     )
 
+
 @login_required
 def render_servers(request: HttpRequest) -> HttpResponse:
     if request.method == "POST":
-        form = AddServerForm(request.POST)
+        form = AddServerForm(request.POST, user=request.user)
 
         if form.is_valid():
             ip = form.cleaned_data["ip"]
             port = form.cleaned_data["port"]
             server_type = form.cleaned_data["server_type"]
+            subscription_id = form.cleaned_data["subscription"]
 
-            # Check if the server_type is of type string
-            if isinstance(server_type, str):
-                if not server_type.isnumeric():
+            # Check if the server_type and the subscription_id are of type string
+            if isinstance(server_type, str) and isinstance(subscription_id, str):
+                if not server_type.isnumeric() and not subscription_id.isnumeric():
                     form.add_error("server_type", "Invalid Server Type")
+                    form.add_error("subscription", "Invalid Subscription")
                     return HttpResponseRedirect("/dashboard/servers")
                 server_type = int(server_type)
+                subscription_id = int(subscription_id)
 
             # Check if the port is of type string
             if isinstance(port, str):
@@ -154,6 +165,27 @@ def render_servers(request: HttpRequest) -> HttpResponse:
                     form.add_error("ip", "Server Address Already been used!")
                     return HttpResponseRedirect("/dashboard/servers")
 
+                # Check the selected subscription health
+                try:
+                    subscription = ServerSubscription.objects.get(id=subscription_id)
+                except ServerSubscription.DoesNotExist:
+                    logger.warning(
+                        f"{request.user.username} trying to use a non existing subscription (used subscription id: {subscription_id})!"
+                    )
+                if subscription.owner != request.user:
+                    logger.warning(
+                        f"{request.user.username} trying to use {subscription.owner.username}'s subscription!"
+                    )
+                    form.add_error("subscription", "Not your fucking subscription!")
+                    return HttpResponseRedirect("/dashboard/servers")
+
+                if not subscription.is_valid_for_now():
+                    logger.warning(
+                        f"{request.user.username} trying to use expired subscription (subscription id: {subscription_id})!"
+                    )
+                    form.add_error("subscription", "Expired Subscription")
+                    return HttpResponseRedirect("/dashboard/servers")
+
                 # Generate a license key for the server
                 license_key = utils.generate_key(4)
 
@@ -174,7 +206,7 @@ def render_servers(request: HttpRequest) -> HttpResponse:
                     port=port,
                     owner=request.user,
                     key=license_key,
-                    subscriptions="",
+                    subscriptions=subscription,
                     configurations=configurations,
                     type=ServerTypes.MTASA,
                     status=ServerStatus.online,
@@ -186,7 +218,7 @@ def render_servers(request: HttpRequest) -> HttpResponse:
                 return HttpResponseRedirect("/dashboard/servers")
 
     else:
-        form = AddServerForm()
+        form = AddServerForm(user=request.user)
 
     servers = GameServers.objects.filter(owner=request.user)
 
@@ -213,6 +245,7 @@ def render_servers(request: HttpRequest) -> HttpResponse:
             ),
         },
     )
+
 
 @login_required
 def check_server(request: HttpRequest) -> HttpResponse:
@@ -286,6 +319,7 @@ def check_server(request: HttpRequest) -> HttpResponse:
 
     return HttpResponse(json.dumps(response_body))
 
+
 @login_required
 def select_server(request: HttpRequest) -> HttpResponse:
     request_body: Dict[str, Union[bool, str]] = request.body.decode()
@@ -336,6 +370,7 @@ def select_server(request: HttpRequest) -> HttpResponse:
     request.session["selected_server"] = target_server.id
 
     return HttpResponse(json.dumps({"success": True}))
+
 
 @login_required
 def render_configurations(request: HttpRequest) -> HttpResponse:
@@ -418,6 +453,7 @@ def render_configurations(request: HttpRequest) -> HttpResponse:
             ],
         },
     )
+
 
 @login_required
 def render_subscriptions(request: HttpRequest) -> HttpResponse:

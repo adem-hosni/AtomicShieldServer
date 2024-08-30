@@ -1,4 +1,6 @@
 from django.db import models
+from time import time
+from datetime import datetime
 from django.contrib.auth.models import User
 from asgiref.sync import sync_to_async
 from server_manager.models import AntiCheatConfigurations, AntiCheatConfigTemplates
@@ -30,6 +32,13 @@ class ServerSubscription(models.Model):
         db_table = "subscriptions"
         verbose_name_plural = "subscriptions"
 
+    def is_valid_for_now(self) -> bool:
+        return (
+            self.started_at is not None
+            and (datetime.timestamp(self.started_at) + self.expires_at) > time()
+            and self.status == 0
+        )
+
     def __str__(self) -> str:
         return self.name
 
@@ -42,7 +51,9 @@ class GameServers(models.Model):
     key = models.CharField(
         max_length=16, null=False, default="UNREGISTRED", unique=True
     )
-    subscriptions = models.ManyToManyField(ServerSubscription)
+    subscriptions = models.ManyToManyField(
+        ServerSubscription, related_name="game_servers"
+    )
     configurations = models.ForeignKey(
         AntiCheatConfigurations, on_delete=models.CASCADE, null=False, blank=False
     )

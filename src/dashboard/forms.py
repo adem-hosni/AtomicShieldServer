@@ -28,9 +28,11 @@ class AddServerForm(forms.Form):
 
         # Add a message for 0 subscriptions
         if not len(valid_choices):
-            self.fields["subscription"].choices = [
-                -1,
-                "There is no Active Subscription found on your account",
+            valid_choices = [
+                (
+                    -1,
+                    "There is no Active Subscription found",
+                )
             ]
 
         # Set the view subscriptions to the valid subscriptions

@@ -45,7 +45,7 @@ async def handle_network_join(
             EagleServerPacketID.NETWORK_JOIN,
             {
                 "success": False,
-                "message": "Invalid server key!",
+                "message": "Invalid server key!\n",
             },
         )
         return await consumer.close()

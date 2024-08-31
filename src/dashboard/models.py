@@ -3,7 +3,7 @@ from time import time
 from datetime import datetime
 from django.contrib.auth.models import User
 from asgiref.sync import sync_to_async
-from server_manager.models import AntiCheatConfigurations, AntiCheatConfigTemplates
+from anticheat.models import AntiCheatConfigurations, AntiCheatConfigTemplates
 from shared.models import ServerTypes
 from typing import Dict, Any
 

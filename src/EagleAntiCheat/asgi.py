@@ -15,7 +15,7 @@ from channels.auth import AuthMiddlewareStack
 
 django_asgi_app = get_asgi_application()
 
-import server_manager.routing
+import anticheat.routing
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "EagleAntiCheat.settings")
 
@@ -23,7 +23,7 @@ application = ProtocolTypeRouter(
     {
         "http": django_asgi_app,
         "websocket": AuthMiddlewareStack(
-            URLRouter(server_manager.routing.websocket_urlpatterns)
+            URLRouter(anticheat.routing.websocket_urlpatterns)
         ),
     }
 )

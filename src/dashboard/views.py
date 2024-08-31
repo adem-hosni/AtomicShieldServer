@@ -13,7 +13,7 @@ from .models import (
     ServerStatus,
     ServerSubscription,
 )
-from server_manager.models import (
+from anticheat.models import (
     AntiCheatConfigTemplates,
     AntiCheatConfigurations,
     AntiCheatConfigurationCategories,

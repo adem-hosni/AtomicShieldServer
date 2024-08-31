@@ -1,5 +1,5 @@
-from server_manager.consumers.eagle_server import EagleServerConsumer
-from server_manager.consumers.eagle_scanner import EagleScanner
+from anticheat.consumers.eagle_server import EagleServerConsumer
+from anticheat.consumers.eagle_scanner import EagleScanner
 from shared.ws import WebSocketGroupNames
 from typing import List, Union, Any
 

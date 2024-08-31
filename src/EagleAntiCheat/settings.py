@@ -45,7 +45,7 @@ INSTALLED_APPS = [
     "home",
     "authentication",
     "dashboard",
-    "server_manager",
+    "anticheat",
 ]
 
 if DEBUG:

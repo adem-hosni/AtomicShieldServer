@@ -21,7 +21,7 @@
 - Implement Eagle Server watermark on server name
 
 # Eagle Agent (PE)
-- Implement UI (with ImGui)
+- ~~Implement UI (with ImGui)~~
 - Hide PEB Agent
 - SSL Verification
 - Malicious Tools checking

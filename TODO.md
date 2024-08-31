@@ -20,14 +20,19 @@
 - Implement HTTP request encryption
 - Implement Eagle Server watermark on server name
 
-# Eagle Agent
+# Eagle Agent (PE)
 - Implement UI (with ImGui)
-- Hide Agent Process
+- Hide PEB Agent
+- SSL Verification
+- Malicious Tools checking
+- VM Verification
+- Implement HTTP request encryption
+
+# Eagle Agent (PEB)
 - Custom Eagle Master Server Pings
 - Memory scan Pulse (with network sync)
 - MTA:SA Anticheat components verification
 - Malicious Tools checking
-- SSL Verification
 - VM Verification
 - HWID Checks
 - HWID Caching

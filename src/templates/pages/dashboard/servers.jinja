@@ -60,7 +60,7 @@
               <td class="px-6 py-4"><button onclick="select('{{ server.id }}', true)" class="border py-1 px-2 rounded font-medium text-red-500 border-red-500 transition-all duration-300 hover:text-black hover:bg-red-500 w-20">Select</button></td>
             {% endif %}
             <td class="px-6 py-4">
-              <button data-tooltip-target="tooltip-refresh-{{ server.id }}" data-tooltip-style="dark" class="font-medium text-blue-600 dark:text-blue-500 hover:underline"><i class="fa-solid fa-arrows-rotate text-purple-600 transition-all duration-300 hover:bg-purple-600 hover:text-black rounded-full p-1"></i></button>
+              <button onclick="document.getElementById('target-refresh-server').value = '{{ server.id }}'" data-modal-target="refresh-key-modal" data-modal-toggle="refresh-key-modal" data-tooltip-target="tooltip-refresh-{{ server.id }}" data-tooltip-style="dark" class="font-medium text-blue-600 dark:text-blue-500 hover:underline"><i class="fa-solid fa-arrows-rotate text-purple-600 transition-all duration-300 hover:bg-purple-600 hover:text-black rounded-full p-1"></i></button>
 
               <div id="tooltip-refresh-{{ server.id }}" role="tooltip" class="z-10 invisible inline-block px-3 py-2 text-sm font-medium text-black bg-purple-600 rounded-lg shadow-sm opacity-0 tooltip transition-all duration-300">
                 Refresh key
@@ -118,6 +118,36 @@
       </div>
     </div>
   </div>
+  <!-- Start Refresh key Modal -->
+  <div id="refresh-key-modal" tabindex="-1" aria-hidden="true" class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
+    <div class="relative p-4 w-full max-w-md max-h-full">
+      <!-- Modal content -->
+      <div class="relative bg-white rounded-lg shadow dark:bg-[#0d0d0d]">
+        <!-- Modal header -->
+        <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
+          <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Refresh Server Key</h3>
+          <button type="button" class="end-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-purple-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-purple-600 dark:hover:text-black">
+            <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
+            </svg>
+            <span class="sr-only">Close modal</span>
+          </button>
+        </div>
+        <!-- Modal body -->
+        <div class="p-4 md:p-5">
+          <p class="text-center text-lg text-gray-300">Are you sure to refresh your server key ?</p>
+          <form class="space-y-4" method="post" id="refreshkey-form" action="{% url 'refresh_key' %}">
+            {% csrf_token %}
+            <input type="hidden" id="target-refresh-server" name="server" value="">
+            <button type="submit"  id="refreshkey-btn" value="" onclick="this.disabled=true; this.form.submit();" class="w-full text-black border-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 border-purple-600 bg-purple-600 hover:bg-purple-500">Yes, Refresh</button>
+          </form>
+          <button data-modal-hide="refresh-key-modal" onclick="this.disabled=true; this.form.submit();" class="w-full border-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 text-red-600 border-red-600 hover:bg-red-600 hover:text-black my-3">No, Don't Refresh</button>
+
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- End Refresh key Modal -->
 
   <script>
     function select(targetServerId, select) {

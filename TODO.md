@@ -1,15 +1,15 @@
 # Authentication
 - ~~Implement Authentication Middleware~~
-- Add 2FA Security
 - ~~Add captcha to the authentication~~
+- Add 2FA Security
 - Add captcha to the admin authentication form
 
 # Dashboard
-- Add Discord Webhook Logs
-- Add Setup Section
 - ~~Add refresh server key functionality~~
 - ~~Integrating Server Creation with active subscriptions~~
 - ~~Add Subscriptions Section~~
+- Add Discord Webhook Logs
+- Add Setup Section
 
 # Eagle Server
 - Check if the key if it's being used

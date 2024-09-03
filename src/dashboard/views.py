@@ -173,6 +173,7 @@ def render_servers(request: HttpRequest) -> HttpResponse:
                     logger.warning(
                         f"{request.user.username} trying to use a non existing subscription (used subscription id: {subscription_id})!"
                     )
+                    return HttpResponseRedirect("/dashboard/servers")
                 if subscription.owner != request.user:
                     logger.warning(
                         f"{request.user.username} trying to use {subscription.owner.username}'s subscription!"

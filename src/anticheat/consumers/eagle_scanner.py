@@ -1,6 +1,6 @@
 from channels.generic.websocket import AsyncWebsocketConsumer
 from .eagle_server import EagleServerConsumer
-from ..models import ClientHWIDS
+from ..models import ClientHWID
 from shared.ws import EagleScannerPacketID, EagleServerPacketID, WebSocketGroupNames
 import json
 from typing import Union, Dict, List, Optional, Any
@@ -14,7 +14,7 @@ class EagleScanner(AsyncWebsocketConsumer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._group_name = ""
-        self._hwid: ClientHWIDS = None
+        self._hwid: ClientHWID = None
         self._connected_server: EagleServerConsumer = None
 
     async def connect(self):
@@ -113,8 +113,8 @@ class EagleScanner(AsyncWebsocketConsumer):
         return self._hwid
 
     @hwid.setter
-    def hwid(self, hwid: Union[ClientHWIDS, Any]):
-        if not isinstance(hwid, ClientHWIDS):
+    def hwid(self, hwid: Union[ClientHWID, Any]):
+        if not isinstance(hwid, ClientHWID):
             raise TypeError(f"Can't convert type {type(hwid)} to type ClientHWIDs")
         self._hwid = hwid
 

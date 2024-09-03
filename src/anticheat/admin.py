@@ -5,7 +5,7 @@ from .models import (
     AntiCheatConfigurations,
     AntiCheatConfigurationCategories,
     MaliciousSignatures,
-    ClientHWIDS,
+    ClientHWID,
 )
 
 
@@ -13,19 +13,19 @@ class ClientHWIDAdmin(ModelAdmin):
     list_display = ["username", "serial", "motherboard_serial", "bios_version"]
 
     @admin.display(description="Username")
-    def username(self, obj: ClientHWIDS):
+    def username(self, obj: ClientHWID):
         return obj.username
 
     @admin.display(description="Serial")
-    def serial(self, obj: ClientHWIDS):
+    def serial(self, obj: ClientHWID):
         return obj.mta_serial
 
     @admin.display(description="Motherboard Serial")
-    def motherboard_serial(self, obj: ClientHWIDS):
+    def motherboard_serial(self, obj: ClientHWID):
         return obj.motherboard_serial
 
     @admin.display(description="BOIS Version")
-    def motherboard_serial(self, obj: ClientHWIDS):
+    def motherboard_serial(self, obj: ClientHWID):
         return obj.bios_version
 
 
@@ -79,4 +79,4 @@ admin.site.register(
 admin.site.register(AntiCheatConfigTemplates, AntiCheatConfigurationsAdmin)
 admin.site.register(AntiCheatConfigurations, ModelAdmin)
 admin.site.register(MaliciousSignatures, MaliciousSignaturesAdmin)
-admin.site.register(ClientHWIDS, ClientHWIDAdmin)
+admin.site.register(ClientHWID, ClientHWIDAdmin)

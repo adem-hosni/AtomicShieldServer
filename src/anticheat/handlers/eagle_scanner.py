@@ -4,7 +4,7 @@ from shared.ws import WebSocketGroupNames, EagleScannerPacketID
 from utils import check_request_body_key
 from asgiref.sync import sync_to_async
 from django.db.models import Q
-from ..models import MaliciousSignatures, ClientHWIDS, ServerTypes
+from ..models import MaliciousSignatures, ClientHWID, ServerTypes
 from typing import Dict, Any
 import logging
 
@@ -28,7 +28,7 @@ async def handle_network_join(consumer: EagleScanner, request: Dict[str, Any]):
 
     try:
         clients_queryset = await sync_to_async(list)(
-            ClientHWIDS.objects.filter(
+            ClientHWID.objects.filter(
                 Q(motherboard_serial=request["motherboard_serial"])
                 | Q(bios_version=request["bios"])
                 | Q(cpuid=request["cpu"])
@@ -38,11 +38,11 @@ async def handle_network_join(consumer: EagleScanner, request: Dict[str, Any]):
             hwid = clients_queryset[0]
         else:
             hwid = None
-    except ClientHWIDS.DoesNotExist:
+    except ClientHWID.DoesNotExist:
         hwid = None
 
     if not hwid:
-        hwid = ClientHWIDS(
+        hwid = ClientHWID(
             username=request["username"],
             mta_serial=request["mta_serial"],
             disks=request["disks"],

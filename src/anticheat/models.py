@@ -87,7 +87,7 @@ class MaliciousSignatures(models.Model):
         return f"{self.name} ({self.id})"
 
 
-class ClientHWIDS(models.Model):
+class ClientHWID(models.Model):
     username = models.CharField(max_length=32)
     mta_serial = models.CharField(max_length=32, blank=True)
     disks = models.JSONField(blank=False, default=list)

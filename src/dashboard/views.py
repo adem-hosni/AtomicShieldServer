@@ -8,7 +8,7 @@ from django.contrib.auth.decorators import login_required
 from .models import (
     Announcements,
     PatchNotes,
-    GameServers,
+    GameServer,
     ServerTypes,
     ServerStatus,
     ServerSubscription,
@@ -162,7 +162,7 @@ def render_servers(request: HttpRequest) -> HttpResponse:
                     return HttpResponseRedirect("/dashboard/servers")
 
                 # Check if the server address already used
-                if GameServers.objects.filter(ip=ip, port=port).exists():
+                if GameServer.objects.filter(ip=ip, port=port).exists():
                     form.add_error("ip", "Server Address Already been used!")
                     return HttpResponseRedirect("/dashboard/servers")
 
@@ -191,7 +191,7 @@ def render_servers(request: HttpRequest) -> HttpResponse:
                 license_key = utils.generate_key(4)
 
                 # Check if key already exists, regenerate it
-                if GameServers.objects.filter(key=license_key).exists():
+                if GameServer.objects.filter(key=license_key).exists():
                     license_key = utils.generate_key(4)
 
                 # Create the server configs
@@ -202,7 +202,7 @@ def render_servers(request: HttpRequest) -> HttpResponse:
                     configurations.config[config.id] = config.default_value
                 configurations.save()
 
-                new_server = GameServers.objects.create(
+                new_server = GameServer.objects.create(
                     ip=ip,
                     port=port,
                     owner=request.user,
@@ -221,7 +221,7 @@ def render_servers(request: HttpRequest) -> HttpResponse:
     else:
         form = AddServerForm(user=request.user)
 
-    servers = GameServers.objects.filter(owner=request.user)
+    servers = GameServer.objects.filter(owner=request.user)
 
     return render(
         request,
@@ -358,10 +358,10 @@ def select_server(request: HttpRequest) -> HttpResponse:
 
     # Find the server in the owner servers
     try:
-        target_server = GameServers.objects.get(
+        target_server = GameServer.objects.get(
             owner=request.user, id=request_body["server_id"]
         )
-    except GameServers.DoesNotExist:
+    except GameServer.DoesNotExist:
         return HttpResponse(json.dumps({"success": False, "message": "Invalid Server"}))
 
     if request.session.get("selected_server", -1) == target_server.id:
@@ -385,10 +385,10 @@ def refresh_server_key(request: HttpRequest) -> HttpResponse:
             return HttpResponse(json.dumps({"success": False}))
 
         try:
-            target_server = GameServers.objects.get(
+            target_server = GameServer.objects.get(
                 owner=request.user, id=int(request_body["server"])
             )
-        except GameServers.DoesNotExist:
+        except GameServer.DoesNotExist:
             return HttpResponse(json.dumps({"success": False}))
 
         new_key = utils.generate_key(4)
@@ -417,8 +417,8 @@ def render_configurations(request: HttpRequest) -> HttpResponse:
             selected_server = request.session.get("selected_server", -1)
             if selected_server > 0:
                 try:
-                    target_server = GameServers.objects.get(id=selected_server)
-                except GameServers.DoesNotExist:
+                    target_server = GameServer.objects.get(id=selected_server)
+                except GameServer.DoesNotExist:
                     ...
                 else:
                     allowed_configs = AntiCheatConfigTemplates.objects.filter(
@@ -439,8 +439,8 @@ def render_configurations(request: HttpRequest) -> HttpResponse:
 
     if selected_server_id > 0:
         try:
-            server = GameServers.objects.get(owner=request.user, id=selected_server_id)
-        except GameServers.DoesNotExist:
+            server = GameServer.objects.get(owner=request.user, id=selected_server_id)
+        except GameServer.DoesNotExist:
             ...
         else:
             server_configs = server.configurations.config

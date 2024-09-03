@@ -2,7 +2,7 @@ import os
 import hashlib
 from typing import Dict, Any
 from utils import check_request_body_key
-from dashboard.models import GameServers
+from dashboard.models import GameServer
 from shared.ws import EagleServerPacketID, WebSocketGroupNames
 from eagle_manager.manager import eagle_manager
 from typing import Dict
@@ -37,8 +37,8 @@ async def handle_network_join(
 
     # Attempt to retrieve the target server using the server key from the request
     try:
-        server = await GameServers.objects.aget(key=request["server_key"])
-    except GameServers.DoesNotExist:
+        server = await GameServer.objects.aget(key=request["server_key"])
+    except GameServer.DoesNotExist:
         # Log a warning and send an error message if the server key is invalid
         logger.warning(f"Invalid server key requested! (Key: {request['server_key']})")
         await consumer.send(

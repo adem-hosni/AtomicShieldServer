@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import GameServers, Announcements, PatchNotes, ServerSubscription
+from .models import GameServer, Announcements, PatchNotes, ServerSubscription
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin, GroupAdmin as BaseGroupAdmin
 
@@ -26,15 +26,15 @@ class GameServerAdmin(ModelAdmin):
     list_display = ["address", "owner", "type"]
 
     @admin.display(description="Address")
-    def address(self, obj: GameServers):
+    def address(self, obj: GameServer):
         return f"{obj.ip}:{obj.port}"
 
     @admin.display(description="Owner")
-    def owner(self, obj: GameServers):
+    def owner(self, obj: GameServer):
         return f"{obj.owner.username}"
 
     @admin.display(description="Type")
-    def type(self, obj: GameServers):
+    def type(self, obj: GameServer):
         return f"{obj.type}"
 
 
@@ -89,7 +89,7 @@ class ServerSubscriptionAdmin(ModelAdmin):
     def status(self, obj: ServerSubscription):
         return obj.status
 
-admin.site.register(GameServers, GameServerAdmin)
+admin.site.register(GameServer, GameServerAdmin)
 admin.site.register(Announcements, AnnouncementAdmin)
 admin.site.register(PatchNotes, PatchNotesAdmin)
 admin.site.register(ServerSubscription, ServerSubscriptionAdmin)

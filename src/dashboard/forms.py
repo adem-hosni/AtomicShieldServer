@@ -1,6 +1,6 @@
 from django import forms
 from typing import List, Dict, Any
-from .models import ServerSubscription, GameServers
+from .models import ServerSubscription, GameServer
 
 
 servers = [

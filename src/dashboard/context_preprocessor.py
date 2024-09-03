@@ -1,12 +1,12 @@
 from django.http import HttpRequest
-from dashboard.models import PatchNotes, Announcements, GameServers
+from dashboard.models import PatchNotes, Announcements, GameServer
 from typing import Dict, Any
 
 
 def preprocess_sidebar_context(request: HttpRequest) -> Dict[str, Any]:
     if request.user.is_authenticated:
         cta_pins = []
-        if GameServers.objects.filter(owner=request.user).count() == 0:
+        if GameServer.objects.filter(owner=request.user).count() == 0:
             cta_pins.append(
                 {
                     "title": "Subscription",

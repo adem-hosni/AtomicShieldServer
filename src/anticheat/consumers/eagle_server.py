@@ -3,7 +3,7 @@ import logging
 from shared.ws import EagleServerPacketID, WebSocketGroupNames
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.contrib.auth.models import User
-from dashboard.models import GameServers
+from dashboard.models import GameServer
 from typing import Dict, Any, Union, Optional
 
 logger = logging.getLogger(__name__)
@@ -40,7 +40,7 @@ class EagleServerConsumer(AsyncWebsocketConsumer):
         super().__init__(*args, **kwargs)
         self._group_name = ""
         self._owner: User = None
-        self._game_server: GameServers = None
+        self._game_server: GameServer = None
 
     async def connect(self):
         """
@@ -207,7 +207,7 @@ class EagleServerConsumer(AsyncWebsocketConsumer):
         self._owner = value
 
     @property
-    def game_server(self) -> GameServers:
+    def game_server(self) -> GameServer:
         """
         Get the game server.
 
@@ -230,7 +230,7 @@ class EagleServerConsumer(AsyncWebsocketConsumer):
         -------
             TypeError: If the value is not of type GameServers.
         """
-        if not isinstance(value, GameServers):
+        if not isinstance(value, GameServer):
             raise TypeError(
                 f"Invalid game server value, expected 'GameServers' got {type(value)}"
             )

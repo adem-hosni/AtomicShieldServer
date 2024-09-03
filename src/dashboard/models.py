@@ -43,7 +43,7 @@ class ServerSubscription(models.Model):
         return self.name
 
 
-class GameServers(models.Model):
+class GameServer(models.Model):
 
     ip = models.CharField(max_length=49)
     port = models.IntegerField()
@@ -68,11 +68,11 @@ class GameServers(models.Model):
 
     async def get_anticheat_configurations(self) -> Dict[str, Any]:
         try:
-            target_server = await GameServers.objects.select_related(
+            target_server = await GameServer.objects.select_related(
                 "configurations"
             ).aget(id=self.id)
             server_configs = target_server.configurations.config
-        except GameServers.DoesNotExist:
+        except GameServer.DoesNotExist:
             # Set Server configs emmpty
             server_configs = {}
 

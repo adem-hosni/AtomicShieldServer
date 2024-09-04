@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.http import HttpRequest, HttpResponse
+from eagle_core import eagle_core
 
 
 def download_agent_peb(request: HttpRequest) -> HttpResponse:

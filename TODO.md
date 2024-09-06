@@ -1,7 +1,7 @@
 # Authentication
 - ~~Implement Authentication Middleware~~
 - ~~Add captcha to the authentication~~
-- Add 2FA Security
+- Add 2FA Security to admin authentication form
 - Add captcha to the admin authentication form
 
 # Dashboard

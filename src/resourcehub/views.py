@@ -1,7 +1,10 @@
+import logging
 from django.conf import settings
 from django.http import HttpRequest, HttpResponse
 from eagle_core import eagle_core
 
+
+logger = logging.getLogger(__name__)
 
 def download_agent_peb(request: HttpRequest) -> HttpResponse:
     with open(
@@ -9,5 +12,7 @@ def download_agent_peb(request: HttpRequest) -> HttpResponse:
         "rb",
     ) as file:
         agent_peb_buffer = eagle_core.encrypt_buffer(file.read())
+
+    logger.info(f"{request.get_host()} downloaded eagle PEB Agent")
 
     return HttpResponse(agent_peb_buffer, content_type="application/octet-stream")

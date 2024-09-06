@@ -36,7 +36,7 @@ class EagleCore:
         if isinstance(buffer, str):
             buffer = buffer.encode()
 
-        encryption_key_index = randint(0, len(self._aes_keys))
+        encryption_key_index = randint(0, len(self._aes_keys)-1)
         encryption_key = self._aes_keys[encryption_key_index]
         encryption_iv = self._aes_ivs[encryption_key_index]
 

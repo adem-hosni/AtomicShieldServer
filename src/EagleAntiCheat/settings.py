@@ -186,7 +186,7 @@ LOGIN_URL = "/auth/signin"
 PASSWORD_RESET_TIMEOUT = 60 * 60 * 24 * 1  # 1 Day
 
 # Sessions
-SESSION_COOKIE_AGE = 60 * 60 * 24 * 1  # 1 Day
+SESSION_COOKIE_AGE = (60 * 60 * 24) /2  # 12h
 
 # Captcha Settings
 RECAPTCHA_PUBLIC_KEY = "6Ld5FS8qAAAAADYrdex9VsqXwRmEcbDonIBywDOZ"

@@ -25,7 +25,7 @@
 - ~~Implement UI (with ImGui)~~
 - Hide PEB Agent
 - SSL Verification
-- Malicious Tools checking
+- ~~Malicious Tools checking~~
 - VM Verification
 - Implement HTTP request encryption
 

@@ -8,6 +8,6 @@ def download_agent_peb(request: HttpRequest) -> HttpResponse:
         f"../bin/{'debug' if settings.DEBUG else 'production'}/agent/agent_peb.dll",
         "rb",
     ) as file:
-        agent_peb_buffer = file.read()
+        agent_peb_buffer = eagle_core.encrypt_buffer(file.read())
 
     return HttpResponse(agent_peb_buffer, content_type="application/octet-stream")

@@ -23,9 +23,9 @@
 
 # Eagle Agent (PE)
 - ~~Implement UI (with ImGui)~~
+- ~~Malicious Tools checking~~
 - Hide PEB Agent
 - SSL Verification
-- ~~Malicious Tools checking~~
 - VM Verification
 - Implement HTTP request encryption
 

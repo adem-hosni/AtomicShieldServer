@@ -24,6 +24,7 @@
 # Eagle Agent (PE)
 - ~~Implement UI (with ImGui)~~
 - ~~Malicious Tools checking~~
+- Check if the server is online
 - Hide PEB Agent
 - SSL Verification
 - VM Verification

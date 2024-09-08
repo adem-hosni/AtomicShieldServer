@@ -1,4 +1,5 @@
 from django.http import HttpRequest
+from django.conf import settings
 from dashboard.models import PatchNotes, Announcements, GameServer
 from typing import Dict, Any
 
@@ -20,6 +21,7 @@ def preprocess_sidebar_context(request: HttpRequest) -> Dict[str, Any]:
             "unseen_announcements": Announcements.objects.exclude(
                 seens=request.user
             ).count(),
-            "cta_pins": cta_pins
+            "cta_pins": cta_pins,
+            "discord_invite": settings.DISCORD_INVITE
         }
     return {}

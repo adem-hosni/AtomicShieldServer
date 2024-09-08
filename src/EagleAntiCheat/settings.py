@@ -177,6 +177,8 @@ LOGGING = {
     },
 }
 
+DISCORD_INVITE = "https://discord.gg/eKtP7W4hXN"
+
 UNFOLD = {
     "SITE_HEADER": "Eagle STAFF",
 }

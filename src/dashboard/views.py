@@ -28,6 +28,11 @@ logger = logging.getLogger(__name__)
 
 
 @login_required
+def render_dashboard_redirect(request: HttpRequest) -> HttpResponse:
+    return redirect(reverse("main"))
+
+
+@login_required
 def render_maindashboard(request: HttpRequest) -> HttpResponse:
     announcements = []
     if request.method == "POST":

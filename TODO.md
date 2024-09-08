@@ -32,11 +32,11 @@
 - Elevate process handle to protected process
 
 # Eagle Agent (PEB)
+- ~~HWID Checks~~
 - Custom Eagle Master Server Pings
 - Memory scan Pulse (with network sync)
 - MTA:SA Anticheat components verification
 - Malicious Tools checking
 - VM Verification
-- HWID Checks
 - HWID Caching
 - Implement HTTP communication encryption

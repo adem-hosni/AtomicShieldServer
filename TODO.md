@@ -29,6 +29,7 @@
 - SSL Verification
 - VM Verification
 - Implement HTTP request encryption
+- Elevate process handle to protected process
 
 # Eagle Agent (PEB)
 - Custom Eagle Master Server Pings

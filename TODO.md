@@ -18,7 +18,7 @@
 - Check Eagle Agent disconnect
 - Open Live Eagle Master Server RPCs
 - Implement server subscription duration (eagle master server side)
-- Implement HTTP request encryption
+- Implement HTTP communication encryption
 - Implement Eagle Server watermark on server name
 
 # Eagle Agent (PE)
@@ -28,7 +28,7 @@
 - Check if the server is online
 - SSL Verification
 - VM Verification
-- Implement HTTP request encryption
+- Implement HTTP communication encryption
 - Elevate process handle to protected process
 
 # Eagle Agent (PEB)
@@ -39,4 +39,4 @@
 - VM Verification
 - HWID Checks
 - HWID Caching
-- Implement HTTP request encryption
+- Implement HTTP communication encryption

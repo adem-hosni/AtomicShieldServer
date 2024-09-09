@@ -62,6 +62,12 @@ async def handle_network_join(consumer: EagleScanner, request: Dict[str, Any]):
     logger.info(
         f"{consumer.address[0]}:{consumer.address[1]} agent joined network successfuly!"
     )
+    
+    return await consumer.send({
+        "type": EagleScannerPacketID.NETWORK_JOIN.value,
+        "success": True,
+        "message": ""
+    })
 
 
 async def handle_signatures_sync(consumer: EagleScanner, request: Dict[str, Any]):

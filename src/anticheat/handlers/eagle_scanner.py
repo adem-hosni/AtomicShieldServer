@@ -73,12 +73,12 @@ async def handle_signatures_sync(consumer: EagleScanner, request: Dict[str, Any]
         MaliciousSignatures.objects.filter(type=ServerTypes.MTASA).order_by("priority")
     )
     await consumer.send(
+        EagleScannerPacketID.SYNC_SIGNATURES,
         {
-            "type": EagleScannerPacketID.SYNC_SIGNATURES.value,
             "signatures": {
                 signature.name: signature.signatures for signature in signatures
             },
-        }
+        },
     )
     logger.info(
         f"{consumer.address[0]}:{consumer.address[1]} Signatures Synced Successfuly!"

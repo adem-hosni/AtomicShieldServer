@@ -50,7 +50,8 @@ class EagleScanner(AsyncWebsocketConsumer):
 
     async def send(
         self,
-        data: Union[Dict[Any, Any], List[Any], str, bytes],
+        packet_id: EagleScannerPacketID,
+        data: Union[Dict[Any, Any], str, bytes],
         bytes_data=None,
         close=False,
     ):
@@ -59,6 +60,7 @@ class EagleScanner(AsyncWebsocketConsumer):
 
         Args:
         -----
+            packet_id (EagleScannerPacketID): The packet id to send
             data (Union[Dict[Any, Any], str, bytes]): The data to be sent. Can be a dictionary, string, or bytes.
             bytes_data: Optional bytes data to be sent.
             close (bool): Whether to close the connection after sending the data.
@@ -67,13 +69,17 @@ class EagleScanner(AsyncWebsocketConsumer):
         --------
             Awaitable: An awaitable object for the send operation.
         """
+        # Check the packet id belongs to our registred packet ids
+        if not packet_id in EagleScannerPacketID.__members__.values():
+            raise ValueError(f"Invalid Packet ID, got {packet_id}")
+
         # If data is bytes, decode it to a string
         if isinstance(data, bytes):
             data = data.decode()
 
-        # If data is a dictionary, convert it to a JSON string
-        if isinstance(data, dict):
-            data = json.dumps(data)
+        data["type"] = packet_id.value
+
+        data = json.dumps(data)
 
         return await super().send(data, bytes_data, close)
 

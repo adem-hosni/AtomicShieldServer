@@ -91,7 +91,7 @@ async def handle_malicious_signature_detected(
     if not check_request_body_key(request, "signature", str):
         return consumer.close()
 
-    logger.warn(
+    logger.warning(
         f"SIGNATURE \"{request['signature']}\" DETECTED ON {consumer.address[0]}:{consumer.address[1]}!"
     )
 

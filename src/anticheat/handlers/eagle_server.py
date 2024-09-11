@@ -149,6 +149,10 @@ async def handle_request_player_join(
     else:
         player_scanner.connected_server = consumer
 
+    if len(player_scanner.detected_signatures) > 0:
+        response["join"] = False
+        response["message"] = player_scanner.detected_signatures[0].ban_message
+
     return await consumer.send(
         EagleServerPacketID.REQUEST_PLAYER_JOIN, {"ip": request["ip"], **response}
     )
@@ -185,7 +189,9 @@ async def handle_load_anticheat_scripts(
                     ).hexdigest()
                     components[component_hash] = component_buffer
 
-    logger.info(f"Synced {len(components)} AntiCheat components for {consumer.address[0]}:{consumer.address[1]}")
+    logger.info(
+        f"Synced {len(components)} AntiCheat components for {consumer.address[0]}:{consumer.address[1]}"
+    )
     return await consumer.send(
         EagleServerPacketID.SYNC_ANTICHEAT_COMPONENTS, components
     )

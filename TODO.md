@@ -33,10 +33,10 @@
 
 # Eagle Agent (PEB)
 - ~~HWID Checks~~
+- ~~Malicious Tools checking~~
 - Custom Eagle Master Server Pings
 - Memory scan Pulse (with network sync)
 - MTA:SA Anticheat components verification
-- Malicious Tools checking
 - VM Verification
 - HWID Caching
 - Implement HTTP communication encryption

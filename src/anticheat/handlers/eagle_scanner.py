@@ -1,3 +1,4 @@
+from asgiref.sync import sync_to_async
 from ..consumers.eagle_scanner import EagleScanner
 from eagle_manager.manager import eagle_manager
 from shared.ws import WebSocketGroupNames, EagleScannerPacketID
@@ -91,9 +92,20 @@ async def handle_malicious_signature_detected(
     if not check_request_body_key(request, "signatures", list):
         return consumer.close()
 
-    logger.warning(
-        f"SIGNATURES \"{', '.join(request['signatures'])}\" DETECTED ON {consumer.address[0]}:{consumer.address[1]}!"
+    signatures_queryset = await sync_to_async(list)(
+        MaliciousSignatures.objects.filter(
+            signatures__contains=request["signatures"]
+        ).order_by("priority")
     )
+
+    if not len(signatures_queryset):
+        return
+
+    logger.warning(
+        f"DETECTED \"{', '.join(request['signatures'])}\" ON {consumer.address[0]}:{consumer.address[1]} -> \"{signatures_queryset[0].ban_message}\""
+    )
+
+    consumer.detected_signatures += signatures_queryset
 
 
 async def handle_scanner_disconnect(consumer: EagleScanner):

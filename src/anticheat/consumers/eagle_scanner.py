@@ -33,7 +33,7 @@ class EagleScanner(AsyncWebsocketConsumer):
         self._group_name = ""
         self._hwid: ClientHWID = None
         self._connected_server: EagleServerConsumer = None
-        self._detected_signatures: List[MaliciousSignaturesi] = []
+        self._detected_signatures: List[MaliciousSignatures] = []
 
     async def connect(self):
         """

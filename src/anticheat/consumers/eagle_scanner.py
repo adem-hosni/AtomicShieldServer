@@ -1,6 +1,6 @@
 from channels.generic.websocket import AsyncWebsocketConsumer
 from .eagle_server import EagleServerConsumer
-from ..models import ClientHWID
+from ..models import ClientHWID, MaliciousSignatures
 from shared.ws import EagleScannerPacketID, EagleServerPacketID, WebSocketGroupNames
 import json
 from typing import Union, Dict, List, Optional, Any
@@ -33,6 +33,7 @@ class EagleScanner(AsyncWebsocketConsumer):
         self._group_name = ""
         self._hwid: ClientHWID = None
         self._connected_server: EagleServerConsumer = None
+        self._detected_signatures: List[MaliciousSignaturesi] = []
 
     async def connect(self):
         """
@@ -235,6 +236,21 @@ class EagleScanner(AsyncWebsocketConsumer):
                 f"Unable to convert type {type(server)} to 'EagleServerConsumer'"
             )
         self._connected_server = server
+        
+    @property
+    def detected_signatures(self) -> List[MaliciousSignatures]:
+        return self._detected_signatures
+    
+    @detected_signatures.setter
+    def detected_signatures(self, value: List[MaliciousSignatures]):
+        if not isinstance(value, list):
+            raise TypeError(f"detected_signatures setter expected type 'list', got {type(value)}")
+
+        for signature in value:
+            if not isinstance(signature, MaliciousSignatures):
+                raise TypeError(f"signature {signature}  expected type 'MaliciousSignatures', got {type(value)}")
+            
+        self._detected_signatures = value
 
     async def kick(self, reason: Optional[str] = "") -> bool:
         """

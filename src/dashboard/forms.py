@@ -8,6 +8,13 @@ servers = [
 ]
 
 
+supported_dists = [
+    (1, "Windows"),
+    (2, "Ubuntu"),
+    (3, "Debian"),
+]
+
+
 class AddServerForm(forms.Form):
     def __init__(self, *args, **kwargs):
         if not "user" in kwargs.keys():
@@ -125,3 +132,18 @@ class ConfigurationsForm(forms.Form):
                     )
 
             self.fields[str(config["id"])] = form_input
+
+
+class QuickSetupForm(forms.Form):
+    distribution = forms.ChoiceField(
+        required=True,
+        label="Distribution",
+        help_text="Set Files OS Distribution",
+        choices=supported_dists,
+        widget=forms.Select(
+            attrs={
+                "class": "mt-4 cursor-pointer text-center rounded-lg text-gray-300 font-medium w-full h-full bg-[#0d0d0d] border py-2",
+                "id": "distribution",
+            }
+        ),
+    )

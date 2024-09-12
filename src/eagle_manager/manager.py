@@ -43,7 +43,7 @@ class EagleManager(object):
             bool: True if running else False
         """
         for server in self._eagle_servers:
-            if server.address[0] == ip:
+            if server.address[0] == server_ip:
                 return True
         return False
 

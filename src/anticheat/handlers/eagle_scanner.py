@@ -92,12 +92,16 @@ async def handle_malicious_signature_detected(
     if not check_request_body_key(request, "signatures", list):
         return consumer.close()
 
-    signatures_queryset = await sync_to_async(list)(
-        MaliciousSignatures.objects.filter(
-            signatures__contains=request["signatures"]
-        ).order_by("priority")
-    )
-
+    try:
+        signatures_queryset = [
+            await sync_to_async(list)(
+                MaliciousSignatures.objects.get(name=signature).order_by("priority")
+            )
+            for signature in request["signatures"]
+        ]
+    except MaliciousSignatures.DoesNotExist:
+        signatures_queryset = []
+    
     if not len(signatures_queryset):
         return
 

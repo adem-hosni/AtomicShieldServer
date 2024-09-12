@@ -1,3 +1,16 @@
-from django.shortcuts import render
+import json
+from django.http import HttpRequest, HttpResponse
+from django.views.decorators.csrf import csrf_exempt
 
-# Create your views here.
+
+@csrf_exempt
+def status(request: HttpRequest) -> HttpResponse:
+    return HttpResponse(
+        json.dumps(
+            {
+                "alive": True,
+                "message": "",
+                "title": "",
+            }
+        )
+    )

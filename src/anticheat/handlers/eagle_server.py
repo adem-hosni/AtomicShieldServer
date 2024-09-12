@@ -73,6 +73,17 @@ async def handle_network_join(
             },
         )
         return await consumer.close()
+    
+    # Check if the server is running
+    if eagle_manager.is_server_running(server.ip):
+        await consumer.send(
+            EagleServerPacketID.NETWORK_JOIN,
+            {
+                "success": False,
+                "message": "Server already running",
+            },
+        )
+        return await consumer.close()
 
     # Successfully joined, add consumer to the WebSocket group and set it's game server
     consumer.group_name = WebSocketGroupNames.EAGLE_SERVERS.value

@@ -40,9 +40,19 @@
 </div>
 
 <div class="mt-4 flex flex-col items-stretch item-center justify-center"></div>
-  <div class="gap-3 rounded-xl bg-[#0D0D0D] px-6 py-2.5 space-y-2 items-center text-gray-400 font-medium flex">
-    Download the above required files to use EagleAntiCheat
-  </div>
+<div class="gap-3 rounded-xl bg-[#0D0D0D] px-6 py-2.5 space-y-2 items-center text-gray-400">
+  <p class="">Download the above required files to use EagleAntiCheat</p>
+  <form>
+    {% csrf_token %}
+    <div class="flex flex-col ml-auto w-32">
+      <input type="submit" value="Download" class="rounded-lg bg-transparent border px-4 py-2 text-white border-white font-medium hover:text-black hover:bg-white transition-all duration-300 cursor-pointer">
+      <select class="mt-4 bg-[#010101] px-4 py-2 rounded-lg text-white transition-all duration-300 hover:bg-[#090909]">
+        {% for distribution in distributions %}
+        <option>{{ distribution }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </form>
 </div>
 
 <div class="mt-4 flex flex-col items-stretch item-center justify-center w-max">

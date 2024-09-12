@@ -31,6 +31,21 @@ class EagleManager(object):
             return False
         self._eagle_servers.append(server)
         return True
+    
+    def is_server_running(self, server_ip: str) -> bool:
+        """
+        Check if the Server is running
+
+        Args:
+            server_ip (str): _description_
+
+        Returns:
+            bool: True if running else False
+        """
+        for server in self._eagle_servers:
+            if server.address[0] == ip:
+                return True
+        return False
 
     def add_eagle_scanner(self, scanner: EagleScanner) -> bool:
         """

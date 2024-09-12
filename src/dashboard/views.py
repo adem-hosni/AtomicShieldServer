@@ -18,7 +18,7 @@ from anticheat.models import (
     AntiCheatConfigurations,
     AntiCheatConfigurationCategories,
 )
-from .forms import AddServerForm, ConfigurationsForm
+from .forms import AddServerForm, ConfigurationsForm, QuickSetupForm, supported_dists
 import utils
 from typing import Dict, Union
 from utils.aseclient import ASEQueryClient, ASEParser
@@ -496,10 +496,25 @@ def render_configurations(request: HttpRequest) -> HttpResponse:
 
 @login_required
 def render_quicksetup(request: HttpRequest) -> HttpResponse:
+    form = QuickSetupForm()    
+    if request.method == "POST":
+        form = QuickSetupForm(request.POST)
+        if form.is_valid():
+            target_dist = form.cleaned_data["distribution"]
+            if int(target_dist) in [int(dist[0]) for dist in supported_dists]:
+                ...
+    
     return render(request, "pages/dashboard/quicksetup.jinja", {
+        "form": form,
         "files": [
             "deathmatch.dll",
             "mtaserver.conf"
+        ],
+        "distributions": [
+            "Windows",
+            "Ubuntu",
+            "Debian",
+            "Kali",
         ]
     })
 

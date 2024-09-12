@@ -8,8 +8,8 @@
 - ~~Add refresh server key functionality~~
 - ~~Integrating Server Creation with active subscriptions~~
 - ~~Add Subscriptions Section~~
+- ~~Add Quick Setup Section~~
 - Add Discord Webhook Logs
-- Add Quick Setup Section
 
 # Eagle Server
 - ~~Check if the key if it's being used~~

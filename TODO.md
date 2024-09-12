@@ -12,7 +12,6 @@
 - Add Setup Section
 
 # Eagle Server
-- Check if the key if it's being used
 - Compile client scripts
 - Inject Anticheat scripts components to the client
 - Check Eagle Agent disconnect

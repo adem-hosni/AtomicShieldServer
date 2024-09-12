@@ -25,7 +25,7 @@
 - ~~Implement UI (with ImGui)~~
 - ~~Malicious Tools checking~~
 - ~~Hide PEB Agent~~
-- Check if the server is online
+- ~~Check if the server is online~~
 - SSL Verification
 - VM Verification
 - Implement HTTP communication encryption

@@ -1,0 +1,58 @@
+{% extends 'bases/dashboard.jinja' %} {% block content %}
+<div
+  class="p-4 rounded-lg transition-all duration-300 bg-purple-200 dark:bg-[#0c0c0c]"
+>
+  {% include 'components/dashboard/breadcrumb.jinja' with current_page='Quick Setup' %}
+</div>
+
+<div class="w-full bg-[#0D0D0D] p-6 rounded-xl mt-4" style="overflow-y: auto">
+  <div class="flex items-center mb-4 md:mb-0 gap-3">
+    <div>
+      <div
+        class="w-12 h-12 flex group items-center transition-all justify-center rounded-xl text-white group-hover:text-white bg-zinc-900 text-white transition-all duration-300"
+      >
+        <div
+          class="flex items-center justify-center relative w-8 h-8 undefined"
+        >
+          <i class="absolute fas fa-gear opacity-20"></i>
+          <i class="absolute fa fa-gear"></i>
+        </div>
+      </div>
+    </div>
+    <div class="w-full">
+      <div class="flex items-center gap-1">
+        <div
+          class="flex items-center justify-center mr-3 bg-input rounded-full text-lg bg-transparent"
+        >
+          <i class="fa fa-brackets-curly text-blue-500"></i>
+        </div>
+        <h3
+          class="min-w-min text-white font-semibold text-sm md:text-lg line-clamp-1"
+        >
+          Quick Setup
+        </h3>
+      </div>
+      <h4 class="text-gray-400 text-sm">
+        Download the Eagle AntiCheat's server
+      </h4>
+    </div>
+  </div>
+</div>
+
+<div class="mt-4 flex flex-col items-stretch item-center justify-center"></div>
+  <div class="gap-3 rounded-xl bg-[#0D0D0D] px-6 py-2.5 space-y-2 items-center text-gray-400 font-medium flex">
+    Download the above required files to use EagleAntiCheat
+  </div>
+</div>
+
+<div class="mt-4 flex flex-col items-stretch item-center justify-center w-max">
+  <div class="gap-6 rounded-xl bg-[#0D0D0D] px-6 py-3.5 items-center flex">
+    {% for file in files %}
+      <div class="bg-[#161616] py-2 px-3 rounded-lg w-32 h-36 text-center flex flex-col transition-all duration-300 hover:translate-y-[-3px] hover:bg-[#181818]">
+        <i class="fa-solid fa-file text-gray-400 fa-6x my-auto"></i>
+        <p class="py-2 text-gray-400">{{ file }}</p>
+      </div>
+      {% endfor %}
+  </div>
+</div>
+{% endblock %}

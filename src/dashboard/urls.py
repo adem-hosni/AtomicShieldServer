@@ -8,6 +8,7 @@ urlpatterns = [
     path("patch-notes", views.render_patchnotes, name="patchnotes"),
     path("servers", views.render_servers, name="servers"),
     path("configurations", views.render_configurations),
+    path("quicksetup", views.render_quicksetup, name="quick_setup"),
     path("subscriptions", views.render_subscriptions),
     path("servers/select", views.select_server),
     path("servers/refresh_key", views.refresh_server_key, name="refresh_key"),

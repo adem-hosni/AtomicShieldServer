@@ -495,6 +495,15 @@ def render_configurations(request: HttpRequest) -> HttpResponse:
 
 
 @login_required
+def render_quicksetup(request: HttpRequest) -> HttpResponse:
+    return render(request, "pages/dashboard/quicksetup.jinja", {
+        "files": [
+            "deathmatch.dll",
+            "mtaserver.conf"
+        ]
+    })
+
+@login_required
 def render_subscriptions(request: HttpRequest) -> HttpResponse:
     return render(
         request,

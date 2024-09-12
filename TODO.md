@@ -9,7 +9,7 @@
 - ~~Integrating Server Creation with active subscriptions~~
 - ~~Add Subscriptions Section~~
 - Add Discord Webhook Logs
-- Add Setup Section
+- Add Quick Setup Section
 
 # Eagle Server
 - ~~Check if the key if it's being used~~

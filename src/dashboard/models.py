@@ -47,6 +47,8 @@ class Whitelist(models.Model):
     username = models.CharField(max_length=32, null=False)
     ip = models.CharField(max_length=49, null=False, default="<Unset>")
     serial = models.CharField(max_length=64, null=False, default="<Unset>")
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+    last_update_at = models.DateTimeField(null=True)
 
     def __str__(self) -> str:
         return self.username

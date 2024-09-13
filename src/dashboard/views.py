@@ -575,6 +575,12 @@ def render_whitelist(request: HttpRequest) -> HttpResponse:
                     "username": whitelist.username,
                     "ip": whitelist.ip,
                     "serial": whitelist.serial,
+                    "created_on": whitelist.created_at,
+                    "last_update_at": (
+                        whitelist.last_update_at
+                        if whitelist.last_update_at
+                        else whitelist.created_at
+                    ),
                 }
                 for whitelist in whitelists
             ],

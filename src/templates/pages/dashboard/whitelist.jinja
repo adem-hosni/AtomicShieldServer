@@ -34,6 +34,8 @@
           <th scope="col" class="px-6 py-3">USERNAME</th>
           <th scope="col" class="px-6 py-3">SERIAL</th>
           <th scope="col" class="pl-16 py-3">IP</th>
+          <th scope="col" class="pl-16 py-3">Created At</th>
+          <th scope="col" class="pl-16 py-3">Last Update At</th>
         </tr>
       </thead>
       <tbody>
@@ -47,6 +49,8 @@
             <td scope="row" class="pl-16 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-gray-400 dark:hover:text-white cursor-pointer" onclick="navigator.clipboard.writeText('{{ whitelist.key }}').then(() => iziToast.success({title: 'SUCCESS', message: 'Successfuly key copied to clipboard!'}))">
               <span class="blur-sm hover:blur-0 transition duration-300">{{ whitelist.ip }}</span>
             </td>
+            <td class="px-6 py-4">{{ whitelist.created_on }}</td>
+            <td class="px-6 py-4">{{ whitelist.last_update_at }}</td>
           </tr>
         {% endfor %}
       </tbody>

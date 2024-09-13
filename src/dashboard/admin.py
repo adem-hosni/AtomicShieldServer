@@ -1,7 +1,10 @@
 from django.contrib import admin
-from .models import GameServer, Announcements, PatchNotes, ServerSubscription
+from .models import GameServer, Announcements, PatchNotes, ServerSubscription, Whitelist
 from django.contrib.auth.models import User, Group
-from django.contrib.auth.admin import UserAdmin as BaseUserAdmin, GroupAdmin as BaseGroupAdmin
+from django.contrib.auth.admin import (
+    UserAdmin as BaseUserAdmin,
+    GroupAdmin as BaseGroupAdmin,
+)
 
 from unfold.admin import ModelAdmin
 from unfold.forms import AdminPasswordChangeForm, UserChangeForm, UserCreationForm
@@ -19,8 +22,8 @@ class UserAdmin(BaseUserAdmin, ModelAdmin):
 
 
 @admin.register(Group)
-class GroupAdmin(BaseGroupAdmin, ModelAdmin):
-    ...
+class GroupAdmin(BaseGroupAdmin, ModelAdmin): ...
+
 
 class GameServerAdmin(ModelAdmin):
     list_display = ["address", "owner", "type"]
@@ -72,7 +75,7 @@ class PatchNotesAdmin(ModelAdmin):
 
 class ServerSubscriptionAdmin(ModelAdmin):
     list_display = ["name", "owner", "type", "status"]
-    
+
     @admin.display(description="Name")
     def name(self, obj: ServerSubscription):
         return obj.name
@@ -89,7 +92,21 @@ class ServerSubscriptionAdmin(ModelAdmin):
     def status(self, obj: ServerSubscription):
         return obj.status
 
+
+class WhitelistAdmin(ModelAdmin):
+    list_display = ["username", "ip"]
+
+    @admin.display(description="Username")
+    def username(self, obj: Whitelist):
+        return obj.username
+
+    @admin.display(description="IP Address")
+    def ip(self, obj: Whitelist):
+        return obj.ip
+
+
 admin.site.register(GameServer, GameServerAdmin)
 admin.site.register(Announcements, AnnouncementAdmin)
 admin.site.register(PatchNotes, PatchNotesAdmin)
 admin.site.register(ServerSubscription, ServerSubscriptionAdmin)
+admin.site.register(Whitelist, WhitelistAdmin)

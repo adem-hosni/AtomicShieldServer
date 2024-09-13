@@ -19,7 +19,13 @@ from anticheat.models import (
     AntiCheatConfigurations,
     AntiCheatConfigurationCategories,
 )
-from .forms import AddServerForm, ConfigurationsForm, QuickSetupForm, supported_dists
+from .forms import (
+    AddServerForm,
+    ConfigurationsForm,
+    QuickSetupForm,
+    supported_dists,
+    WhitelistForm,
+)
 import utils
 from typing import Dict, Union, List
 from utils.aseclient import ASEQueryClient, ASEParser
@@ -544,6 +550,7 @@ def render_subscriptions(request: HttpRequest) -> HttpResponse:
 
 @login_required
 def render_whitelist(request: HttpRequest) -> HttpResponse:
+    form = WhitelistForm()
     whitelists: List[Whitelist] = []
     error_message = ""
 
@@ -571,6 +578,7 @@ def render_whitelist(request: HttpRequest) -> HttpResponse:
                 }
                 for whitelist in whitelists
             ],
+            "form": form,
             "error_message": error_message,
         },
     )

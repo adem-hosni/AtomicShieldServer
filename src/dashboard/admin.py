@@ -94,15 +94,7 @@ class ServerSubscriptionAdmin(ModelAdmin):
 
 
 class WhitelistAdmin(ModelAdmin):
-    list_display = ["username", "ip"]
-
-    @admin.display(description="Username")
-    def username(self, obj: Whitelist):
-        return obj.username
-
-    @admin.display(description="IP Address")
-    def ip(self, obj: Whitelist):
-        return obj.ip
+    list_display = ["username", "ip", "allowed"]
 
 
 admin.site.register(GameServer, GameServerAdmin)

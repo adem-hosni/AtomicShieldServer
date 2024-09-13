@@ -10,9 +10,11 @@
 - ~~Add Subscriptions Section~~
 - ~~Add Quick Setup Section~~
 - Add Discord Webhook Logs
+- Add Whitelist
 
 # Eagle Server
 - ~~Check if the key if it's being used~~
+- Check if the joining player is whitelisted
 - Compile client scripts
 - Inject Anticheat scripts components to the client
 - Check Eagle Agent disconnect

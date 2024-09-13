@@ -10,7 +10,8 @@
 - ~~Add Subscriptions Section~~
 - ~~Add Quick Setup Section~~
 - Add Discord Webhook Logs
-- Add Whitelist
+- ~~Add Whitelist view~~
+- Add "whitelist add" functionality
 
 # Eagle Server
 - ~~Check if the key if it's being used~~

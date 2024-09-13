@@ -581,6 +581,7 @@ def render_whitelist(request: HttpRequest) -> HttpResponse:
                         if whitelist.last_update_at
                         else whitelist.created_at
                     ),
+                    "allowed": whitelist.allowed,
                 }
                 for whitelist in whitelists
             ],

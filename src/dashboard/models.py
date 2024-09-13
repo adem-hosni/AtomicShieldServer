@@ -68,7 +68,7 @@ class GameServer(models.Model):
     configurations = models.ForeignKey(
         AntiCheatConfigurations, on_delete=models.CASCADE, null=False, blank=False
     )
-    whitelists = models.ManyToManyField(Whitelist, related_name="whitelists")
+    whitelists = models.ManyToManyField(Whitelist, related_name="servers")
     type = models.IntegerField(choices=ServerTypes.choices, null=True)
     status = models.IntegerField(
         choices=ServerStatus.choices, null=False, default=ServerStatus.unsubscribed

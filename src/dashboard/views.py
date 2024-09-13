@@ -9,6 +9,7 @@ from .models import (
     Announcements,
     PatchNotes,
     GameServer,
+    Whitelist,
     ServerTypes,
     ServerStatus,
     ServerSubscription,
@@ -20,7 +21,7 @@ from anticheat.models import (
 )
 from .forms import AddServerForm, ConfigurationsForm, QuickSetupForm, supported_dists
 import utils
-from typing import Dict, Union
+from typing import Dict, Union, List
 from utils.aseclient import ASEQueryClient, ASEParser
 
 
@@ -496,27 +497,29 @@ def render_configurations(request: HttpRequest) -> HttpResponse:
 
 @login_required
 def render_quicksetup(request: HttpRequest) -> HttpResponse:
-    form = QuickSetupForm()    
+    form = QuickSetupForm()
     if request.method == "POST":
         form = QuickSetupForm(request.POST)
         if form.is_valid():
             target_dist = form.cleaned_data["distribution"]
             if int(target_dist) in [int(dist[0]) for dist in supported_dists]:
                 ...
-    
-    return render(request, "pages/dashboard/quicksetup.jinja", {
-        "form": form,
-        "files": [
-            "deathmatch.dll",
-            "mtaserver.conf"
-        ],
-        "distributions": [
-            "Windows",
-            "Ubuntu",
-            "Debian",
-            "Kali",
-        ]
-    })
+
+    return render(
+        request,
+        "pages/dashboard/quicksetup.jinja",
+        {
+            "form": form,
+            "files": ["deathmatch.dll", "mtaserver.conf"],
+            "distributions": [
+                "Windows",
+                "Ubuntu",
+                "Debian",
+                "Kali",
+            ],
+        },
+    )
+
 
 @login_required
 def render_subscriptions(request: HttpRequest) -> HttpResponse:
@@ -535,5 +538,39 @@ def render_subscriptions(request: HttpRequest) -> HttpResponse:
                     owner=request.user
                 )
             ]
+        },
+    )
+
+
+@login_required
+def render_whitelist(request: HttpRequest) -> HttpResponse:
+    whitelists: List[Whitelist] = []
+    error_message = ""
+
+    try:
+        target_server = GameServer.objects.get(
+            id=request.session.get("selected_server", -1)
+        )
+    except GameServer.DoesNotExist:
+        error_message = "The selected server does not exists!"
+    else:
+        whitelists = target_server.whitelists.all()
+
+    if not len(whitelists):
+        error_message = "0 Whitelists"
+
+    return render(
+        request,
+        "pages/dashboard/whitelist.jinja",
+        {
+            "whitelists": [
+                {
+                    "username": whitelist.username,
+                    "ip": whitelist.ip,
+                    "serial": whitelist.serial,
+                }
+                for whitelist in whitelists
+            ],
+            "error_message": error_message,
         },
     )

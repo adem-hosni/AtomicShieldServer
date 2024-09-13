@@ -43,6 +43,15 @@ class ServerSubscription(models.Model):
         return self.name
 
 
+class Whitelist(models.Model):
+    username = models.CharField(max_length=32, null=False)
+    ip = models.CharField(max_length=49, null=False, default="<Unset>")
+    serial = models.CharField(max_length=64, null=False, default="<Unset>")
+
+    def __str__(self) -> str:
+        return self.username
+
+
 class GameServer(models.Model):
 
     ip = models.CharField(max_length=49)
@@ -57,6 +66,7 @@ class GameServer(models.Model):
     configurations = models.ForeignKey(
         AntiCheatConfigurations, on_delete=models.CASCADE, null=False, blank=False
     )
+    whitelists = models.ManyToManyField(Whitelist, related_name="whitelists")
     type = models.IntegerField(choices=ServerTypes.choices, null=True)
     status = models.IntegerField(
         choices=ServerStatus.choices, null=False, default=ServerStatus.unsubscribed

@@ -73,7 +73,7 @@ async def handle_network_join(
             },
         )
         return await consumer.close()
-    
+
     # Check if the server is running
     if eagle_manager.is_server_running(server.ip):
         await consumer.send(
@@ -163,6 +163,10 @@ async def handle_request_player_join(
     if len(player_scanner.detected_signatures) > 0:
         response["join"] = False
         response["message"] = player_scanner.detected_signatures[0].ban_message
+
+    if player_scanner._flagged:
+        response["join"] = False
+        response["message"] = player_scanner.flag_message
 
     return await consumer.send(
         EagleServerPacketID.REQUEST_PLAYER_JOIN, {"ip": request["ip"], **response}

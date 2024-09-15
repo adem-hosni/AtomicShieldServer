@@ -34,7 +34,8 @@ class EagleScanner(AsyncWebsocketConsumer):
         self._hwid: ClientHWID = None
         self._connected_server: EagleServerConsumer = None
         self._detected_signatures: List[MaliciousSignatures] = []
-        self._flagged: str = ""
+        self._flagged: bool = False
+        self._flag_message: str = ""
 
     async def connect(self):
         """
@@ -275,7 +276,8 @@ class EagleScanner(AsyncWebsocketConsumer):
             bool: True if the kick was successful, False otherwise.
         """
         if flag:
-            self._flagged = reason if len(reason) else "UnNormal behaviour detected"
+            self._flagged = True
+            self._flag_message = reason if len(reason) else "UnNormal behaviour detected"
 
         if self._connected_server:
             await self._connected_server.send(

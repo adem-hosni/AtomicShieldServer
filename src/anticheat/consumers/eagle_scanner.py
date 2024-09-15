@@ -277,7 +277,9 @@ class EagleScanner(AsyncWebsocketConsumer):
         """
         if flag:
             self._flagged = True
-            self._flag_message = reason if len(reason) else "UnNormal behaviour detected"
+            self._flag_message = (
+                reason if len(reason) else "UnNormal behaviour detected"
+            )
 
         if self._connected_server:
             await self._connected_server.send(

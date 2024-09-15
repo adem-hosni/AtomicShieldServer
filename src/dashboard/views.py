@@ -23,8 +23,8 @@ from .forms import (
     AddServerForm,
     ConfigurationsForm,
     QuickSetupForm,
-    supported_dists,
     WhitelistForm,
+    supported_dists,
 )
 import utils
 from typing import Dict, Union, List
@@ -553,6 +553,12 @@ def render_whitelist(request: HttpRequest) -> HttpResponse:
     form = WhitelistForm()
     whitelists: List[Whitelist] = []
     error_message = ""
+
+    if request.method == "POST":
+        form = WhitelistForm(request.POST)
+        if form.is_valid():
+            ip = form.cleaned_data["ip"]
+            serial = form.cleaned_data["ip"]
 
     try:
         target_server = GameServer.objects.get(

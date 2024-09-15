@@ -34,6 +34,7 @@ class EagleScanner(AsyncWebsocketConsumer):
         self._hwid: ClientHWID = None
         self._connected_server: EagleServerConsumer = None
         self._detected_signatures: List[MaliciousSignatures] = []
+        self._flagged: str = ""
 
     async def connect(self):
         """
@@ -150,6 +151,7 @@ class EagleScanner(AsyncWebsocketConsumer):
             handle_network_join,
             handle_signatures_sync,
             handle_malicious_signature_detected,
+            handle_game_anticheat_status,
         )
 
         match request_body["type"]:
@@ -159,6 +161,8 @@ class EagleScanner(AsyncWebsocketConsumer):
                 await handle_signatures_sync(self, request_body)
             case EagleScannerPacketID.MALICIOUS_SIGNATURE_DETECTION:
                 await handle_malicious_signature_detected(self, request_body)
+            case EagleScannerPacketID.GAME_ANTICHEAT_COMPONENT_STATUS:
+                await handle_game_anticheat_status(self, request_body)
 
     async def disconnect(self, code):
         """
@@ -236,23 +240,29 @@ class EagleScanner(AsyncWebsocketConsumer):
                 f"Unable to convert type {type(server)} to 'EagleServerConsumer'"
             )
         self._connected_server = server
-        
+
     @property
     def detected_signatures(self) -> List[MaliciousSignatures]:
         return self._detected_signatures
-    
+
     @detected_signatures.setter
     def detected_signatures(self, value: List[MaliciousSignatures]):
         if not isinstance(value, list):
-            raise TypeError(f"detected_signatures setter expected type 'list', got {type(value)}")
+            raise TypeError(
+                f"detected_signatures setter expected type 'list', got {type(value)}"
+            )
 
         for signature in value:
             if not isinstance(signature, MaliciousSignatures):
-                raise TypeError(f"signature {signature}  expected type 'MaliciousSignatures', got {type(value)}")
-            
+                raise TypeError(
+                    f"signature {signature}  expected type 'MaliciousSignatures', got {type(value)}"
+                )
+
         self._detected_signatures = value
 
-    async def kick(self, reason: Optional[str] = "") -> bool:
+    async def kick(
+        self, reason: Optional[str] = "", flag: Optional[bool] = False
+    ) -> bool:
         """
         Kicks a client by sending a PLAYER_KICK packet to the connected server.
 
@@ -264,6 +274,9 @@ class EagleScanner(AsyncWebsocketConsumer):
         --------
             bool: True if the kick was successful, False otherwise.
         """
+        if flag:
+            self._flagged = reason if len(reason) else "UnNormal behaviour detected"
+
         if self._connected_server:
             await self._connected_server.send(
                 EagleServerPacketID.PLAYER_KICK,

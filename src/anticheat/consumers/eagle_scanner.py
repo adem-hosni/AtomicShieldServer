@@ -37,6 +37,31 @@ class EagleScanner(AsyncWebsocketConsumer):
         self._flagged: bool = False
         self._flag_message: str = ""
 
+    @property
+    def is_flagged(self) -> bool:
+        """
+        Check if the player is flagged from EagleAntiCheat
+
+        Returns:
+            bool: True if flagged else False
+        """
+        return self._flagged
+
+    @property
+    def flag_message(self) -> str:
+        """Gets the player flag message
+
+        Returns:
+            str: The flag message
+        """
+        return self._flag_message
+
+    @flag_message.setter
+    def flag_message(self, message: str):
+        if not isinstance(message, str):
+            raise TypeError(f"expected type 'str', got '{type(message)}'")
+        self._flag_message = message
+
     async def connect(self):
         """
         Accepts the WebSocket connection and logs the client's IP address.

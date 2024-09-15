@@ -38,8 +38,8 @@
 - ~~HWID Checks~~
 - ~~Malicious Tools checking~~
 - ~~Memory scan Pulse (with network sync)~~
+- ~~MTA:SA Anticheat components verification~~
 - Custom Eagle Master Server Pings
-- MTA:SA Anticheat components verification
 - VM Verification
 - HWID Caching
 - Implement HTTP communication encryption

@@ -9,8 +9,8 @@
 - ~~Integrating Server Creation with active subscriptions~~
 - ~~Add Subscriptions Section~~
 - ~~Add Quick Setup Section~~
-- Add Discord Webhook Logs
 - ~~Add Whitelist view~~
+- Add Discord Webhook Logs
 - Add "whitelist add" functionality
 
 # Eagle Server

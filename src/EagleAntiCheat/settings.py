@@ -157,6 +157,12 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "[{asctime}] {levelname} {message}",
+            "style": "{",
+        },
+    },
     "handlers": {
         "console": {
             "class": "rich.logging.RichHandler",
@@ -164,10 +170,11 @@ LOGGING = {
             "show_time": True,
         },
         "file": {
-            'level': 'DEBUG',
-            'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, '../logs/console.log'),
-        }
+            "level": "INFO",
+            "class": "logging.FileHandler",
+            "filename": os.path.join(BASE_DIR, "../logs/console.log"),
+            "formatter": "verbose"
+        },
     },
     "root": {
         "handlers": ["console", "file"],

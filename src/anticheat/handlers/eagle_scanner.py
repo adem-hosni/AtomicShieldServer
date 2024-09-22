@@ -118,10 +118,9 @@ async def handle_game_anticheat_status(consumer: EagleScanner, request: Dict[str
 
     if not request["status"]:
         logger.warning(f"MTA:SA AntiCheat component blocked for {consumer.address}")
-        consumer.kick("MTA:SA AntiCheat Component Blocked", True)
+        await consumer.kick("MTA:SA AntiCheat Component Blocked", True)
 
 
 async def handle_scanner_disconnect(consumer: EagleScanner):
-
     logger.info(f"{consumer.hwid.username}'s scanner disconnected from network.")
     eagle_manager.remove_eagle_scanner(consumer)

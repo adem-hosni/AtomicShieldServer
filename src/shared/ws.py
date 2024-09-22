@@ -7,7 +7,8 @@ class EagleServerPacketID(Enum):
     REQUEST_STATUS = 3
     REQUEST_PLAYER_JOIN = 4
     PLAYER_KICK = 5
-    SYNC_ANTICHEAT_COMPONENTS = 6
+    OBFUSCATE_CLIENT_SCRIPT = 6
+    SYNC_ANTICHEAT_COMPONENTS = 7
 
 
 class EagleScannerPacketID(Enum):

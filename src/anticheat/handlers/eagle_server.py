@@ -152,14 +152,16 @@ async def handle_request_player_join(
     response = {"join": False, "message": "None"}
 
     player_scanner = eagle_manager.get_scanner_by_ip(request["ip"])
-
     response["join"] = not player_scanner is None
     if not response["join"]:
         response["message"] = "PLEASE OPEN EAGLE ANTICHEAT AGENT"
         logger.info('Connection refused: "Eagle Agent Not Connected"')
     else:
         player_scanner.connected_server = consumer
-
+        if player_scanner.is_flagged:
+            response["join"] = False
+            response["message"] = player_scanner.flag_message
+        
         if len(player_scanner.detected_signatures) > 0:
             response["join"] = False
             response["message"] = player_scanner.detected_signatures[0].ban_message

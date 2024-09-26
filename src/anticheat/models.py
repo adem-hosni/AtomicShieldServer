@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from shared.models import ServerTypes
 from django.db import models
 from typing import Union
@@ -119,7 +119,7 @@ class Ban(models.Model):
 
     @property
     def duration(self) -> datetime:
-        return datetime.utcfromtimestamp(self.ends_at)
+        return datetime.fromtimestamp(self.ends_at, timezone.utc)
 
     def __str__(self) -> str:
         return f"{self.hwid.username} - {self.duration.hour}h"

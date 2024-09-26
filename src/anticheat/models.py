@@ -116,7 +116,10 @@ class Ban(models.Model):
         db_table = "bans"
         verbose_name = "Ban"
         verbose_name_plural = "Bans"
+        
+    @property
+    def duration(self) -> datetime:
+        return datetime.fromtimestamp(self.ends_at)
 
     def __str__(self) -> str:
-        banned_hours = datetime.fromtimestamp(self.ends_at)
-        return f"{self.hwid.username} - {banned_hours.hour}h"
+        return f"{self.hwid.username} - {self.duration.hour}h"

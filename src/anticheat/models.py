@@ -119,7 +119,7 @@ class Ban(models.Model):
 
     @property
     def duration(self) -> datetime:
-        return datetime.fromtimestamp(self.ends_at)
+        return datetime.utcfromtimestamp(self.ends_at)
 
     def __str__(self) -> str:
         return f"{self.hwid.username} - {self.duration.hour}h"

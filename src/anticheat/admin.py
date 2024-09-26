@@ -6,6 +6,7 @@ from .models import (
     AntiCheatConfigurationCategories,
     MaliciousSignatures,
     ClientHWID,
+    Ban,
 )
 
 
@@ -73,6 +74,29 @@ class MaliciousSignaturesAdmin(ModelAdmin):
         return obj.priority
 
 
+class BanAdminModel(ModelAdmin):
+    list_display = ["username", "duration", "reason", "active"]
+
+    @admin.display(description="Username")
+    def username(self, obj: Ban):
+        return obj.hwid.username
+
+    @admin.display(description="Duration")
+    def duration(self, obj: Ban):
+        hours = obj.duration.hour
+        if hours == 0:
+            return f"{obj.duration.minute}m"
+        return f"{obj.duration.hour}h"
+
+    @admin.display(boolean=True, description="Active")
+    def active(self, obj: Ban):
+        return obj.active
+
+    @admin.display(description="Reason")
+    def reason(self, obj: Ban):
+        return obj.reason
+
+
 admin.site.register(
     AntiCheatConfigurationCategories, AntiCheatConfigurationsCategoriesAdmin
 )
@@ -80,3 +104,4 @@ admin.site.register(AntiCheatConfigTemplates, AntiCheatConfigurationsAdmin)
 admin.site.register(AntiCheatConfigurations, ModelAdmin)
 admin.site.register(MaliciousSignatures, MaliciousSignaturesAdmin)
 admin.site.register(ClientHWID, ClientHWIDAdmin)
+admin.site.register(Ban, BanAdminModel)

@@ -1,3 +1,4 @@
+from datetime import datetime
 from shared.models import ServerTypes
 from django.db import models
 from typing import Union
@@ -102,3 +103,20 @@ class ClientHWID(models.Model):
 
     def __str__(self) -> str:
         return f"{self.username} ({self.id})"
+
+
+class Ban(models.Model):
+    hwid = models.ForeignKey(ClientHWID, on_delete=models.CASCADE)
+    banned_at = models.DateTimeField(auto_now_add=True)
+    ends_at = models.PositiveIntegerField(null=True)
+    reason = models.CharField(null=True, max_length=96)
+    enabled = models.BooleanField()
+
+    class Meta:
+        db_table = "bans"
+        verbose_name = "Ban"
+        verbose_name_plural = "Bans"
+
+    def __str__(self) -> str:
+        banned_hours = datetime.fromtimestamp(self.ends_at)
+        return f"{self.hwid.username} - {banned_hours.hour}h"

@@ -116,7 +116,7 @@ class Ban(models.Model):
         db_table = "bans"
         verbose_name = "Ban"
         verbose_name_plural = "Bans"
-        
+
     @property
     def duration(self) -> datetime:
         return datetime.fromtimestamp(self.ends_at)

@@ -75,7 +75,7 @@ class MaliciousSignaturesAdmin(ModelAdmin):
 
 
 class BanAdminModel(ModelAdmin):
-    list_display = ["username", "duration", "reason", "active"]
+    list_display = ["username", "duration", "reason"]
 
     @admin.display(description="Username")
     def username(self, obj: Ban):
@@ -87,10 +87,6 @@ class BanAdminModel(ModelAdmin):
         if hours == 0:
             return f"{obj.duration.minute}m"
         return f"{obj.duration.hour}h"
-
-    @admin.display(boolean=True, description="Active")
-    def active(self, obj: Ban):
-        return obj.active
 
     @admin.display(description="Reason")
     def reason(self, obj: Ban):

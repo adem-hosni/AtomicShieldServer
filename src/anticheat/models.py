@@ -110,7 +110,6 @@ class Ban(models.Model):
     banned_at = models.DateTimeField(auto_now_add=True)
     ends_at = models.PositiveIntegerField(null=True)
     reason = models.CharField(null=True, max_length=96)
-    active = models.BooleanField()
 
     class Meta:
         db_table = "bans"

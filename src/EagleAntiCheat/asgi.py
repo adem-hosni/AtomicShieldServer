@@ -17,7 +17,6 @@ django_asgi_app = get_asgi_application()
 
 import anticheat.routing
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "EagleAntiCheat.settings")
 
 application = ProtocolTypeRouter(
     {

@@ -15,6 +15,7 @@
 
 # Eagle Server
 - ~~Check if the key if it's being used~~
+- Check eagle server status
 - Check if the joining player is whitelisted
 - Check if the player is banned
 - Compile client scripts

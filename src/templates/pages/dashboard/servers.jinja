@@ -95,8 +95,8 @@
         </div>
         <!-- Modal body -->
         <div class="p-4 md:p-5">
-          <div id="server-status-div" class="hidden rounded-lg border-2 w-full text-center border-purple-500 py-2 transition-all duration-300 hover:bg-purple-500 group">
-            <h1 id="server-status" class="font-medium text-purple-500 group-hover:text-black select-none">Invalid Server IP Address</h1>
+          <div id="server-status-div" class="hidden rounded-lg border-2 w-full text-center border-red-500 py-2 transition-all duration-300 hover:bg-red-500 group">
+            <h1 id="server-status" class="font-medium text-red-500 group-hover:text-black select-none">Invalid Server IP Address</h1>
           </div>
           <form class="space-y-4" method="post" id="addserver-form">
             {% csrf_token %}
@@ -139,7 +139,7 @@
           <form class="space-y-4" method="post" id="refreshkey-form" action="{% url 'refresh_key' %}">
             {% csrf_token %}
             <input type="hidden" id="target-refresh-server" name="server" value="">
-            <button type="submit"  id="refreshkey-btn" value="" onclick="this.disabled=true; this.form.submit();" class="w-full text-black border-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 border-[#8c592b] bg-[#8c592b] hover:bg-purple-500">Yes, Refresh</button>
+            <button type="submit"  id="refreshkey-btn" value="" onclick="this.disabled=true; this.form.submit();" class="w-full text-black border-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 border-[#8c592b] bg-[#8c592b] hover:bg-red-500">Yes, Refresh</button>
           </form>
           <button data-modal-hide="refresh-key-modal" onclick="this.disabled=true; this.form.submit();" class="w-full border-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 text-red-600 border-red-600 hover:bg-red-600 hover:text-black my-3">No, Don't Refresh</button>
 
@@ -193,23 +193,23 @@
     
       function setStatusColor(success) {
         if (success) {
-          serverStatusDiv.classList.remove('hover:bg-purple-500')
+          serverStatusDiv.classList.remove('hover:bg-red-500')
           serverStatusDiv.classList.add('hover:bg-green-500')
     
-          serverStatus.classList.remove('text-purple-500')
+          serverStatus.classList.remove('text-red-500')
           serverStatus.classList.add('text-green-500')
     
-          serverStatusDiv.classList.remove('border-purple-500')
+          serverStatusDiv.classList.remove('border-red-500')
           serverStatusDiv.classList.add('border-green-500')
         } else {
           serverStatusDiv.classList.remove('hover:bg-green-500')
-          serverStatusDiv.classList.add('hover:bg-purple-500')
+          serverStatusDiv.classList.add('hover:bg-red-500')
     
           serverStatus.classList.remove('text-green-500')
-          serverStatus.classList.add('text-purple-500')
+          serverStatus.classList.add('text-red-500')
     
           serverStatusDiv.classList.remove('border-green-500')
-          serverStatusDiv.classList.add('border-purple-500')
+          serverStatusDiv.classList.add('border-red-500')
         }
       }
     

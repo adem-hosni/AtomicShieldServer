@@ -9,6 +9,26 @@
     <script src="{% static "vendor/tailwindcss.css" %}"></script>
     <script src="{% static 'js/flowbite.js' %}"></script>
     <title>EagleAntiCheat | Dashboard</title>
+    <style>
+          ::-webkit-scrollbar {
+            width: 8px;
+          }
+          ::-webkit-scrollbar-track {
+            box-shadow: inset 0 0 5px grey; 
+            border-radius: 10px;
+          }
+          ::-webkit-scrollbar-thumb {
+            background: rgb(88 28 135 / var(--tw-bg-opacity)); 
+            border-radius: 10px;
+          }
+          ::-webkit-scrollbar-thumb:hover {
+            background: rgb(108 48 155 / var(--tw-bg-opacity)); 
+          }
+          ::-webkit-scrollbar-thumb:active {
+            background: rgb(68 8 115 / var(--tw-bg-opacity)); 
+          }
+          
+    </style>
 </head>
 <body class="bg-black text-white flex flex-col min-h-screen">
     {% include "components/dashboard/sidebar.jinja" %}

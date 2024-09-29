@@ -108,17 +108,13 @@ class ClientHWID(models.Model):
 class Ban(models.Model):
     hwid = models.ForeignKey(ClientHWID, on_delete=models.CASCADE)
     banned_at = models.DateTimeField(auto_now_add=True)
-    ends_at = models.DurationField(null=True, editable=True)  # null
+    duration = models.DurationField(null=True, editable=True)  # null
     reason = models.CharField(null=True, max_length=96)
 
     class Meta:
         db_table = "bans"
         verbose_name = "Ban"
         verbose_name_plural = "Bans"
-
-    @property
-    def duration(self) -> datetime:
-        return datetime.fromtimestamp(self.ends_at, timezone.utc)
 
     def __str__(self) -> str:
         return f"{self.hwid.username} - {self.duration.hour}h"

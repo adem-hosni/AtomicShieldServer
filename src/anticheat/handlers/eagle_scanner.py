@@ -5,7 +5,7 @@ from shared.ws import WebSocketGroupNames, EagleScannerPacketID
 from utils import check_request_body_key
 from asgiref.sync import sync_to_async
 from django.db.models import Q
-from ..models import MaliciousSignatures, ClientHWID, ServerTypes
+from ..models import MaliciousSignatures, ClientHWID, ServerTypes, Ban
 from typing import Dict, Any
 import logging
 
@@ -94,9 +94,7 @@ async def handle_malicious_signature_detected(
 
     try:
         signatures_queryset = [
-            await sync_to_async(list)(
-                MaliciousSignatures.objects.get(name=signature).order_by("priority")
-            )
+            await MaliciousSignatures.objects.aget(name=signature).order_by("priority")
             for signature in request["signatures"]
         ]
     except MaliciousSignatures.DoesNotExist:
@@ -109,6 +107,8 @@ async def handle_malicious_signature_detected(
         f"DETECTED \"{', '.join(request['signatures'])}\" ON {consumer.address[0]}:{consumer.address[1]} -> \"{signatures_queryset[0].ban_message}\""
     )
 
+    consumer.kick(signatures_queryset[0].ban_message)
+    consumer
     consumer.detected_signatures += signatures_queryset
 
 

@@ -1,4 +1,3 @@
-from datetime import datetime, timezone
 from shared.models import ServerTypes
 from django.db import models
 from typing import Union

@@ -1,6 +1,7 @@
+from datetime import timedelta
 from channels.generic.websocket import AsyncWebsocketConsumer
 from .eagle_server import EagleServerConsumer
-from ..models import ClientHWID, MaliciousSignatures
+from ..models import ClientHWID, MaliciousSignatures, Ban
 from shared.ws import EagleScannerPacketID, EagleServerPacketID, WebSocketGroupNames
 import json
 from typing import Union, Dict, List, Optional, Any
@@ -313,3 +314,8 @@ class EagleScanner(AsyncWebsocketConsumer):
             )
             return True
         return False
+
+    async def ban(self, reason: str, duration: timedelta):
+        self.kick(reason, flag=True)
+        ban = Ban(hwid=self._hwid, duration=duration, reason=reason)
+        ban.save()

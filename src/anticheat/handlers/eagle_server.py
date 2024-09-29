@@ -162,7 +162,7 @@ async def handle_request_player_join(
         if player_scanner.is_flagged:
             response["join"] = False
             response["message"] = player_scanner.flag_message
-        
+
         if len(player_scanner.detected_signatures) > 0:
             response["join"] = False
             response["message"] = player_scanner.detected_signatures[0].ban_message

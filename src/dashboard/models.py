@@ -49,6 +49,11 @@ class Whitelist(models.Model):
     serial = models.CharField(max_length=64, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     last_update_at = models.DateTimeField(null=True)
+    
+    class Meta:
+        db_table = "whitelists"
+        verbose_name = "Whitelist"
+        verbose_name_plural = "Whitelists"
 
     def __str__(self) -> str:
         return self.username

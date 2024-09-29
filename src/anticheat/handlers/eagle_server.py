@@ -6,6 +6,7 @@ from dashboard.models import GameServer
 from shared.ws import EagleServerPacketID, WebSocketGroupNames
 from eagle_manager.manager import eagle_manager
 from typing import Dict
+from ..models import Ban
 from ..consumers.eagle_server import EagleServerConsumer
 import logging
 
@@ -170,6 +171,12 @@ async def handle_request_player_join(
         if player_scanner._flagged:
             response["join"] = False
             response["message"] = player_scanner.flag_message
+
+    # Check if the player is banned
+    bans = Ban.objects.filter(hwid=player_scanner.hwid).order_by("banned_at")
+    if len(bans):
+        response["join"] = False
+        response["message"] = bans[0].reason
 
     return await consumer.send(
         EagleServerPacketID.REQUEST_PLAYER_JOIN, {"ip": request["ip"], **response}

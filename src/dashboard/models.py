@@ -35,7 +35,7 @@ class ServerSubscription(models.Model):
     def is_valid_for_now(self) -> bool:
         return (
             self.started_at is not None
-            and (datetime.timestamp(self.started_at) + self.expires_at) > time()
+            and (datetime.timestamp(self.started_at) + self.expires_at.total_seconds()) > time()
             and self.status == 0
         )
 

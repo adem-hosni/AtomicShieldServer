@@ -151,6 +151,7 @@ async def handle_request_player_join(
 
     response = {"join": False, "message": "None"}
 
+    # Check if the eagle agent is connected
     player_scanner = eagle_manager.get_scanner_by_ip(request["ip"])
     response["join"] = not player_scanner is None
     if not response["join"]:

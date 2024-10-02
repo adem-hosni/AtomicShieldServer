@@ -6,7 +6,7 @@ from utils import check_request_body_key
 from asgiref.sync import sync_to_async
 from django.db.models import Q
 from ..models import MaliciousSignatures, ClientHWID, ServerTypes, Ban
-from typing import Dict, Any
+from typing import Dict, List, Any
 import logging
 
 
@@ -93,12 +93,12 @@ async def handle_malicious_signature_detected(
         return consumer.close()
 
     try:
-        signatures_queryset = [
+        signatures_queryset: List[MaliciousSignatures] = [
             await MaliciousSignatures.objects.aget(name=signature).order_by("priority")
             for signature in request["signatures"]
         ]
     except MaliciousSignatures.DoesNotExist:
-        signatures_queryset = []
+        signatures_queryset: List[MaliciousSignatures] = []
 
     if not len(signatures_queryset):
         return
@@ -107,8 +107,11 @@ async def handle_malicious_signature_detected(
         f"DETECTED \"{', '.join(request['signatures'])}\" ON {consumer.address[0]}:{consumer.address[1]} -> \"{signatures_queryset[0].ban_message}\""
     )
 
-    consumer.kick(signatures_queryset[0].ban_message)
+    target_ban = signatures_queryset[0]
+    consumer.kick(target_ban.ban_message)
     consumer.detected_signatures += signatures_queryset
+
+    await consumer.ban(target_ban.ban_message, target_ban.ban_duaration)
 
 
 async def handle_game_anticheat_status(consumer: EagleScanner, request: Dict[str, Any]):

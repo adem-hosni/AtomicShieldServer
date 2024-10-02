@@ -108,7 +108,6 @@ async def handle_malicious_signature_detected(
     )
 
     consumer.kick(signatures_queryset[0].ban_message)
-    consumer
     consumer.detected_signatures += signatures_queryset
 
 

@@ -1,11 +1,12 @@
 import os
 import hashlib
 from typing import Dict, Any
-from utils import check_request_body_key
+from utils import check_request_body_key, represent_timedelta_string
 from dashboard.models import GameServer
 from shared.ws import EagleServerPacketID, WebSocketGroupNames
 from eagle_manager.manager import eagle_manager
 from typing import Dict
+from django.conf import settings
 from ..models import Ban
 from ..consumers.eagle_server import EagleServerConsumer
 import logging
@@ -175,8 +176,12 @@ async def handle_request_player_join(
     # Check if the player is banned
     bans = Ban.objects.filter(hwid=player_scanner.hwid).order_by("banned_at")
     if len(bans):
+        target_ban = bans[0]
         response["join"] = False
-        response["message"] = bans[0].reason
+        response["message"] = (
+            f"Banned by {settings.ANTICHEAT_NAME} AntiCheat: {target_ban.reason} "
+            f"(Timeleft: {represent_timedelta_string(target_ban.duration)})"
+        )
 
     return await consumer.send(
         EagleServerPacketID.REQUEST_PLAYER_JOIN, {"ip": request["ip"], **response}

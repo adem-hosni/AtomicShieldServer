@@ -44,3 +44,4 @@
 - VM Verification
 - HWID Caching
 - Implement HTTP communication encryption
+- Add Discord Rich Presence

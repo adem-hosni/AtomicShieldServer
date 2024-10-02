@@ -195,6 +195,11 @@ UNFOLD = {
     "SITE_HEADER": "SafeGuard STAFF",
 }
 
+# Project names
+ANTICHEAT_NAME = "SafeGuard"
+ANTICHEAT_VERSION = "1.0b"
+ANTICHEAT_NAME_LONG = f"{ANTICHEAT_NAME} {ANTICHEAT_VERSION}"
+
 # Authentication Settings
 LOGIN_URL = "/auth/signin"
 PASSWORD_RESET_TIMEOUT = 60 * 60 * 24 * 1  # 1 Day

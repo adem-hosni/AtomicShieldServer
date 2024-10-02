@@ -77,6 +77,7 @@ class MaliciousSignatures(models.Model):
     )
     priority = models.IntegerField(null=True, default=None)
     ban_message = models.CharField(null=True, blank=True, max_length=64)
+    ban_duaration = models.DurationField(blank=True)
 
     class Meta:
         db_table = "malicious_signatures"

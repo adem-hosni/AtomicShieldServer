@@ -95,7 +95,7 @@ WSGI_APPLICATION = "EagleAntiCheat.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
-        "NAME": "eagleanticheat",
+        "NAME": "safeguard",
         "USER": "root",
         "PASSWORD": "",
         "HOST": "localhost",

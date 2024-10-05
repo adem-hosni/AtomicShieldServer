@@ -39,49 +39,91 @@
   </div>
 </div>
 <div class="mt-4 flex flex-col items-stretch item-center justify-center">
-    <div class="gap-3 rounded-xl bg-[#0D0D0D] px-6 py-2.5 space-y-2 items-center">
-      <div class="mb-4 border-b border-gray-200 dark:border-gray-700">
-        <ul class="flex flex-wrap -mb-px text-sm font-medium text-center w-full" id="default-tab" data-tabs-toggle="#default-tab-content" role="tablist">
-            {% for category in categories %}
-              <li role="presentation">
-                  <button class="transition-all duration-300 inline-block p-4 border-b-2 rounded-t-lg hover:text-purple-600 hover:border-purple-600 dark:hover:text-purple-500" id="c{{ category.id }}-tab" data-tabs-target="#c{{ category.id }}" type="button" role="tab" aria-controls="c{{ category.id }}" aria-selected="false">{{ category.name }}</button>
-              </li>
-            {% endfor %}
-        </ul>
-    </div>
-    <div id="default-tab-content">
-        {% for category in categories %}
-          <div class="hidden p-4 rounded-lg bg-gray-50 dark:bg-gray-800" id="c{{ category.id }}" role="tabpanel" aria-labelledby="c{{ category.id }}-tab">
-              <p class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ category.description }}</p>
-          </div>
+  <div class="gap-3 rounded-xl bg-[#0D0D0D] px-6 py-2.5 space-y-2 items-center">
+    <div class="mb-4 border-b border-gray-200 dark:border-gray-700">
+      <ul
+        class="flex flex-wrap -mb-px text-sm font-medium text-center"
+        id="default-styled-tab"
+        data-tabs-toggle="#default-styled-tab-content"
+        data-tabs-active-classes="text-[#8c592b] hover:text-[#8c592b] dark:text-[#8c592b] dark:hover:text-[#8c592b] border-[#8c592b] dark:border-[#8c592b]"
+        data-tabs-inactive-classes="dark:border-transparent text-gray-500 hover:text-gray-600 dark:text-gray-400 border-gray-100 hover:border-gray-300 dark:border-gray-700 dark:hover:text-gray-300"
+        role="tablist"
+      >
+        {% for configuration in configurations %}
+        <li role="presentation">
+          <button
+            class="transition-all duration-300 inline-block p-4 border-b-2 rounded-t-lg hover:text-[#b37339] hover:border-[#b37339] dark:hover:text-[#8c592b]"
+            id="c{{ configuration.id }}-tab"
+            data-tabs-target="#c{{ configuration.id }}"
+            type="button"
+            role="tab"
+            aria-controls="c{{ configuration.id }}"
+            aria-selected="false"
+          >
+            {{ configuration.name }}
+          </button>
+        </li>
         {% endfor %}
+      </ul>
     </div>
+    <div id="default-styled-tab-content">
+      {% for configuration in configurations %}
+      <div
+        class="hidden"
+        id="c{{ configuration.id }}"
+        role="tabpanel"
+        aria-labelledby="c{{ configuration.id }}-tab"
+      >
+        <div class="rounded-lg bg-[#8c592b] p-4">
+          <p class="text-sm text-black">
+            {{ configuration.description }}
+          </p>
+        </div>
+        <div class="p-1">
+          <form method="POST">
+            {% csrf_token %}
+            {% for field in configuration.fields %}
+            <div class="flex flex-col w-full p-4">
+              <label
+                for="{{ field.id }}"
+                class="font-medium text-gray-300 pb-2"
+                >{{ field.name }}</label
+              >
 
+              <div class="flex">
+                <p class="text-gray-400 font-medium text-sm px-2">
+                  {{ field.description }}
+                </p>
 
-      <form method="POST">
-        {% csrf_token %}
-        {% for field in form %}
-          <div class="flex flex-col w-full px-4 py-3">
-            <label for="{{ config.id }}" class="font-medium text-gray-300">{{ field.label }}</label>
-
-            <div class="flex">
-              <p class="text-gray-400 font-medium text-sm px-2">
-                {{ field.field.widget.attrs.description }}
-              </p>
-
-              <label class="transition-all duration-300 inline-flex items-center cursor-pointer ml-auto">
-                {% if field.field.widget.input_type == "checkbox" %}
-                  {{ field }}
-                  <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-zinc-900 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-purple-700"></div>
+                <label
+                  class="transition-all duration-300 inline-flex items-center cursor-pointer ml-auto"
+                >
+                  {% if field.type == 1 %} {% if field.value %}
+                  <input
+                    type="checkbox"
+                    name="{{ field.id }}"
+                    class="sr-only peer"
+                    checked
+                  />
+                  {% else %}
+                  <input
+                    type="checkbox"
+                    name="{{ field.id }}"
+                    class="sr-only peer"
+                  />
+                  {% endif %}
+                  <div
+                    class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-zinc-900 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-[#8c592b] hover:peer-checked:bg-[#b37339] active:peer-checked:bg-[#7f4c1e] transition-all duration-300"
+                  ></div>
                 </label>
 
-              {% elif config.data.type == 2 %}
+                {% elif field.type == 2 %}
                 <div class="relative h-10 w-64 min-w-[200px] ml-auto">
                   <input
-                    name="{{ config.id }}"
-                    value="{{ config.data.value }}"
+                    name="{{ field.id }}"
+                    value="{{ field.value }}"
                     placeholder="Type Here..."
-                    class="peer h-full w-full rounded-lg border border-gray-200 border-t-transparent bg-transparent px-3 py-2.5 font-sans text-sm font-normal text-gray-300 outline outline-0 transition-all placeholder-shown:border placeholder-shown:border-gray-300 placeholder-shown:border-t-gray-200 focus:border-gray-300 focus:border-t-transparent focus:outline-0 disabled:border-0 disabled:bg-gray-300 placeholder:opacity-0 focus:placeholder:opacity-100 focus:placeholder-transparent selection:bg-purple-600 selection:text-black"
+                    class="peer h-full w-full rounded-lg border border-gray-200 border-t-transparent bg-transparent px-3 py-2.5 font-sans text-sm font-normal text-gray-300 outline outline-0 transition-all placeholder-shown:border placeholder-shown:border-gray-300 placeholder-shown:border-t-gray-200 focus:border-gray-300 focus:border-t-transparent focus:outline-0 disabled:border-0 disabled:bg-gray-300 placeholder:opacity-0 focus:placeholder:opacity-100 focus:placeholder-transparent selection:bg-[#8c592b] selection:text-black"
                   />
                   <label
                     class="before:content[' '] after:content[' '] pointer-events-none absolute left-0 -top-1.5 flex h-full w-full select-none !overflow-visible truncate text-[11px] font-normal leading-tight text-gray-300 transition-all before:pointer-events-none before:mt-[6.5px] before:mr-1 before:box-border before:block before:h-1.5 before:w-2.5 before:rounded-tl-md before:border-t before:border-l before:border-gray-300 before:transition-all after:pointer-events-none after:mt-[6.5px] after:ml-1 after:box-border after:block after:h-1.5 after:w-2.5 after:flex-grow after:rounded-tr-md after:border-t after:border-r after:border-gray-300 after:transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:leading-[3.75] peer-placeholder-shown:text-gray-300 peer-placeholder-shown:before:border-transparent peer-placeholder-shown:after:border-transparent peer-focus:text-[12px] peer-focus:leading-tight peer-focus:text-gray-300 peer-focus:after:border-t-2 peer-focus:after:border-r-2 peer-focus:after:!border-gray-300 peer-disabled:text-transparent peer-disabled:before:border-transparent peer-disabled:after:border-transparent peer-disabled:peer-placeholder-shown:text-gray-300"
@@ -89,38 +131,38 @@
                     Type Here...
                   </label>
                 </div>
-              {% elif config.data.type == 3 %}
-              <div class="relative h-10 w-16 min-w-[100px] ml-auto">
-                <input
-                  name="{{ config.id }}"
-                  value="{{ config.data.value }}"
-                  placeholder="Type Here..."
-                  type="number"
-                  class="peer h-full w-full rounded-lg border border-gray-200 border-t-transparent bg-transparent px-3 py-2.5 font-sans text-sm font-normal text-gray-300 outline outline-0 transition-all placeholder-shown:border placeholder-shown:border-gray-300 placeholder-shown:border-t-gray-200 focus:border-gray-300 focus:border-t-transparent focus:outline-0 disabled:border-0 disabled:bg-gray-300 placeholder:opacity-0 focus:placeholder:opacity-100 focus:placeholder-transparent selection:bg-purple-600 selection:text-black"
-                />
-                <label
-                  class="before:content[' '] after:content[' '] pointer-events-none absolute left-0 -top-1.5 flex h-full w-full select-none !overflow-visible truncate text-[11px] font-normal leading-tight text-gray-300 transition-all before:pointer-events-none before:mt-[6.5px] before:mr-1 before:box-border before:block before:h-1.5 before:w-2.5 before:rounded-tl-md before:border-t before:border-l before:border-gray-300 before:transition-all after:pointer-events-none after:mt-[6.5px] after:ml-1 after:box-border after:block after:h-1.5 after:w-2.5 after:flex-grow after:rounded-tr-md after:border-t after:border-r after:border-gray-300 after:transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:leading-[3.75] peer-placeholder-shown:text-gray-300 peer-placeholder-shown:before:border-transparent peer-placeholder-shown:after:border-transparent peer-focus:text-[12px] peer-focus:leading-tight peer-focus:text-gray-300 peer-focus:after:border-t-2 peer-focus:after:border-r-2 peer-focus:after:!border-gray-300 peer-disabled:text-transparent peer-disabled:before:border-transparent peer-disabled:after:border-transparent peer-disabled:peer-placeholder-shown:text-gray-300"
-                >
-                  Type a number
-                </label>
+                {% elif field.type == 3 %}
+                <div class="relative h-10 w-16 min-w-[100px] ml-auto">
+                  <input
+                    name="{{ field.id }}"
+                    value="{{ field.value }}"
+                    placeholder="Type Here..."
+                    type="number"
+                    class="peer h-full w-full rounded-lg border border-gray-200 border-t-transparent bg-transparent px-3 py-2.5 font-sans text-sm font-normal text-gray-300 outline outline-0 transition-all placeholder-shown:border placeholder-shown:border-gray-300 placeholder-shown:border-t-gray-200 focus:border-gray-300 focus:border-t-transparent focus:outline-0 disabled:border-0 disabled:bg-gray-300 placeholder:opacity-0 focus:placeholder:opacity-100 focus:placeholder-transparent selection:bg-[#8c592b] selection:text-black"
+                  />
+                  <label
+                    class="before:content[' '] after:content[' '] pointer-events-none absolute left-0 -top-1.5 flex h-full w-full select-none !overflow-visible truncate text-[11px] font-normal leading-tight text-gray-300 transition-all before:pointer-events-none before:mt-[6.5px] before:mr-1 before:box-border before:block before:h-1.5 before:w-2.5 before:rounded-tl-md before:border-t before:border-l before:border-gray-300 before:transition-all after:pointer-events-none after:mt-[6.5px] after:ml-1 after:box-border after:block after:h-1.5 after:w-2.5 after:flex-grow after:rounded-tr-md after:border-t after:border-r after:border-gray-300 after:transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:leading-[3.75] peer-placeholder-shown:text-gray-300 peer-placeholder-shown:before:border-transparent peer-placeholder-shown:after:border-transparent peer-focus:text-[12px] peer-focus:leading-tight peer-focus:text-gray-300 peer-focus:after:border-t-2 peer-focus:after:border-r-2 peer-focus:after:!border-gray-300 peer-disabled:text-transparent peer-disabled:before:border-transparent peer-disabled:after:border-transparent peer-disabled:peer-placeholder-shown:text-gray-300"
+                  >
+                    Type a number
+                  </label>
+                </div>
+                {% endif %}
               </div>
-              {% endif %}
             </div>
-          </div>
 
-          {% if forloop.counter < configs|length %}
-          <hr class="my-4 border-t-2 border-gray-600 w-[100%] mx-auto" />
-          {% endif %}
-        {% endfor %}
-
-        {% if configs_count == 0 %}
-          <div scope="row" class="transition-all duration-300 py-4 text-center font-medium text-gray-900 whitespace-nowrap dark:text-gray-400 dark:hover:text-white w-full">Couldn't Load Settings!</div>
-        {% else %}
-        <div class="flex p-4">
-           <button class="bg-purple-600 rounded-lg min-w-16 py-1 text-black font-medium transition-all duration-300 hover:bg-purple-700 ml-auto">Save</button>
+            {% if forloop.counter != configs|length %}
+            <hr class="my-2 border-t-2 border-[#8c592b] w-[100%] mx-auto" />
+            {% endif %} {% endfor %}
+            <input
+              type="submit"
+              value="Save"
+              class="px-3 py-1 font-medium cursor-pointer bg-[#8c592b] transition-all duration-300 hover:bg-[#b37339] active:bg-[#7f4c1e] text-black rounded-lg flex ml-auto"
+            >
+          </form>
         </div>
-        {% endif %}
       </div>
-    </form>
+      {% endfor %}
+    </div>
   </div>
+</div>
 {% endblock %}

@@ -94,7 +94,7 @@ async def handle_network_join(
     consumer.channel_layer.group_add(consumer.group_name, consumer.channel_name)
     eagle_manager.add_eagle_server(consumer)
     logger.info(
-        f"{consumer.address[0]}:{consumer.address[1]} joined Eagle Servers Network!"
+        f"{consumer.address[0]}:{consumer.address[1]} joined SafeGuard Servers Network!"
     )
 
     await consumer.send(
@@ -154,7 +154,7 @@ async def handle_request_player_join(
 
     response = {"join": False, "message": "None"}
 
-    # Check if the eagle agent is connected
+    # Check if the SafeGuard agent is connected
     player_scanner = eagle_manager.get_scanner_by_ip(request["ip"])
     response["join"] = not player_scanner is None
     if not response["join"]:
@@ -192,7 +192,7 @@ async def handle_request_player_join(
 
 async def handle_server_disconnect(consumer: EagleServerConsumer):
     logger.info(
-        f"{consumer.address[0]}:{consumer.address[1]} disconnected from eagle servers network."
+        f"{consumer.address[0]}:{consumer.address[1]} disconnected from SafeGuard servers network."
     )
     eagle_manager.remove_eagle_server(consumer)
 

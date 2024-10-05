@@ -22,10 +22,8 @@ from anticheat.models import (
 )
 from .forms import (
     AddServerForm,
-    ConfigurationsForm,
     QuickSetupForm,
     WhitelistForm,
-    config_to_field,
     supported_dists,
 )
 import utils
@@ -440,11 +438,11 @@ def render_configurations(request: HttpRequest) -> HttpResponse:
             "pages/dashboard/configurations.jinja",
             {"error": "The selected server does not exists!"},
         )
-        
+
     if request.method == "POST":
         for config in AntiCheatConfigTemplates.objects.all():
             config_id = str(config.id)
-            
+
             if config.config_type == AntiCheatConfigDataTypes.BOOLEAN:
                 config_value = request.POST.get(config_id, False)
             else:
@@ -460,27 +458,29 @@ def render_configurations(request: HttpRequest) -> HttpResponse:
     for category in AntiCheatConfigurationCategories.objects.filter(
         server_type=ServerTypes.MTASA
     ):
-        configurations.append({
-            "id": category.id,
-            "name": category.name,
-            "description": category.description,
-            "fields": [
-                {
-                    "id": config.id,
-                    "type": config.config_type,
-                    "name": config.name,
-                    "description": config.description,
-                    "value": server_configs.get(
-                        str(config.id),
-                        server_configs.get(
+        configurations.append(
+            {
+                "id": category.id,
+                "name": category.name,
+                "description": category.description,
+                "fields": [
+                    {
+                        "id": config.id,
+                        "type": config.config_type,
+                        "name": config.name,
+                        "description": config.description,
+                        "value": server_configs.get(
                             str(config.id),
-                            config.get_default_value(),
+                            server_configs.get(
+                                str(config.id),
+                                config.get_default_value(),
+                            ),
                         ),
-                    ),
-                }
-                for config in category.configs.all()
-            ],
-        })
+                    }
+                    for config in category.configs.all()
+                ],
+            }
+        )
 
     return render(
         request,

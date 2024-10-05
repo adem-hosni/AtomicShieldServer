@@ -1,5 +1,6 @@
 import os
 import hashlib
+from asgiref.sync import sync_to_async
 from typing import Dict, Any
 from utils import check_request_body_key, represent_timedelta_string
 from dashboard.models import GameServer
@@ -157,8 +158,8 @@ async def handle_request_player_join(
     player_scanner = eagle_manager.get_scanner_by_ip(request["ip"])
     response["join"] = not player_scanner is None
     if not response["join"]:
-        response["message"] = "PLEASE OPEN EAGLE ANTICHEAT AGENT"
-        logger.info('Connection refused: "Eagle Agent Not Connected"')
+        response["message"] = "PLEASE OPEN SafeGuard ANTICHEAT AGENT"
+        logger.info('Connection refused: "SafeGuard Agent Not Connected"')
     else:
         player_scanner.connected_server = consumer
         if player_scanner.is_flagged:
@@ -173,15 +174,16 @@ async def handle_request_player_join(
             response["join"] = False
             response["message"] = player_scanner.flag_message
 
-    # Check if the player is banned
-    bans = Ban.objects.filter(hwid=player_scanner.hwid).order_by("banned_at")
-    if len(bans):
-        target_ban = bans[0]
-        response["join"] = False
-        response["message"] = (
-            f"Banned by {settings.ANTICHEAT_NAME} AntiCheat: {target_ban.reason} "
-            f"(Timeleft: {represent_timedelta_string(target_ban.duration)})"
-        )
+        # Check if the player is banned
+        bans = await sync_to_async(list)(Ban.objects.filter(hwid=player_scanner.hwid).order_by("banned_at"))
+        
+        if len(bans):
+            target_ban = bans[0]
+            response["join"] = False
+            response["message"] = (
+                f"Banned by {settings.ANTICHEAT_NAME} AntiCheat: {target_ban.reason} "
+                f"(Timeleft: {represent_timedelta_string(target_ban.duration)})"
+            )
 
     return await consumer.send(
         EagleServerPacketID.REQUEST_PLAYER_JOIN, {"ip": request["ip"], **response}

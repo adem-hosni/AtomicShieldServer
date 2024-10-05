@@ -3,9 +3,18 @@ from django.db import models
 from typing import Union
 
 
+class AntiCheatConfigDataTypes(models.IntegerChoices):
+    BOOLEAN = 1, "Boolean"
+    STRING = 2, "String"
+    INTEGER = 3, "Integer"
+
+
 class AntiCheatConfigurationCategories(models.Model):
     name = models.CharField(max_length=32)
     description = models.TextField()
+    server_type = models.IntegerField(
+        choices=ServerTypes, null=False, default=ServerTypes.MTASA
+    )
 
     class Meta:
         db_table = "anticheat_configuration_categories"
@@ -17,11 +26,6 @@ class AntiCheatConfigurationCategories(models.Model):
 
 
 class AntiCheatConfigTemplates(models.Model):
-    class AntiCheatConfigDataTypes(models.IntegerChoices):
-        BOOLEAN = 1, "Boolean"
-        STRING = 2, "String"
-        INTEGER = 3, "Integer"
-
     name = models.CharField(max_length=64)
     description = models.TextField(null=True, default=None, blank=True)
     pseudo_name = models.CharField(max_length=16)
@@ -35,7 +39,10 @@ class AntiCheatConfigTemplates(models.Model):
     )
     default_value = models.CharField(blank=True, max_length=50)
     category = models.ForeignKey(
-        AntiCheatConfigurationCategories, on_delete=models.CASCADE, null=True
+        AntiCheatConfigurationCategories,
+        on_delete=models.CASCADE,
+        null=True,
+        related_name="configs",
     )
 
     class Meta:

@@ -18,12 +18,14 @@ from anticheat.models import (
     AntiCheatConfigTemplates,
     AntiCheatConfigurations,
     AntiCheatConfigurationCategories,
+    AntiCheatConfigDataTypes,
 )
 from .forms import (
     AddServerForm,
     ConfigurationsForm,
     QuickSetupForm,
     WhitelistForm,
+    config_to_field,
     supported_dists,
 )
 import utils
@@ -421,83 +423,69 @@ def refresh_server_key(request: HttpRequest) -> HttpResponse:
 
 @login_required
 def render_configurations(request: HttpRequest) -> HttpResponse:
+    if not "selected_server" in request.session.keys():
+        return render(
+            request,
+            "pages/dashboard/configurations.jinja",
+            {"error": "The selected server does not exists!"},
+        )
+
+    try:
+        target_server = GameServer.objects.get(
+            id=request.session["selected_server"], owner=request.user
+        )
+    except GameServer.DoesNotExist:
+        return render(
+            request,
+            "pages/dashboard/configurations.jinja",
+            {"error": "The selected server does not exists!"},
+        )
+        
     if request.method == "POST":
-        request_body = request.POST
-        form = ConfigurationsForm(request.POST)
+        for config in AntiCheatConfigTemplates.objects.all():
+            config_id = str(config.id)
+            
+            if config.config_type == AntiCheatConfigDataTypes.BOOLEAN:
+                config_value = request.POST.get(config_id, False)
+            else:
+                config_value = request.POST[config_id]
 
-        # check the request body health
-        if form.is_valid():
-            selected_server = request.session.get("selected_server", -1)
-            if selected_server > 0:
-                try:
-                    target_server = GameServer.objects.get(id=selected_server)
-                except GameServer.DoesNotExist:
-                    ...
-                else:
-                    allowed_configs = AntiCheatConfigTemplates.objects.filter(
-                        server_type=ServerTypes.MTASA
-                    )
-                    allowed_ids = allowed_configs.values_list("id", flat=True)
-                    server_configurations = target_server.configurations
-                    for key, value in form.cleaned_data.items():
-                        if key != "csrfmiddlewaretoken":
-                            target_config_id = int(key)
-                            if target_config_id in allowed_ids:
-                                server_configurations.config[target_config_id] = value
-                    server_configurations.save()
-                    return redirect(request.path)
+            target_server.configurations.config[config_id] = config_value
+        target_server.configurations.save()
+        return redirect(request.path)
 
-    selected_server_id = request.session.get("selected_server", -1)
-    configs = []
+    server_configs = target_server.configurations.config
+    configurations = []
+    AntiCheatConfigurationCategories
+    for category in AntiCheatConfigurationCategories.objects.filter(
+        server_type=ServerTypes.MTASA
+    ):
+        configurations.append({
+            "id": category.id,
+            "name": category.name,
+            "description": category.description,
+            "fields": [
+                {
+                    "id": config.id,
+                    "type": config.config_type,
+                    "name": config.name,
+                    "description": config.description,
+                    "value": server_configs.get(
+                        str(config.id),
+                        server_configs.get(
+                            str(config.id),
+                            config.get_default_value(),
+                        ),
+                    ),
+                }
+                for config in category.configs.all()
+            ],
+        })
 
-    if selected_server_id > 0:
-        try:
-            server = GameServer.objects.get(owner=request.user, id=selected_server_id)
-        except GameServer.DoesNotExist:
-            ...
-        else:
-            server_configs = server.configurations.config
-
-            for template_config in AntiCheatConfigTemplates.objects.filter(
-                server_type=ServerTypes.MTASA
-            ):
-                # Added each config per templates
-                # if the config is not registred on the server configs table, get the default config value from configs templates
-                configs.append(
-                    {
-                        "id": template_config.id,
-                        "name": template_config.name,
-                        "description": template_config.description,
-                        "data": {
-                            "type": template_config.config_type,
-                            "value": server_configs.get(
-                                str(template_config.id),
-                                server_configs.get(
-                                    str(template_config.id),
-                                    template_config.get_default_value(),
-                                ),
-                            ),
-                        },
-                    }
-                )
-
-    form = ConfigurationsForm()
-    form.set_configurations(configs)
     return render(
         request,
         "pages/dashboard/configurations.jinja",
-        {
-            "form": form,
-            "configs_count": len(configs),
-            "categories": [
-                {
-                    "id": category.id,
-                    "name": category.name,
-                    "description": category.description,
-                }
-                for category in AntiCheatConfigurationCategories.objects.all()
-            ],
-        },
+        {"configurations": configurations, "error": ""},
     )
 
 

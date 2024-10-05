@@ -51,7 +51,7 @@ INSTALLED_APPS = [
 if DEBUG:
     INSTALLED_APPS.append("django_browser_reload")
 
-ASGI_APPLICATION = "EagleAntiCheat.asgi.application"
+ASGI_APPLICATION = "SafeGuard.asgi.application"
 
 MIDDLEWARE = [
     "django_browser_reload.middleware.BrowserReloadMiddleware",  # Debug
@@ -64,7 +64,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = "EagleAntiCheat.urls"
+ROOT_URLCONF = "SafeGuard.urls"
 
 TEMPLATES = [
     {
@@ -86,7 +86,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "EagleAntiCheat.wsgi.application"
+WSGI_APPLICATION = "SafeGuard.wsgi.application"
 
 
 # Database

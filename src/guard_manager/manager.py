@@ -4,15 +4,15 @@ from shared.ws import WebSocketGroupNames
 from typing import List, Union, Any
 
 
-class EagleManager(object):
+class GuardManager(object):
     """
-    EagleManager is responsible for managing Eagle servers and scanners.
+    GuardManager is responsible for managing SafeGuard servers and scanners.
     It provides functionalities to add, remove, and check the status of servers and scanners.
     """
 
     def __init__(self) -> None:
         """
-        Initialize EagleManager with empty lists to track Eagle servers and Eagle scanners.
+        Initialize GuardManager with empty lists to track Eagle servers and Eagle scanners.
         """
         self._eagle_servers: List[EagleServerConsumer] = []
         self._eagle_scanners: List[EagleScanner] = []
@@ -129,5 +129,5 @@ class EagleManager(object):
         return None  # Not Found
 
 
-# Instantiate the EagleManager
-eagle_manager = EagleManager()
+# Instantiate the GuardManager
+eagle_manager = GuardManager()

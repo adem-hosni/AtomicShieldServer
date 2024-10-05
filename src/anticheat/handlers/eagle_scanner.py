@@ -1,6 +1,6 @@
 from asgiref.sync import sync_to_async
 from ..consumers.eagle_scanner import EagleScanner
-from eagle_manager.manager import eagle_manager
+from guard_manager.manager import eagle_manager
 from shared.ws import WebSocketGroupNames, EagleScannerPacketID
 from utils import check_request_body_key
 from asgiref.sync import sync_to_async

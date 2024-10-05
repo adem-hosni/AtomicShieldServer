@@ -4,7 +4,7 @@ from typing import Dict, Any
 from utils import check_request_body_key, represent_timedelta_string
 from dashboard.models import GameServer
 from shared.ws import EagleServerPacketID, WebSocketGroupNames
-from eagle_manager.manager import eagle_manager
+from guard_manager.manager import eagle_manager
 from typing import Dict
 from django.conf import settings
 from ..models import Ban

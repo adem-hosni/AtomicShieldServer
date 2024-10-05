@@ -5,10 +5,8 @@ from datetime import timedelta
 
 
 def generate_key(parts: Optional[int] = 4) -> str:
-    allowed_chars = ascii_uppercase + digits
+    allowed_chars = list(ascii_uppercase + digits)
     license_key = ""
-
-    allowed_chars = " ".join(allowed_chars).split(" ")
 
     # Generate 3 random parts of the key
     for i in range(parts + 1):

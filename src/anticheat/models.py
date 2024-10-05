@@ -28,7 +28,7 @@ class AntiCheatConfigurationCategories(models.Model):
 class AntiCheatConfigTemplates(models.Model):
     name = models.CharField(max_length=64)
     description = models.TextField(null=True, default=None, blank=True)
-    pseudo_name = models.CharField(max_length=16)
+    pseudo_name = models.CharField(max_length=16, unique=True)
     server_type = models.IntegerField(
         choices=ServerTypes, null=False, default=ServerTypes.MTASA
     )

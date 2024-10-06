@@ -557,21 +557,51 @@ def render_whitelist(request: HttpRequest) -> HttpResponse:
     form = WhitelistForm()
     whitelists: List[Whitelist] = []
     error_message = ""
-
-    if request.method == "POST":
-        form = WhitelistForm(request.POST)
-        if form.is_valid():
-            ip = form.cleaned_data["ip"]
-            serial = form.cleaned_data["ip"]
-
+    
     try:
         target_server = GameServer.objects.get(
             id=request.session.get("selected_server", -1)
         )
     except GameServer.DoesNotExist:
-        error_message = "The selected server does not exists!"
+        messages.error(request, "The selected server does not exists!")
     else:
-        whitelists = target_server.whitelists.all()
+        whitelists = Whitelist.objects.filter(game_server=target_server)
+
+    if request.method == "POST":
+        form = WhitelistForm(request.POST)
+        if form.is_valid():
+            player_name = form.cleaned_data["name"]
+            ip = form.cleaned_data["ip"]
+            serial = form.cleaned_data["serial"]
+            
+            if not target_server:
+                messages.error(request, "Invalid selected server!")
+                return redirect(request.path)
+            
+            ipv4_pattern = re.compile(
+                    r"^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
+                )
+
+            # Check if the ip pattern is correct
+            if not ipv4_pattern.match(ip):
+                messages.error(request, "Invalid ip!")
+                return redirect(request.path)
+
+            # Check if the serial is inequal to 32
+            if len(serial) != 32:
+                messages.error(request, "Invalid Serial!")
+                return redirect(request.path)
+            
+            new_whitelist = Whitelist(
+                name=player_name,
+                ip=ip,
+                serial=serial,
+                server=target_server
+            )
+            new_whitelist.save()
+            messages.success(request, f"{player_name}'s whitelist added successfuly!")
+        else:
+            messages.error(request, "Empty whitelist!")
 
     if not len(whitelists):
         error_message = "0 Whitelists"
@@ -582,7 +612,7 @@ def render_whitelist(request: HttpRequest) -> HttpResponse:
         {
             "whitelists": [
                 {
-                    "username": whitelist.username,
+                    "username": whitelist.name,
                     "ip": whitelist.ip,
                     "serial": whitelist.serial,
                     "created_on": whitelist.created_at,

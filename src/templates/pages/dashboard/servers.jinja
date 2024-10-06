@@ -32,10 +32,11 @@
       <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-[#0d0d0d] dark:text-gray-400">
         <tr>
           <th scope="col" class="px-6 py-3">Key</th>
-          <th scope="col" class="px-6 py-3">Address</th>
+          <th scope="col" class="pl-1 py-3">Name</th>
+          <th scope="col" class="px-3 py-3">Address</th>
           <th scope="col" class="px-6 py-3">Type</th>
           <th scope="col" class="px-6 py-3">Duration</th>
-          <th scope="col" class="px-6 py-3">Subscription</th>
+          <th scope="col" class="px-1 py-3">Subscription</th>
           <th scope="col" class="px-6 py-3">SELECTED</th>
           <th scope="col" class="px-6 py-3">Actions</th>
         </tr>
@@ -43,17 +44,18 @@
       <tbody>
         {% for server in servers %}
           <tr class="transition-all duration:300 bg-white border-b dark:bg-[#161616] dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#212121]">
-            <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-gray-400 dark:hover:text-white cursor-pointer" onclick="navigator.clipboard.writeText('{{ server.key }}').then(() => iziToast.success({title: 'SUCCESS', message: 'Successfuly key copied to clipboard!'}))">
+            <th scope="row" class="px-4 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-gray-400 dark:hover:text-white cursor-pointer" onclick="navigator.clipboard.writeText('{{ server.key }}').then(() => iziToast.success({title: 'SUCCESS', message: 'Successfuly key copied to clipboard!'}))">
               <span class="blur-sm hover:blur-0 transition duration-300">{{ server.key }}</span>
             </th>
-            <td class="px-6 py-4">{{ server.address }}</td>
+            <td class="pl-1 py-4 whitespace-nowrap font-medium">{{ server.name }}</td>
+            <td class="px-3 py-4">{{ server.address }}</td>
             <td class="px-6 py-4">
               {% if server.type == 1 %}
                 <span class="border font-medium border-orange-500 rounded p-1 text-orange-500 transition-all duration-300 hover:bg-orange-500 hover:text-black select-none">MTA:SA</span>
               {% endif %}
             </td>
             <td class="px-6 py-4">{{ server.duration }}</td>
-            <td class="px-6 py-4">{{ server.subscription_status }}</td>
+            <td class="px-1 py-4">{{ server.subscription_status }}</td>
             {% if active == server.id %}
               <td class="px-6 py-4"><button onclick="select('{{ server.id }}', false)" class="border py-1 px-2 rounded font-medium text-blue-500 border-blue-500 transition-all duration-300 hover:text-black hover:bg-blue-500 w-20">UnSelect</button></td>
             {% else %}
@@ -110,6 +112,10 @@
                 <label class="before:content[' '] after:content[' '] pointer-events-none absolute left-0 -top-1.5 flex h-full w-full select-none !overflow-visible truncate text-[11px] font-normal leading-tight text-gray-300 transition-all before:pointer-events-none before:mt-[6.5px] before:mr-1 before:box-border before:block before:h-1.5 before:w-2.5 before:rounded-tl-md before:border-t before:border-l before:border-gray-300 before:transition-all after:pointer-events-none after:mt-[6.5px] after:ml-1 after:box-border after:block after:h-1.5 after:w-2.5 after:flex-grow after:rounded-tr-md after:border-t after:border-r after:border-gray-300 after:transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:leading-[3.75] peer-placeholder-shown:text-gray-300 peer-placeholder-shown:before:border-transparent peer-placeholder-shown:after:border-transparent peer-focus:text-[12px] peer-focus:leading-tight peer-focus:text-gray-300 peer-focus:after:border-t-2 peer-focus:after:border-r-2 peer-focus:after:!border-gray-300 peer-disabled:text-transparent peer-disabled:before:border-transparent peer-disabled:after:border-transparent peer-disabled:peer-placeholder-shown:text-gray-300">Server Port</label>
               </div>
             </div>
+            <div class="relative">
+              {{ form.server_name }}
+              <label class="before:content[' '] after:content[' '] pointer-events-none absolute left-0 -top-1.5 flex h-full w-full select-none !overflow-visible truncate text-[11px] font-normal leading-tight text-gray-300 transition-all before:pointer-events-none before:mt-[6.5px] before:mr-1 before:box-border before:block before:h-1.5 before:w-2.5 before:rounded-tl-md before:border-t before:border-l before:border-gray-300 before:transition-all after:pointer-events-none after:mt-[6.5px] after:ml-1 after:box-border after:block after:h-1.5 after:w-2.5 after:flex-grow after:rounded-tr-md after:border-t after:border-r after:border-gray-300 after:transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:leading-[3.75] peer-placeholder-shown:text-gray-300 peer-placeholder-shown:before:border-transparent peer-placeholder-shown:after:border-transparent peer-focus:text-[12px] peer-focus:leading-tight peer-focus:text-gray-300 peer-focus:after:border-t-2 peer-focus:after:border-r-2 peer-focus:after:!border-gray-300 peer-disabled:text-transparent peer-disabled:before:border-transparent peer-disabled:after:border-transparent peer-disabled:peer-placeholder-shown:text-gray-300">Server Name</label>
+            </div>
             <div class="relative mx-auto">{{ form.server_type }}</div>
             <div class="relative mx-auto">{{ form.subscription }}</div>
             <button type="submit" id="addserver-btn" onclick="this.disabled=true; this.form.submit();" class="w-full border-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 text-[#8c592b] border-[#8c592b] hover:bg-[#8c592b] hover:text-black">Generate Key</button>
@@ -149,7 +155,7 @@
   </div>
   <!-- End Refresh key Modal -->
 
-  <script>
+  <script type="text/javascript">
     function select(targetServerId, select) {
       const xhr = new XMLHttpRequest();
       xhr.open('POST', '/dashboard/servers/select', true)
@@ -276,5 +282,15 @@
         }
       })
     })
+
+    {% if messages %}
+    {% for message in messages %}
+        iziToast.{{ message.tags }}({
+            title: '{{ message.level_tag|capfirst }}',
+            message: '{{ message }}',
+        });
+    {% endfor %}
+  {% endif %}
+
   </script>
 {% endblock %}

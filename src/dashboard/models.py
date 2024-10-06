@@ -63,6 +63,7 @@ class GameServer(models.Model):
 
     ip = models.CharField(max_length=49)
     port = models.IntegerField()
+    name = models.CharField(max_length=32)
     owner = models.ForeignKey(User, on_delete=models.CASCADE, default=None)
     key = models.CharField(
         max_length=16, null=False, default="UNREGISTRED", unique=True

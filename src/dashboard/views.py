@@ -612,7 +612,7 @@ def render_whitelist(request: HttpRequest) -> HttpResponse:
         {
             "whitelists": [
                 {
-                    "username": whitelist.name,
+                    "name": whitelist.name,
                     "ip": whitelist.ip,
                     "serial": whitelist.serial,
                     "created_on": whitelist.created_at,

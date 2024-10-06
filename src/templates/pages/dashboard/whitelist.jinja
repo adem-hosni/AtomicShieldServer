@@ -74,7 +74,7 @@
       class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-[#0d0d0d] dark:text-gray-400"
     >
       <tr>
-        <th scope="col" class="px-6 py-3">USERNAME</th>
+        <th scope="col" class="px-6 py-3">NAME</th>
         <th scope="col" class="px-6 py-3">SERIAL</th>
         <th scope="col" class="pl-16 py-3">IP</th>
         <th scope="col" class="pl-16 py-3">Created At</th>
@@ -86,25 +86,21 @@
       <tr
         class="transition-all duration:300 bg-white border-b dark:bg-[#161616] dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#212121]"
       >
-        <td class="px-6 py-4">{{ whitelist.username }}</td>
+        <td class="px-6 py-4 font-medium">{{ whitelist.name }}</td>
 
         <th
           scope="row"
           class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-gray-400 dark:hover:text-white cursor-pointer"
           onclick="navigator.clipboard.writeText('{{ whitelist.key }}').then(() => iziToast.success({title: 'SUCCESS', message: 'Successfuly key copied to clipboard!'}))"
         >
-          <span class="blur-sm hover:blur-0 transition duration-300">{{
-            whitelist.serial
-          }}</span>
+          <span class="blur-sm hover:blur-0 transition duration-300">{{ whitelist.serial }}</span>
         </th>
         <td
           scope="row"
           class="pl-16 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-gray-400 dark:hover:text-white cursor-pointer"
           onclick="navigator.clipboard.writeText('{{ whitelist.key }}').then(() => iziToast.success({title: 'SUCCESS', message: 'Successfuly key copied to clipboard!'}))"
         >
-          <span class="blur-sm hover:blur-0 transition duration-300">{{
-            whitelist.ip
-          }}</span>
+          <span class="blur-sm hover:blur-0 transition duration-300">{{ whitelist.ip }}</span>
         </td>
         <td class="px-6 py-4">{{ whitelist.created_on }}</td>
         <td class="px-6 py-4">{{ whitelist.last_update_at }}</td>

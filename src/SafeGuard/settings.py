@@ -198,6 +198,7 @@ ANTICHEAT_NAME_LONG = f"{ANTICHEAT_NAME} {ANTICHEAT_VERSION}"
 
 UNFOLD = {
     "SITE_HEADER": f"{ANTICHEAT_NAME} STAFF",
+    "SITE_SYMBOL": "shield",
 }
 
 # Authentication Settings

@@ -202,6 +202,7 @@ UNFOLD = {
 
 # Authentication Settings
 LOGIN_URL = "/auth/signin"
+LOGIN_REDIRECT_URL = "/dashboard/main/"
 PASSWORD_RESET_TIMEOUT = 60 * 60 * 24 * 1  # 1 Day
 
 # Sessions

@@ -35,28 +35,13 @@ class ServerSubscription(models.Model):
     def is_valid_for_now(self) -> bool:
         return (
             self.started_at is not None
-            and (datetime.timestamp(self.started_at) + self.expires_at.total_seconds()) > time()
+            and (datetime.timestamp(self.started_at) + self.expires_at.total_seconds())
+            > time()
             and self.status == 0
         )
 
     def __str__(self) -> str:
         return self.name
-
-
-class Whitelist(models.Model):
-    username = models.CharField(max_length=32, null=False)
-    ip = models.CharField(max_length=49, blank=True)
-    serial = models.CharField(max_length=64, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True, null=True)
-    last_update_at = models.DateTimeField(null=True)
-    
-    class Meta:
-        db_table = "whitelists"
-        verbose_name = "Whitelist"
-        verbose_name_plural = "Whitelists"
-
-    def __str__(self) -> str:
-        return self.username
 
 
 class GameServer(models.Model):
@@ -74,7 +59,6 @@ class GameServer(models.Model):
     configurations = models.ForeignKey(
         AntiCheatConfigurations, on_delete=models.CASCADE, null=False, blank=False
     )
-    whitelists = models.ManyToManyField(Whitelist, related_name="servers")
     type = models.IntegerField(choices=ServerTypes.choices, null=True)
     status = models.IntegerField(
         choices=ServerStatus.choices, null=False, default=ServerStatus.unsubscribed
@@ -110,6 +94,23 @@ class GameServer(models.Model):
 
     def __str__(self) -> str:
         return f"{self.ip}:{self.port} ({self.id})"
+
+
+class Whitelist(models.Model):
+    name = models.CharField(max_length=32, null=False)
+    ip = models.CharField(max_length=49, blank=True)
+    serial = models.CharField(max_length=64, blank=True)
+    game_server = models.ForeignKey(GameServer, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+    last_update_at = models.DateTimeField(null=True)
+
+    class Meta:
+        db_table = "whitelists"
+        verbose_name = "Whitelist"
+        verbose_name_plural = "Whitelists"
+
+    def __str__(self) -> str:
+        return self.name
 
 
 class Announcements(models.Model):

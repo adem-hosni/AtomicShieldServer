@@ -94,7 +94,7 @@ class ServerSubscriptionAdmin(ModelAdmin):
 
 
 class WhitelistAdmin(ModelAdmin):
-    list_display = ["username", "ip"]
+    list_display = ["name", "ip"]
 
 
 admin.site.register(GameServer, GameServerAdmin)

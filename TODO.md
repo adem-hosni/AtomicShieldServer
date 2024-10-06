@@ -11,6 +11,7 @@
 - ~~Add Quick Setup Section~~
 - ~~Add Whitelist view~~
 - ~~Add "whitelist add" functionality~~
+- Add whitelist actions
 - Add Discord Webhook Logs
 
 # Eagle Server

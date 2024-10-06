@@ -37,5 +37,16 @@
         {% block content %}
         {% endblock content %}
     </main>
+
+    <script>
+      {% if messages %}
+      {% for message in messages %}
+          iziToast.{{ message.tags }}({
+              title: '{{ message.level_tag|capfirst }}',
+              message: '{{ message }}',
+          });
+      {% endfor %}
+    {% endif %}
+    </script>
 </body>
 </html>

@@ -283,14 +283,5 @@
       })
     })
 
-    {% if messages %}
-    {% for message in messages %}
-        iziToast.{{ message.tags }}({
-            title: '{{ message.level_tag|capfirst }}',
-            message: '{{ message }}',
-        });
-    {% endfor %}
-  {% endif %}
-
   </script>
 {% endblock %}

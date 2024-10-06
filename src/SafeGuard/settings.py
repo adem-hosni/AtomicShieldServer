@@ -191,14 +191,14 @@ LOGGING = {
 
 DISCORD_INVITE = "https://discord.gg/eKtP7W4hXN"
 
-UNFOLD = {
-    "SITE_HEADER": "SafeGuard STAFF",
-}
-
 # Project names
 ANTICHEAT_NAME = "SafeGuard"
 ANTICHEAT_VERSION = "1.0b"
 ANTICHEAT_NAME_LONG = f"{ANTICHEAT_NAME} {ANTICHEAT_VERSION}"
+
+UNFOLD = {
+    "SITE_HEADER": f"{ANTICHEAT_NAME} STAFF",
+}
 
 # Authentication Settings
 LOGIN_URL = "/auth/signin"
@@ -211,3 +211,12 @@ SESSION_COOKIE_AGE = (60 * 60 * 24) / 2  # 12h
 RECAPTCHA_PUBLIC_KEY = "6Ld5FS8qAAAAADYrdex9VsqXwRmEcbDonIBywDOZ"
 RECAPTCHA_PRIVATE_KEY = "6Ld5FS8qAAAAAGq5JUx7rsAAL2rFOPHeV9WAwYA4"
 RECAPTCHA_REQUIRED_SCORE = 0.9
+
+
+ADMINS = [
+    ("Hyper", "hosniadem400@gmail.com")
+]
+
+# Mail Settings
+DEFAULT_FROM_EMAIL = "SafeGuard@localhost"
+EMAIL_SUBJECT_PREFIX = "[SafeGuard] "

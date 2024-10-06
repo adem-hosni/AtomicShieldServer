@@ -16,11 +16,11 @@ supported_dists = [
 
 
 class WhitelistForm(forms.Form):
-    username = forms.CharField(
+    name = forms.CharField(
         widget=forms.TextInput(
             attrs={
-                "placeholder": "Player Username",
-                "id": "player-username",
+                "placeholder": "Player Name",
+                "id": "player-name",
                 "class": "peer h-full w-full rounded-lg border border-gray-200 border-t-transparent bg-transparent px-3 py-2.5 font-sans text-sm font-normal text-gray-300 outline outline-0 transition-all placeholder-shown:border placeholder-shown:border-gray-300 placeholder-shown:border-t-gray-200 focus:border-gray-300 focus:border-t-transparent focus:outline-0 disabled:border-0 disabled:bg-gray-300 placeholder:opacity-0 focus:placeholder:opacity-100 focus:placeholder-transparent selection:bg-purple-600 selection:text-black",
             }
         ),

@@ -4,6 +4,7 @@ import json
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.urls import reverse
+from django.db.models import Q
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
 from utils import check_request_body_key
@@ -593,6 +594,13 @@ def render_whitelist(request: HttpRequest) -> HttpResponse:
                     if len(serial) != 32:
                         messages.error(request, "Invalid Serial!")
                         return redirect(request.path)
+
+                    if Whitelist.objects.filter(
+                        Q(game_server=target_server) & (Q(name=player_name) | Q(serial=serial) | Q(ip=ip))
+                    ).exists():
+                        messages.error(request, "Whitelist already exists!")
+                        return redirect(request.path)
+                        
 
                     new_whitelist = Whitelist(
                         name=player_name,

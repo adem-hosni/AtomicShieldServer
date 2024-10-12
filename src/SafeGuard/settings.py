@@ -199,6 +199,27 @@ ANTICHEAT_NAME_LONG = f"{ANTICHEAT_NAME} {ANTICHEAT_VERSION}"
 UNFOLD = {
     "SITE_HEADER": f"{ANTICHEAT_NAME} STAFF",
     "SITE_SYMBOL": "shield",
+    "SIDEBAR": {
+        "show_search": True,
+        "show_all_applications": True,
+    },
+    "COLORS": {
+        "primary": {
+            "50": "250 245 255",
+            "100": "243 232 255",
+            "200": "233 213 255",
+            "300": "216 180 254",
+            "400": "192 132 252",
+            "500": "168 85 247",
+            "600": "140 89 43",
+            "700": "126 34 206",
+            "800": "107 33 168",
+            "900": "88 28 135",
+            "950": "59 7 100",
+        },
+    },
+    # Other configurations...
+
 }
 
 # Authentication Settings

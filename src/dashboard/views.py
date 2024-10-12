@@ -556,7 +556,6 @@ def render_subscriptions(request: HttpRequest) -> HttpResponse:
 @login_required
 def render_whitelist(request: HttpRequest) -> HttpResponse:
     add_form = WhitelistForm()
-    edit_form = EditWhitelistForm()
     whitelists: List[Whitelist] = []
     error_message = ""
 

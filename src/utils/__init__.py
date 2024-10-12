@@ -36,7 +36,7 @@ def check_request_body_key(
         return False
 
     if not isinstance(request_body[target_key], key_type):
-        print(f"'{target_key}''s type isn't comptatible with {key_type}")
+        print(f"'{target_key}''s type isn't comptatible with {key_type} (got: {request_body[target_key]})")
         return False
     return True
 

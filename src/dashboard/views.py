@@ -26,7 +26,6 @@ from .forms import (
     AddServerForm,
     QuickSetupForm,
     WhitelistForm,
-    EditWhitelistForm,
     supported_dists,
 )
 import utils

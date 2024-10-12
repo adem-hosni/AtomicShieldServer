@@ -113,7 +113,7 @@
             data-modal-target="edit-whitelist-modal" data-modal-toggle="edit-whitelist-modal" data-tooltip-target="edit-whitelist-{{ whitelist.id }}" data-tooltip-style="dark" class="font-medium text-blue-600 dark:text-blue-500 hover:underline"><i class="fa-solid fa-pen-to-square text-[#8c592b] transition-all duration-300 hover:bg-[#8c592b] hover:text-black rounded-full p-1"></i></button>
 
           <button onclick="document.getElementById('target-delete-whitelist').value = '{{ whitelist.id }}'; document.getElementById('target-delete-whitelist-modal-name').textContent = '{{ whitelist.name }}';"
-            data-modal-target="delete-whitelist-modal" data-modal-toggle="edit-whitelist-modal" data-tooltip-target="remove-whitelist-{{ whitelist.id }}" data-tooltip-style="dark" class="font-medium text-blue-600 dark:text-blue-500 hover:underline"><i class="fa-solid fa-xmark text-[#8c592b] transition-all duration-300 hover:bg-[#8c592b] hover:text-black rounded-full p-1"></i></button>
+            data-modal-target="delete-whitelist-modal" data-modal-toggle="delete-whitelist-modal" data-tooltip-target="remove-whitelist-{{ whitelist.id }}" data-tooltip-style="dark" class="font-medium text-blue-600 dark:text-blue-500 hover:underline"><i class="fa-solid fa-xmark text-[#8c592b] transition-all duration-300 hover:bg-[#8c592b] hover:text-black rounded-full p-1"></i></button>
 
           <div id="edit-whitelist-{{ whitelist.id }}" role="tooltip" class="z-10 invisible inline-block px-3 py-2 text-sm font-medium text-black bg-[#8c592b] rounded-lg shadow-sm opacity-0 tooltip transition-all duration-300">
             Edit Whitelist

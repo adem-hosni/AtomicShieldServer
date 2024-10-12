@@ -6,11 +6,33 @@ from datetime import timedelta
 
 
 def generate_key(parts: Optional[int] = 4) -> str:
+    """
+    Generate a random license key consisting of uppercase letters and digits.
+    
+    The function generates a license key with a specified number of parts (default is 4), 
+    where each part consists of 5 randomly shuffled characters (uppercase letters and digits), 
+    separated by hyphens. For example, a key with 4 parts will have the format 'XXXXX-XXXXX-XXXXX-XXXXX'.
+    
+    Args:
+    -----
+        parts (Optional[int]): The number of parts in the license key. Default is 4, which results in 
+                               5 characters in each part and 4 parts separated by hyphens. If `parts=4`,
+                               the key will contain 5 parts (due to the loop structure adding one extra part).
+    
+    Returns:
+    --------
+        str: A randomly generated license key in the format of multiple parts separated by hyphens.
+    
+    Notes:
+    ------
+        - The function uses the `shuffle` method to randomly rearrange characters in each part.
+        - The result is trimmed at the end to remove the trailing hyphen.
+    """
     allowed_chars = list(ascii_uppercase + digits)
     license_key = ""
 
     # Generate 3 random parts of the key
-    for i in range(parts + 1):
+    for _ in range(parts + 1):
         shuffle(allowed_chars)
         license_key += "".join(allowed_chars)[:5] + "-"
 

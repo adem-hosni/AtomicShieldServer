@@ -26,7 +26,7 @@ class GroupAdmin(BaseGroupAdmin, ModelAdmin): ...
 
 
 class GameServerAdmin(ModelAdmin):
-    list_display = ["address", "owner", "type"]
+    list_display = ["name", "address", "owner", "type"]
 
     @admin.display(description="Address")
     def address(self, obj: GameServer):

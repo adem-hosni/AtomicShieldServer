@@ -48,7 +48,7 @@
               <span class="blur-sm hover:blur-0 transition duration-300">{{ server.key }}</span>
             </th>
             <td class="pl-1 py-4 whitespace-nowrap font-medium">{{ server.name }}</td>
-            <td class="px-3 py-4">{{ server.address }}</td>
+            <td class="px-3 py-4">{{ server.ip }}:{{ server.port }}</td>
             <td class="px-6 py-4">
               {% if server.type == 1 %}
                 <span class="border font-medium border-orange-500 rounded p-1 text-orange-500 transition-all duration-300 hover:bg-orange-500 hover:text-black select-none">MTA:SA</span>
@@ -62,8 +62,20 @@
               <td class="px-6 py-4"><button onclick="select('{{ server.id }}', true)" class="border py-1 px-2 rounded font-medium text-red-500 border-red-500 transition-all duration-300 hover:text-black hover:bg-red-500 w-20">Select</button></td>
             {% endif %}
             <td class="px-6 py-4">
+              <button onclick="document.getElementById('target-edit-server').value = '{{ server.id }}';
+                              document.getElementById('target-edit-server-name').textContent = '{{ server.name }}';
+                              document.getElementById('edit-server-name').value = '{{ server.name }}';
+                              document.getElementById('edit-server-ip').value = '{{ server.ip }}';
+                              document.getElementById('edit-server-port').value = '{{ server.port }}';"
+              data-modal-target="edit-server-modal" data-modal-toggle="edit-server-modal" data-tooltip-target="edit-server-tooltip-{{ server.id }}" data-tooltip-style="dark" class="font-medium text-blue-600 dark:text-blue-500 hover:underline"><i class="fa-solid fa-pen-to-square text-[#8c592b] transition-all duration-300 hover:bg-[#8c592b] hover:text-black rounded-full p-1"></i></button>
+  
+
               <button onclick="document.getElementById('target-refresh-server').value = '{{ server.id }}'" data-modal-target="refresh-key-modal" data-modal-toggle="refresh-key-modal" data-tooltip-target="tooltip-refresh-{{ server.id }}" data-tooltip-style="dark" class="font-medium text-blue-600 dark:text-blue-500 hover:underline"><i class="fa-solid fa-arrows-rotate text-[#8c592b] transition-all duration-300 hover:bg-[#8c592b] hover:text-black rounded-full p-1"></i></button>
 
+              <div id="edit-server-tooltip-{{ server.id }}" role="tooltip" class="z-10 invisible inline-block px-3 py-2 text-sm font-medium text-black bg-[#8c592b] rounded-lg shadow-sm opacity-0 tooltip transition-all duration-300">
+                Edit Server
+                <div class="tooltip-arrow" data-popper-arrow></div>
+            </div>
               <div id="tooltip-refresh-{{ server.id }}" role="tooltip" class="z-10 invisible inline-block px-3 py-2 text-sm font-medium text-black bg-[#8c592b] rounded-lg shadow-sm opacity-0 tooltip transition-all duration-300">
                 Refresh key
                 <div class="tooltip-arrow" data-popper-arrow></div>
@@ -102,6 +114,7 @@
           </div>
           <form class="space-y-4" method="post" id="addserver-form">
             {% csrf_token %}
+            <input type="hidden" name="type" value="add">
             <div class="flex">
               <div class="relative mx-auto w-full">
                 {{ form.ip }}
@@ -154,6 +167,85 @@
     </div>
   </div>
   <!-- End Refresh key Modal -->
+
+  <!-- Start Edit Server Modal -->
+  <div id="edit-server-modal" tabindex="-1" aria-hidden="true" class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
+    <div class="relative p-4 w-full max-w-md max-h-full">
+      <!-- Modal content -->
+      <div class="relative bg-white rounded-lg shadow dark:bg-[#0d0d0d]">
+        <!-- Modal header -->
+        <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
+          <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Edit <span id="target-edit-server-name"></span>'s Server</h3>
+          <button type="button" class="end-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-purple-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-[#8c592b] dark:hover:text-black">
+            <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
+            </svg>
+            <span class="sr-only">Close modal</span>
+          </button>
+        </div>
+        <!-- Modal body -->
+        <div class="p-4 md:p-5">
+          <form class="space-y-4" method="post">
+            {% csrf_token %}
+            <input type="hidden" name="type" value="edit">
+            <input type="hidden" id="target-edit-server" name="target-server" value="">
+
+            <div class="relative mx-auto w-full">
+              <input
+                type="text"
+                name="server-name"
+                placeholder="Server Name"
+                id="edit-server-name"
+                class="peer h-full w-full rounded-lg border border-gray-200 border-t-transparent bg-transparent px-3 py-2.5 font-sans text-sm font-normal text-gray-300 outline outline-0 transition-all placeholder-shown:border placeholder-shown:border-gray-300 placeholder-shown:border-t-gray-200 focus:border-gray-300 focus:border-t-transparent focus:outline-0 disabled:border-0 disabled:bg-gray-300 placeholder:opacity-0 focus:placeholder:opacity-100 focus:placeholder-transparent selection:bg-[#8c592b] selection:text-black"
+                required=""
+              />
+              <label
+                class="before:content[' '] after:content[' '] pointer-events-none absolute left-0 -top-1.5 flex h-full w-full select-none !overflow-visible truncate text-[11px] font-normal leading-tight text-gray-300 transition-all before:pointer-events-none before:mt-[6.5px] before:mr-1 before:box-border before:block before:h-1.5 before:w-2.5 before:rounded-tl-md before:border-t before:border-l before:border-gray-300 before:transition-all after:pointer-events-none after:mt-[6.5px] after:ml-1 after:box-border after:block after:h-1.5 after:w-2.5 after:flex-grow after:rounded-tr-md after:border-t after:border-r after:border-gray-300 after:transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:leading-[3.75] peer-placeholder-shown:text-gray-300 peer-placeholder-shown:before:border-transparent peer-placeholder-shown:after:border-transparent peer-focus:text-[12px] peer-focus:leading-tight peer-focus:text-gray-300 peer-focus:after:border-t-2 peer-focus:after:border-r-2 peer-focus:after:!border-gray-300 peer-disabled:text-transparent peer-disabled:before:border-transparent peer-disabled:after:border-transparent peer-disabled:peer-placeholder-shown:text-gray-300"
+                >Server Name</label
+              >
+            </div>
+            
+            <div class="flex">
+              <div class="relative mx-auto w-full">
+                <input
+                  type="text"
+                  name="server-ip"
+                  placeholder="Server IP"
+                  id="edit-server-ip"
+                  class="peer h-full w-full rounded-lg border border-gray-200 border-t-transparent bg-transparent px-3 py-2.5 font-sans text-sm font-normal text-gray-300 outline outline-0 transition-all placeholder-shown:border placeholder-shown:border-gray-300 placeholder-shown:border-t-gray-200 focus:border-gray-300 focus:border-t-transparent focus:outline-0 disabled:border-0 disabled:bg-gray-300 placeholder:opacity-0 focus:placeholder:opacity-100 focus:placeholder-transparent selection:bg-[#8c592b] selection:text-black"
+                  required=""
+                />
+                <label
+                  class="before:content[' '] after:content[' '] pointer-events-none absolute left-0 -top-1.5 flex h-full w-full select-none !overflow-visible truncate text-[11px] font-normal leading-tight text-gray-300 transition-all before:pointer-events-none before:mt-[6.5px] before:mr-1 before:box-border before:block before:h-1.5 before:w-2.5 before:rounded-tl-md before:border-t before:border-l before:border-gray-300 before:transition-all after:pointer-events-none after:mt-[6.5px] after:ml-1 after:box-border after:block after:h-1.5 after:w-2.5 after:flex-grow after:rounded-tr-md after:border-t after:border-r after:border-gray-300 after:transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:leading-[3.75] peer-placeholder-shown:text-gray-300 peer-placeholder-shown:before:border-transparent peer-placeholder-shown:after:border-transparent peer-focus:text-[12px] peer-focus:leading-tight peer-focus:text-gray-300 peer-focus:after:border-t-2 peer-focus:after:border-r-2 peer-focus:after:!border-gray-300 peer-disabled:text-transparent peer-disabled:before:border-transparent peer-disabled:after:border-transparent peer-disabled:peer-placeholder-shown:text-gray-300"
+                  >Server IP</label
+                >
+              </div>
+              <div class="relative mx-auto w-18">
+                <input
+                  type="number"
+                  name="server-port"
+                  placeholder="Server Port"
+                  id="edit-server-port"
+                  class="peer h-full w-full rounded-lg border border-gray-200 border-t-transparent bg-transparent px-3 py-2.5 font-sans text-sm font-normal text-gray-300 outline outline-0 transition-all placeholder-shown:border placeholder-shown:border-gray-300 placeholder-shown:border-t-gray-200 focus:border-gray-300 focus:border-t-transparent focus:outline-0 disabled:border-0 disabled:bg-gray-300 placeholder:opacity-0 focus:placeholder:opacity-100 focus:placeholder-transparent selection:bg-[#8c592b] selection:text-black"
+                  required=""
+                />
+                <label
+                  class="before:content[' '] after:content[' '] pointer-events-none absolute left-0 -top-1.5 flex h-full w-full select-none !overflow-visible truncate text-[11px] font-normal leading-tight text-gray-300 transition-all before:pointer-events-none before:mt-[6.5px] before:mr-1 before:box-border before:block before:h-1.5 before:w-2.5 before:rounded-tl-md before:border-t before:border-l before:border-gray-300 before:transition-all after:pointer-events-none after:mt-[6.5px] after:ml-1 after:box-border after:block after:h-1.5 after:w-2.5 after:flex-grow after:rounded-tr-md after:border-t after:border-r after:border-gray-300 after:transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:leading-[3.75] peer-placeholder-shown:text-gray-300 peer-placeholder-shown:before:border-transparent peer-placeholder-shown:after:border-transparent peer-focus:text-[12px] peer-focus:leading-tight peer-focus:text-gray-300 peer-focus:after:border-t-2 peer-focus:after:border-r-2 peer-focus:after:!border-gray-300 peer-disabled:text-transparent peer-disabled:before:border-transparent peer-disabled:after:border-transparent peer-disabled:peer-placeholder-shown:text-gray-300"
+                  >Server Port</label
+                >
+              </div>
+            </div>
+            
+
+            <button type="submit" value="" onclick="this.disabled=true; this.form.submit();" class="w-full text-black border-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 border-[#8c592b] bg-[#8c592b] hover:bg-[#b37339]">Save</button>
+          </form>
+          <button data-modal-hide="edit-server-modal" onclick="this.disabled=true; this.form.submit();" class="w-full border-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 text-red-600 border-red-600 hover:bg-red-600 hover:text-black my-3">Cancel</button>
+
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- End Edit Server Modal -->
 
   <script type="text/javascript">
     function select(targetServerId, select) {

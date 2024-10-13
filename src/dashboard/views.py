@@ -136,120 +136,173 @@ def render_patchnotes(request: HttpRequest) -> HttpResponse:
 
 @login_required
 def render_servers(request: HttpRequest) -> HttpResponse:
+    add_form = AddServerForm(user=request.user)
     if request.method == "POST":
-        form = AddServerForm(request.POST, user=request.user)
+        request_body = request.POST
 
-        if form.is_valid():
-            ip = form.cleaned_data["ip"]
-            port = form.cleaned_data["port"]
-            name = str(form.cleaned_data["server_name"])
-            server_type = form.cleaned_data["server_type"]
-            subscription_id = form.cleaned_data["subscription"]
+        match request_body["type"]:
+            case "add":
+                add_form = AddServerForm(request_body, user=request.user)
+                if add_form.is_valid():
+                    ip = add_form.cleaned_data["ip"]
+                    port = add_form.cleaned_data["port"]
+                    name = str(add_form.cleaned_data["server_name"])
+                    server_type = add_form.cleaned_data["server_type"]
+                    subscription_id = add_form.cleaned_data["subscription"]
 
-            # Check if the server_type and the subscription_id are of type string
-            if isinstance(server_type, str) and isinstance(subscription_id, str):
-                if not server_type.isnumeric() and not subscription_id.isnumeric():
-                    messages.error(request, "Invalid Server Type")
-                    messages.error(request, "Invalid Subscription")
-                    return HttpResponseRedirect("/dashboard/servers")
-                server_type = int(server_type)
-                subscription_id = int(subscription_id)
+                    # Check if the server_type and the subscription_id are of type string
+                    if isinstance(server_type, str) and isinstance(
+                        subscription_id, str
+                    ):
+                        if (
+                            not server_type.isnumeric()
+                            and not subscription_id.isnumeric()
+                        ):
+                            messages.error(request, "Invalid Server Type")
+                            messages.error(request, "Invalid Subscription")
+                            return HttpResponseRedirect("/dashboard/servers")
+                        server_type = int(server_type)
+                        subscription_id = int(subscription_id)
 
-            # Check if the port is of type string
-            if isinstance(port, str):
-                if not port.isnumeric():
-                    messages.error(request, "Invalid Server Type")
-                    return HttpResponseRedirect("/dashboard/servers")
-                port = int(port)
+                    # Check if the port is of type string
+                    if isinstance(port, str):
+                        if not port.isnumeric():
+                            messages.error(request, "Invalid Server Type")
+                            return HttpResponseRedirect("/dashboard/servers")
+                        port = int(port)
 
-            # Check port range (1 -> 65535)
-            if not (port >= 1 and port <= 65535):
-                messages.error(request, "Invalid port range")
-                return HttpResponseRedirect("/dashboard/servers")
+                    # Check port range (1 -> 65535)
+                    if not (port >= 1 and port <= 65535):
+                        messages.error(request, "Invalid port range")
+                        return HttpResponseRedirect("/dashboard/servers")
 
-            if not len(name):
-                messages.error(request, "Invalid server name")
-                return HttpResponseRedirect("/dashboard/servers")
+                    if not len(name):
+                        messages.error(request, "Invalid server name")
+                        return HttpResponseRedirect("/dashboard/servers")
 
-            if len(name) > 32:
-                messages.error(request, "Server name must be less than 32 characters")
-                return HttpResponseRedirect("/dashboard/servers")
+                    if len(name) > 32:
+                        messages.error(
+                            request, "Server name must be less than 32 characters"
+                        )
+                        return HttpResponseRedirect("/dashboard/servers")
 
-            if server_type == 1:  # Server Type: MTA:SA
-                ipv4_pattern = re.compile(
-                    r"^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
-                )
+                    if server_type == 1:  # Server Type: MTA:SA
+                        ipv4_pattern = re.compile(
+                            r"^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
+                        )
 
-                # Check if the ip is correct
-                if not ipv4_pattern.match(ip):
-                    messages.error(request, "Invalid IPV4 IP")
-                    return HttpResponseRedirect("/dashboard/servers")
+                        # Check if the ip is correct
+                        if not ipv4_pattern.match(ip):
+                            messages.error(request, "Invalid IPV4 IP")
+                            return HttpResponseRedirect("/dashboard/servers")
 
-                # Check if the server address already used
-                if GameServer.objects.filter(ip=ip, port=port).exists():
-                    messages.error(request, "Server Address Already been used!")
-                    return HttpResponseRedirect("/dashboard/servers")
+                        # Check if the server address already used
+                        if GameServer.objects.filter(ip=ip, port=port).exists():
+                            messages.error(request, "Server Address Already been used!")
+                            return HttpResponseRedirect("/dashboard/servers")
 
-                # Check the selected subscription health
-                try:
-                    subscription = ServerSubscription.objects.get(id=subscription_id)
-                except ServerSubscription.DoesNotExist:
-                    logger.warning(
-                        f"{request.user.username} trying to use a non existing subscription (used subscription id: {subscription_id})!"
-                    )
-                    return HttpResponseRedirect("/dashboard/servers")
-                if subscription.owner != request.user:
-                    logger.warning(
-                        f"{request.user.username} trying to use {subscription.owner.username}'s subscription!"
-                    )
-                    messages.error(request, "Not your fucking subscription!")
-                    return HttpResponseRedirect("/dashboard/servers")
+                        # Check the selected subscription health
+                        try:
+                            subscription = ServerSubscription.objects.get(
+                                id=subscription_id
+                            )
+                        except ServerSubscription.DoesNotExist:
+                            logger.warning(
+                                f"{request.user.username} trying to use a non existing subscription (used subscription id: {subscription_id})!"
+                            )
+                            return HttpResponseRedirect("/dashboard/servers")
+                        if subscription.owner != request.user:
+                            logger.warning(
+                                f"{request.user.username} trying to use {subscription.owner.username}'s subscription!"
+                            )
+                            messages.error(request, "Not your fucking subscription!")
+                            return HttpResponseRedirect("/dashboard/servers")
 
-                if not subscription.is_valid_for_now():
-                    logger.warning(
-                        f"{request.user.username} trying to use expired subscription (subscription id: {subscription_id})!"
-                    )
-                    messages.error(request, "Expired Subscription")
-                    return HttpResponseRedirect("/dashboard/servers")
+                        if not subscription.is_valid_for_now():
+                            logger.warning(
+                                f"{request.user.username} trying to use expired subscription (subscription id: {subscription_id})!"
+                            )
+                            messages.error(request, "Expired Subscription")
+                            return HttpResponseRedirect("/dashboard/servers")
 
-                # Check if the server name exists in the owned servers
-                if GameServer.objects.filter(name=name, owner=request.user).exists():
-                    messages.error(request, "Server name already used!")
-                    return HttpResponseRedirect("/dashboard/servers")
+                        # Check if the server name exists in the owned servers
+                        if GameServer.objects.filter(
+                            name=name, owner=request.user
+                        ).exists():
+                            messages.error(request, "Server name already used!")
+                            return HttpResponseRedirect("/dashboard/servers")
 
-                # Generate a license key for the server
-                license_key = utils.generate_key(4)
+                        # Generate a license key for the server
+                        license_key = utils.generate_key(4)
 
-                # Check if key already exists, regenerate it
-                if GameServer.objects.filter(key=license_key).exists():
-                    license_key = utils.generate_key(4)
+                        # Check if key already exists, regenerate it
+                        if GameServer.objects.filter(key=license_key).exists():
+                            license_key = utils.generate_key(4)
 
-                # Create the server configs
-                configurations = AntiCheatConfigurations()
-                for config in AntiCheatConfigTemplates.objects.filter(
-                    server_type=ServerTypes.MTASA
+                        # Create the server configs
+                        configurations = AntiCheatConfigurations()
+                        for config in AntiCheatConfigTemplates.objects.filter(
+                            server_type=ServerTypes.MTASA
+                        ):
+                            configurations.config[config.id] = config.default_value
+                        configurations.save()
+
+                        new_server = GameServer.objects.create(
+                            ip=ip,
+                            port=port,
+                            name=name,
+                            owner=request.user,
+                            key=license_key,
+                            configurations=configurations,
+                            type=ServerTypes.MTASA,
+                            status=ServerStatus.online,
+                        )
+                        new_server.subscriptions.add(subscription)
+                        request.session["selected_server"] = new_server.id
+                        logger.info(
+                            f"Added New Server {ip}:{port} from {request.user.username}, license key: ({license_key})"
+                        )
+                        return HttpResponseRedirect("/dashboard/servers")
+            case "edit":
+                if not (
+                    "target-server" in request_body.keys()
+                    or "server-name" in request_body.keys()
+                    or "server-ip" in request_body.keys()
+                    or "server-port" in request_body.keys()
                 ):
-                    configurations.config[config.id] = config.default_value
-                configurations.save()
+                    messages.error(request, "Unexpected error!")
+                    return redirect(request.path)
 
-                new_server = GameServer.objects.create(
-                    ip=ip,
-                    port=port,
-                    name=name,
-                    owner=request.user,
-                    key=license_key,
-                    configurations=configurations,
-                    type=ServerTypes.MTASA,
-                    status=ServerStatus.online,
-                )
-                new_server.subscriptions.add(subscription)
-                request.session["selected_server"] = new_server.id
-                logger.info(
-                    f"Added New Server {ip}:{port} from {request.user.username}, license key: ({license_key})"
-                )
-                return HttpResponseRedirect("/dashboard/servers")
+                new_name = request_body["server-name"]
+                new_ip = request_body["server-ip"]
+                new_port = int(request_body["server-port"])
+
+                if not utils.isvalid_ip(new_ip):
+                    messages.error(request, "Invalid port")
+                    return HttpResponseRedirect(request.path)
+
+                # Check port range (1 -> 65535)
+                if not (1 <= new_port <= 65535):
+                    messages.error(request, "Invalid port")
+                    return HttpResponseRedirect(request.path)
+
+                try:
+                    target_server = GameServer.objects.get(
+                        id=int(request_body["target-server"]), owner=request.user
+                    )
+                except GameServer.DoesNotExist:
+                    messages.error(request, "Selected Server Does Not Exists!")
+                    return redirect(request.path)
+
+                target_server.name = new_name
+                target_server.ip = new_ip
+                target_server.port = new_port
+
+                target_server.save()
+                messages.success(request, f"{target_server.name} Saved Successfuly!")
+
     else:
-        form = AddServerForm(user=request.user)
+        add_form = AddServerForm(user=request.user)
 
     servers = GameServer.objects.filter(owner=request.user)
 
@@ -257,12 +310,13 @@ def render_servers(request: HttpRequest) -> HttpResponse:
         request,
         "pages/dashboard/servers.jinja",
         {
-            "form": form,
+            "form": add_form,
             "servers": [
                 {
                     "id": server.id,
                     "key": server.key,
-                    "address": f"{server.ip}:{server.port}",
+                    "ip": server.ip,
+                    "port": server.port,
                     "name": server.name,
                     "type": server.type,
                     "duration": "30 Days",

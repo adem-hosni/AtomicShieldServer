@@ -12,6 +12,7 @@
 - ~~Add Whitelist view~~
 - ~~Add "whitelist add" functionality~~
 - ~~Add whitelist actions~~
+- Add Server Edit action
 - Add Discord Webhook Logs
 
 # Eagle Server

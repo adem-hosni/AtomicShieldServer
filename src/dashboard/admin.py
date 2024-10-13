@@ -42,11 +42,7 @@ class GameServerAdmin(ModelAdmin):
 
 
 class AnnouncementAdmin(ModelAdmin):
-    list_display = ["announcement", "author", "description"]
-
-    @admin.display(description="Announcement")
-    def announcement(self, obj: Announcements):
-        return obj.title
+    list_display = ["title", "author", "description"]
 
     @admin.display(description="Author")
     def announcement(self, obj: Announcements):

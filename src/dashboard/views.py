@@ -573,102 +573,105 @@ def render_whitelist(request: HttpRequest) -> HttpResponse:
 
     if request.method == "POST":
         request_body = request.POST
-        match request_body["type"]:
-            case "add":
-                add_form = WhitelistForm(request_body)
-                if add_form.is_valid():
-                    player_name = add_form.cleaned_data["name"]
-                    ip = add_form.cleaned_data["ip"]
-                    serial = add_form.cleaned_data["serial"]
+        if "type" in request_body.keys():
+            match request_body["type"]:
+                case "add":
+                    add_form = WhitelistForm(request_body)
+                    if add_form.is_valid():
+                        player_name = add_form.cleaned_data["name"]
+                        ip = add_form.cleaned_data["ip"]
+                        serial = add_form.cleaned_data["serial"]
 
-                    if not target_server:
-                        messages.error(request, "Invalid selected server!")
-                        return redirect(request.path)
+                        if not target_server:
+                            messages.error(request, "Invalid selected server!")
+                            return redirect(request.path)
+
+                        # Check if the ip pattern is correct
+                        if not utils.isvalid_ip(ip):
+                            messages.error(request, "Invalid ip!")
+                            return redirect(request.path)
+
+                        # Check if the serial is inequal to 32
+                        if len(serial) != 32:
+                            messages.error(request, "Invalid Serial!")
+                            return redirect(request.path)
+
+                        if Whitelist.objects.filter(
+                            Q(game_server=target_server)
+                            & (Q(name=player_name) | Q(serial=serial) | Q(ip=ip))
+                        ).exists():
+                            messages.error(request, "Whitelist already exists!")
+                            return redirect(request.path)
+
+                        new_whitelist = Whitelist(
+                            name=player_name,
+                            ip=ip,
+                            serial=serial,
+                            game_server=target_server,
+                        )
+                        new_whitelist.save()
+                        messages.success(
+                            request, f"{player_name}'s whitelist added successfuly!"
+                        )
+                    else:
+                        messages.error(request, "Empty whitelist!")
+
+                case "delete":
+                    if check_request_body_key(request_body, "target-whitelist", int):
+                        messages.error(request, "Unexptected error!")
+                        return HttpResponseRedirect(request.path)
+
+                    target_whitelist_id = int(request_body["target-whitelist"])
+                    try:
+                        target_whitelist = Whitelist.objects.get(id=target_whitelist_id)
+                    except Whitelist.DoesNotExist:
+                        messages.error(request, "Whitelist doesnt exists!")
+                        return HttpResponseRedirect(request.path)
+
+                    target_whitelist.delete()
+                    messages.success(
+                        request,
+                        f"Successfuly {target_whitelist.name}'s whitelist deleted!",
+                    )
+
+                case "edit":
+                    if not (
+                        "target-whitelist" in request_body.keys()
+                        or "player-serial" in request_body.keys()
+                        or "player-ip" in request_body.keys()
+                    ):
+                        messages.error(request, "Unexptected error!")
+                        return HttpResponseRedirect(request.path)
+
+                    target_whitelist_id = int(request_body["target-whitelist"])
+                    player_serial = request_body["player-serial"]
+                    player_ip = request_body["player-ip"]
+
+                    try:
+                        target_whitelist = Whitelist.objects.get(id=target_whitelist_id)
+                    except Whitelist.DoesNotExist:
+                        messages.error(request, "Whitelist doesnt exists!")
+                        return HttpResponseRedirect(request.path)
 
                     # Check if the ip pattern is correct
-                    if not utils.isvalid_ip(ip):
+                    if not utils.isvalid_ip(player_ip):
                         messages.error(request, "Invalid ip!")
                         return redirect(request.path)
 
                     # Check if the serial is inequal to 32
-                    if len(serial) != 32:
+                    if len(player_serial) != 32:
                         messages.error(request, "Invalid Serial!")
                         return redirect(request.path)
 
-                    if Whitelist.objects.filter(
-                        Q(game_server=target_server) & (Q(name=player_name) | Q(serial=serial) | Q(ip=ip))
-                    ).exists():
-                        messages.error(request, "Whitelist already exists!")
-                        return redirect(request.path)
-                        
+                    target_whitelist.serial = player_serial
+                    target_whitelist.ip = player_ip
 
-                    new_whitelist = Whitelist(
-                        name=player_name,
-                        ip=ip,
-                        serial=serial,
-                        game_server=target_server,
-                    )
-                    new_whitelist.save()
+                    target_whitelist.save()
+
                     messages.success(
-                        request, f"{player_name}'s whitelist added successfuly!"
+                        request,
+                        f"{target_whitelist.name}'s whitelist saved successfuly!",
                     )
-                else:
-                    messages.error(request, "Empty whitelist!")
-
-            case "delete":
-                if check_request_body_key(request_body, "target-whitelist", int):
-                    messages.error(request, "Unexptected error!")
-                    return HttpResponseRedirect(request.path)
-
-                target_whitelist_id = int(request_body["target-whitelist"])
-                try:
-                    target_whitelist = Whitelist.objects.get(id=target_whitelist_id)
-                except Whitelist.DoesNotExist:
-                    messages.error(request, "Whitelist doesnt exists!")
-                    return HttpResponseRedirect(request.path)
-
-                target_whitelist.delete()
-                messages.success(
-                    request, f"Successfuly {target_whitelist.name}'s whitelist deleted!"
-                )
-
-            case "edit":
-                if not (
-                    "target-whitelist" in request_body.keys()
-                    or "player-serial" in request_body.keys()
-                    or "player-ip" in request_body.keys()
-                ):
-                    messages.error(request, "Unexptected error!")
-                    return HttpResponseRedirect(request.path)
-
-                target_whitelist_id = int(request_body["target-whitelist"])
-                player_serial = request_body["player-serial"]
-                player_ip = request_body["player-ip"]
-
-                try:
-                    target_whitelist = Whitelist.objects.get(id=target_whitelist_id)
-                except Whitelist.DoesNotExist:
-                    messages.error(request, "Whitelist doesnt exists!")
-                    return HttpResponseRedirect(request.path)
-
-                # Check if the ip pattern is correct
-                if not utils.isvalid_ip(player_ip):
-                    messages.error(request, "Invalid ip!")
-                    return redirect(request.path)
-
-                # Check if the serial is inequal to 32
-                if len(player_serial) != 32:
-                    messages.error(request, "Invalid Serial!")
-                    return redirect(request.path)
-
-                target_whitelist.serial = player_serial
-                target_whitelist.ip = player_ip
-
-                target_whitelist.save()
-
-                messages.success(
-                    request, f"{target_whitelist.name}'s whitelist saved successfuly!"
-                )
 
     if not len(whitelists):
         error_message = "0 Whitelists"

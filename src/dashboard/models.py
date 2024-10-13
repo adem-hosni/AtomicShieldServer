@@ -66,7 +66,8 @@ class GameServer(models.Model):
 
     class Meta:
         db_table = "gameservers"
-        verbose_name_plural = "gameservers"
+        verbose_name = "Game Server"
+        verbose_name_plural = "Game Servers"
 
     async def get_anticheat_configurations(self) -> Dict[str, Any]:
         try:
@@ -125,7 +126,8 @@ class Announcements(models.Model):
 
     class Meta:
         db_table = "announcements"
-        verbose_name_plural = "announcements"
+        verbose_name = "Announcement"
+        verbose_name_plural = "Announcements"
 
     def __str__(self) -> str:
         return self.title

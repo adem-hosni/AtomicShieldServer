@@ -187,12 +187,8 @@ def render_servers(request: HttpRequest) -> HttpResponse:
                         return HttpResponseRedirect("/dashboard/servers")
 
                     if server_type == 1:  # Server Type: MTA:SA
-                        ipv4_pattern = re.compile(
-                            r"^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
-                        )
-
                         # Check if the ip is correct
-                        if not ipv4_pattern.match(ip):
+                        if not utils.isvalid_ip(ip):
                             messages.error(request, "Invalid IPV4 IP")
                             return HttpResponseRedirect("/dashboard/servers")
 

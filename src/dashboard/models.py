@@ -145,7 +145,7 @@ class PatchNotes(models.Model):
 
     class Meta:
         db_table = "patchnotes"
-        verbose_name_plural = "patch-notes"
+        verbose_name = "Patchnote"
 
     def __str__(self) -> str:
         return self.title

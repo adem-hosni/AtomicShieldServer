@@ -355,12 +355,8 @@ def check_server(request: HttpRequest) -> HttpResponse:
     ):
         return HttpResponse(json.dumps({"success": False}))
 
-    ipv4_pattern = re.compile(
-        r"^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
-    )
-
     # check the ip health
-    if not ipv4_pattern.match(request_body["ip"]):
+    if not utils.isvalid_ip(request_body["ip"]):
         return HttpResponse(json.dumps({"success": False}))
 
     # remove some spaces in the port if found

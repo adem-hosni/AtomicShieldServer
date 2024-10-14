@@ -320,11 +320,7 @@ def render_servers(request: HttpRequest) -> HttpResponse:
                 }
                 for server in servers.reverse()
             ],
-            "active": (
-                request.session["selected_server"]
-                if "selected_server" in request.session.keys()
-                else servers[0].id if len(servers) >= 1 else -1
-            ),
+            "active": request.session.get("selected_server", -1),
         },
     )
 

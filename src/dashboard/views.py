@@ -600,7 +600,6 @@ def render_subscriptions(request: HttpRequest) -> HttpResponse:
 def render_whitelist(request: HttpRequest) -> HttpResponse:
     add_form = WhitelistForm()
     whitelists: List[Whitelist] = []
-    error_message = ""
 
     try:
         target_server = GameServer.objects.get(
@@ -612,6 +611,8 @@ def render_whitelist(request: HttpRequest) -> HttpResponse:
         whitelists = Whitelist.objects.filter(game_server=target_server).order_by(
             "-created_at"
         )
+        
+    is_whitelist_enabled = target_server.get_config_by_id(1)
 
     if request.method == "POST":
         request_body = request.POST
@@ -620,6 +621,10 @@ def render_whitelist(request: HttpRequest) -> HttpResponse:
                 case "add":
                     add_form = WhitelistForm(request_body)
                     if add_form.is_valid():
+                        if not is_whitelist_enabled:
+                            messages.error(request, "Whitelist configuration is disabled!")
+                            return redirect(request.path)
+                        
                         player_name = add_form.cleaned_data["name"]
                         ip = add_form.cleaned_data["ip"]
                         serial = add_form.cleaned_data["serial"]
@@ -684,6 +689,10 @@ def render_whitelist(request: HttpRequest) -> HttpResponse:
                     ):
                         messages.error(request, "Unexptected error!")
                         return HttpResponseRedirect(request.path)
+                    
+                    if not is_whitelist_enabled:
+                        messages.error(request, "Whitelist configuration is disabled!")
+                        return redirect(request.path)
 
                     target_whitelist_id = int(request_body["target-whitelist"])
                     player_serial = request_body["player-serial"]
@@ -715,9 +724,6 @@ def render_whitelist(request: HttpRequest) -> HttpResponse:
                         f"{target_whitelist.name}'s whitelist saved successfuly!",
                     )
 
-    if not len(whitelists):
-        error_message = "0 Whitelists"
-
     return render(
         request,
         "pages/dashboard/whitelist.jinja",
@@ -738,6 +744,6 @@ def render_whitelist(request: HttpRequest) -> HttpResponse:
                 for whitelist in whitelists
             ],
             "form": add_form,
-            "error_message": error_message,
+            "whitelist_disabled": not is_whitelist_enabled,
         },
     )

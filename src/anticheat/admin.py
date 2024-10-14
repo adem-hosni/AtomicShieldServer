@@ -31,7 +31,7 @@ class ClientHWIDAdmin(ModelAdmin):
 
 
 class AntiCheatConfigurationsAdmin(ModelAdmin):
-    list_display = ["title", "description"]
+    list_display = ["id", "title", "description"]
 
     @admin.display(description="Title")
     def title(self, obj: AntiCheatConfigTemplates):

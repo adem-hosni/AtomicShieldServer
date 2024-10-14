@@ -36,23 +36,15 @@
       </h4>
     </div>
   </div>
-  {% if not error_message %}
-  <div class="pt-4 flex">
-    <p class="text-gray-400 font-medium">Enable whitelist</p>
-
-    <label
-      class="transition-all duration-300 inline-flex items-center cursor-pointer ml-auto"
-    >
-      <input
-        type="checkbox"
-        name="enable-whitelist"
-        class="sr-only peer"
-        id="enable-whitelist"
-      />
-      <div
-        class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-zinc-900 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-purple-700"
-      ></div>
-    </label>
+  {% if whitelist_disabled %}
+  <div
+    class="text-yellow-700 mt-4 p-2 flex border-2 border-yellow-700 rounded-lg gap-2"
+  >
+    <i class="fa-solid fa-triangle-exclamation my-auto"></i>
+    <p class="font-bold">
+      Whitelist configuration is disabled, you can't add any whitelists. To use
+      this feature please enable it in configurations section.
+    </p>
   </div>
   {% endif %}
 </div>
@@ -106,21 +98,65 @@
         <td class="px-6 py-4">{{ whitelist.created_on }}</td>
         <td class="px-6 py-4">{{ whitelist.last_update_at }}</td>
         <td class="px-6 py-4 flex">
-          <button onclick="document.getElementById('target-edit-whitelist').value = '{{ whitelist.id }}';
-            document.getElementById('target-edit-whitelist-modal-name').textContent = '{{ whitelist.name }}';
-            document.getElementById('edit-player-ip').value = '{{ whitelist.ip }}';
-            document.getElementById('edit-player-serial').value = '{{ whitelist.serial }}';"
-            data-modal-target="edit-whitelist-modal" data-modal-toggle="edit-whitelist-modal" data-tooltip-target="edit-whitelist-{{ whitelist.id }}" data-tooltip-style="dark" class="font-medium text-blue-600 dark:text-blue-500 hover:underline"><i class="fa-solid fa-pen-to-square text-[#8c592b] transition-all duration-300 hover:bg-[#8c592b] hover:text-black rounded-full p-1"></i></button>
+          {% if not whitelist_disabled %}
+          <button
+            onclick="document.getElementById('target-edit-whitelist').value = '{{
+              whitelist.id
+            }}';
+          document.getElementById('target-edit-whitelist-modal-name').textContent = '{{
+              whitelist.name
+            }}';
+          document.getElementById('edit-player-ip').value = '{{
+              whitelist.ip
+            }}';
+          document.getElementById('edit-player-serial').value = '{{
+              whitelist.serial
+            }}';"
+            data-modal-target="edit-whitelist-modal"
+            data-modal-toggle="edit-whitelist-modal"
+            data-tooltip-target="edit-whitelist-{{ whitelist.id }}"
+            data-tooltip-style="dark"
+            class="font-medium text-blue-600 dark:text-blue-500 hover:underline"
+          >
+            <i
+              class="fa-solid fa-pen-to-square text-[#8c592b] transition-all duration-300 hover:bg-[#8c592b] hover:text-black rounded-full p-1"
+            ></i>
+          </button>
+          {% endif %}
 
-          <button onclick="document.getElementById('target-delete-whitelist').value = '{{ whitelist.id }}'; document.getElementById('target-delete-whitelist-modal-name').textContent = '{{ whitelist.name }}';"
-            data-modal-target="delete-whitelist-modal" data-modal-toggle="delete-whitelist-modal" data-tooltip-target="remove-whitelist-{{ whitelist.id }}" data-tooltip-style="dark" class="font-medium text-blue-600 dark:text-blue-500 hover:underline"><i class="fa-solid fa-xmark text-[#8c592b] transition-all duration-300 hover:bg-[#8c592b] hover:text-black rounded-full p-1"></i></button>
+          <button
+            onclick="document.getElementById('target-delete-whitelist').value = '{{
+              whitelist.id
+            }}'; document.getElementById('target-delete-whitelist-modal-name').textContent = '{{
+              whitelist.name
+            }}';"
+            data-modal-target="delete-whitelist-modal"
+            data-modal-toggle="delete-whitelist-modal"
+            data-tooltip-target="remove-whitelist-{{ whitelist.id }}"
+            data-tooltip-style="dark"
+            class="font-medium text-blue-600 dark:text-blue-500 hover:underline"
+          >
+            <i
+              class="fa-solid fa-xmark text-[#8c592b] transition-all duration-300 hover:bg-[#8c592b] hover:text-black rounded-full p-1"
+            ></i>
+          </button>
 
-          <div id="edit-whitelist-{{ whitelist.id }}" role="tooltip" class="z-10 invisible inline-block px-3 py-2 text-sm font-medium text-black bg-[#8c592b] rounded-lg shadow-sm opacity-0 tooltip transition-all duration-300">
+          {% if not whitelist_disabled %}
+          <div
+            id="edit-whitelist-{{ whitelist.id }}"
+            role="tooltip"
+            class="z-10 invisible inline-block px-3 py-2 text-sm font-medium text-black bg-[#8c592b] rounded-lg shadow-sm opacity-0 tooltip transition-all duration-300"
+          >
             Edit Whitelist
             <div class="tooltip-arrow" data-popper-arrow></div>
           </div>
-          
-          <div id="remove-whitelist-{{ whitelist.id }}" role="tooltip" class="z-10 invisible inline-block px-3 py-2 text-sm font-medium text-black bg-[#8c592b] rounded-lg shadow-sm opacity-0 tooltip transition-all duration-300">
+          {% endif %}
+
+          <div
+            id="remove-whitelist-{{ whitelist.id }}"
+            role="tooltip"
+            class="z-10 invisible inline-block px-3 py-2 text-sm font-medium text-black bg-[#8c592b] rounded-lg shadow-sm opacity-0 tooltip transition-all duration-300"
+          >
             Delete Whitelist
             <div class="tooltip-arrow" data-popper-arrow></div>
           </div>
@@ -198,7 +234,7 @@
         </div>
         <form class="space-y-4" method="post" id="addwhitelist-form">
           {% csrf_token %}
-          <input type="hidden" name="type" value="add">
+          <input type="hidden" name="type" value="add" />
           <div class="relative mx-auto w-full">
             {{ form.name }}
             <label
@@ -234,103 +270,192 @@
   </div>
 </div>
 
-  <!-- Start Delete whitelist modal -->
-  <div id="delete-whitelist-modal" tabindex="-1" aria-hidden="true" class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
-    <div class="relative p-4 w-full max-w-md max-h-full">
-      <!-- Modal content -->
-      <div class="relative bg-white rounded-lg shadow dark:bg-[#0d0d0d]">
-        <!-- Modal header -->
-        <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
-          <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Delete Whitelist</h3>
-          <button type="button" class="end-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-purple-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-[#8c592b] dark:hover:text-black">
-            <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
-              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
-            </svg>
-            <span class="sr-only">Close modal</span>
+<!-- Start Delete whitelist modal -->
+<div
+  id="delete-whitelist-modal"
+  tabindex="-1"
+  aria-hidden="true"
+  class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full"
+>
+  <div class="relative p-4 w-full max-w-md max-h-full">
+    <!-- Modal content -->
+    <div class="relative bg-white rounded-lg shadow dark:bg-[#0d0d0d]">
+      <!-- Modal header -->
+      <div
+        class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600"
+      >
+        <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
+          Delete Whitelist
+        </h3>
+        <button
+          type="button"
+          class="end-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-purple-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-[#8c592b] dark:hover:text-black"
+        >
+          <svg
+            class="w-3 h-3"
+            aria-hidden="true"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 14 14"
+          >
+            <path
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"
+            />
+          </svg>
+          <span class="sr-only">Close modal</span>
+        </button>
+      </div>
+      <!-- Modal body -->
+      <div class="p-4 md:p-5">
+        <p class="text-center text-lg text-gray-300">
+          Are you sure
+          <span id="target-delete-whitelist-modal-name" class="font-bold"></span
+          >'s to delete this whitelist ?
+        </p>
+        <form class="space-y-4" method="post">
+          {% csrf_token %}
+          <input type="hidden" name="type" value="delete" />
+          <input
+            type="hidden"
+            id="target-delete-whitelist"
+            name="target-whitelist"
+            value=""
+          />
+          <button
+            type="submit"
+            value=""
+            onclick="this.disabled=true; this.form.submit();"
+            class="w-full text-black border-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 border-[#8c592b] bg-[#8c592b] hover:bg-[#b37339]"
+          >
+            Yes, Delete
           </button>
-        </div>
-        <!-- Modal body -->
-        <div class="p-4 md:p-5">
-          <p class="text-center text-lg text-gray-300">Are you sure <span id="target-delete-whitelist-modal-name" class="font-bold"></span>'s to delete this whitelist ?</p>
-          <form class="space-y-4" method="post">
-            {% csrf_token %}
-            <input type="hidden" name="type" value="delete">
-            <input type="hidden" id="target-delete-whitelist" name="target-whitelist" value="">
-            <button type="submit" value="" onclick="this.disabled=true; this.form.submit();" class="w-full text-black border-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 border-[#8c592b] bg-[#8c592b] hover:bg-[#b37339]">Yes, Delete</button>
-          </form>
-          <button data-modal-hide="delete-whitelist-modal" onclick="this.disabled=true; this.form.submit();" class="w-full border-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 text-red-600 border-red-600 hover:bg-red-600 hover:text-black my-3">No, Don't Refresh</button>
-
-        </div>
+        </form>
+        <button
+          data-modal-hide="delete-whitelist-modal"
+          onclick="this.disabled=true; this.form.submit();"
+          class="w-full border-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 text-red-600 border-red-600 hover:bg-red-600 hover:text-black my-3"
+        >
+          No, Don't Refresh
+        </button>
       </div>
     </div>
   </div>
-  <!-- End Delete whitelist modal -->
+</div>
+<!-- End Delete whitelist modal -->
 
-  <!-- Start Edit whitelist modal -->
-  <div id="edit-whitelist-modal" tabindex="-1" aria-hidden="true" class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
-    <div class="relative p-4 w-full max-w-md max-h-full">
-      <!-- Modal content -->
-      <div class="relative bg-white rounded-lg shadow dark:bg-[#0d0d0d]">
-        <!-- Modal header -->
-        <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
-          <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Edit Whitelist</h3>
-          <button type="button" class="end-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-purple-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-[#8c592b] dark:hover:text-black">
-            <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
-              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
-            </svg>
-            <span class="sr-only">Close modal</span>
+{% if not whitelist_disabled %}
+<!-- Start Edit whitelist modal -->
+<div
+  id="edit-whitelist-modal"
+  tabindex="-1"
+  aria-hidden="true"
+  class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full"
+>
+  <div class="relative p-4 w-full max-w-md max-h-full">
+    <!-- Modal content -->
+    <div class="relative bg-white rounded-lg shadow dark:bg-[#0d0d0d]">
+      <!-- Modal header -->
+      <div
+        class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600"
+      >
+        <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
+          Edit Whitelist
+        </h3>
+        <button
+          type="button"
+          class="end-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-purple-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-[#8c592b] dark:hover:text-black"
+        >
+          <svg
+            class="w-3 h-3"
+            aria-hidden="true"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 14 14"
+          >
+            <path
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"
+            />
+          </svg>
+          <span class="sr-only">Close modal</span>
+        </button>
+      </div>
+      <!-- Modal body -->
+      <div class="p-4 md:p-5">
+        <p class="text-center text-lg text-gray-300">
+          Edit
+          <span id="target-edit-whitelist-modal-name" class="font-bold"></span
+          >'s whitelist
+        </p>
+        <form class="space-y-4" method="post">
+          {% csrf_token %}
+          <input type="hidden" name="type" value="edit" />
+          <input
+            type="hidden"
+            id="target-edit-whitelist"
+            name="target-whitelist"
+            value=""
+          />
+
+          <div class="relative mx-auto w-full">
+            <input
+              type="text"
+              name="player-ip"
+              placeholder="Player IP"
+              id="edit-player-ip"
+              class="peer h-full w-full rounded-lg border border-gray-200 border-t-transparent bg-transparent px-3 py-2.5 font-sans text-sm font-normal text-gray-300 outline outline-0 transition-all placeholder-shown:border placeholder-shown:border-gray-300 placeholder-shown:border-t-gray-200 focus:border-gray-300 focus:border-t-transparent focus:outline-0 disabled:border-0 disabled:bg-gray-300 placeholder:opacity-0 focus:placeholder:opacity-100 focus:placeholder-transparent selection:bg-[#8c592b] selection:text-black"
+              required=""
+            />
+            <label
+              class="before:content[' '] after:content[' '] pointer-events-none absolute left-0 -top-1.5 flex h-full w-full select-none !overflow-visible truncate text-[11px] font-normal leading-tight text-gray-300 transition-all before:pointer-events-none before:mt-[6.5px] before:mr-1 before:box-border before:block before:h-1.5 before:w-2.5 before:rounded-tl-md before:border-t before:border-l before:border-gray-300 before:transition-all after:pointer-events-none after:mt-[6.5px] after:ml-1 after:box-border after:block after:h-1.5 after:w-2.5 after:flex-grow after:rounded-tr-md after:border-t after:border-r after:border-gray-300 after:transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:leading-[3.75] peer-placeholder-shown:text-gray-300 peer-placeholder-shown:before:border-transparent peer-placeholder-shown:after:border-transparent peer-focus:text-[12px] peer-focus:leading-tight peer-focus:text-gray-300 peer-focus:after:border-t-2 peer-focus:after:border-r-2 peer-focus:after:!border-gray-300 peer-disabled:text-transparent peer-disabled:before:border-transparent peer-disabled:after:border-transparent peer-disabled:peer-placeholder-shown:text-gray-300"
+              >Player IP</label
+            >
+          </div>
+
+          <div class="relative mx-auto w-full">
+            <input
+              type="text"
+              name="player-serial"
+              placeholder="Player Serial"
+              id="edit-player-serial"
+              class="peer h-full w-full rounded-lg border border-gray-200 border-t-transparent bg-transparent px-3 py-2.5 font-sans text-sm font-normal text-gray-300 outline outline-0 transition-all placeholder-shown:border placeholder-shown:border-gray-300 placeholder-shown:border-t-gray-200 focus:border-gray-300 focus:border-t-transparent focus:outline-0 disabled:border-0 disabled:bg-gray-300 placeholder:opacity-0 focus:placeholder:opacity-100 focus:placeholder-transparent selection:bg-[#8c592b] selection:text-black"
+              required=""
+            />
+            <label
+              class="before:content[' '] after:content[' '] pointer-events-none absolute left-0 -top-1.5 flex h-full w-full select-none !overflow-visible truncate text-[11px] font-normal leading-tight text-gray-300 transition-all before:pointer-events-none before:mt-[6.5px] before:mr-1 before:box-border before:block before:h-1.5 before:w-2.5 before:rounded-tl-md before:border-t before:border-l before:border-gray-300 before:transition-all after:pointer-events-none after:mt-[6.5px] after:ml-1 after:box-border after:block after:h-1.5 after:w-2.5 after:flex-grow after:rounded-tr-md after:border-t after:border-r after:border-gray-300 after:transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:leading-[3.75] peer-placeholder-shown:text-gray-300 peer-placeholder-shown:before:border-transparent peer-placeholder-shown:after:border-transparent peer-focus:text-[12px] peer-focus:leading-tight peer-focus:text-gray-300 peer-focus:after:border-t-2 peer-focus:after:border-r-2 peer-focus:after:!border-gray-300 peer-disabled:text-transparent peer-disabled:before:border-transparent peer-disabled:after:border-transparent peer-disabled:peer-placeholder-shown:text-gray-300"
+              >Player Serial</label
+            >
+          </div>
+
+          <button
+            type="submit"
+            value=""
+            onclick="this.disabled=true; this.form.submit();"
+            class="w-full text-black border-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 border-[#8c592b] bg-[#8c592b] hover:bg-[#b37339]"
+          >
+            Save
           </button>
-        </div>
-        <!-- Modal body -->
-        <div class="p-4 md:p-5">
-          <p class="text-center text-lg text-gray-300">Edit <span id="target-edit-whitelist-modal-name" class="font-bold"></span>'s whitelist</p>
-          <form class="space-y-4" method="post">
-            {% csrf_token %}
-            <input type="hidden" name="type" value="edit">
-            <input type="hidden" id="target-edit-whitelist" name="target-whitelist" value="">
-
-            <div class="relative mx-auto w-full">
-              <input
-                type="text"
-                name="player-ip"
-                placeholder="Player IP"
-                id="edit-player-ip"
-                class="peer h-full w-full rounded-lg border border-gray-200 border-t-transparent bg-transparent px-3 py-2.5 font-sans text-sm font-normal text-gray-300 outline outline-0 transition-all placeholder-shown:border placeholder-shown:border-gray-300 placeholder-shown:border-t-gray-200 focus:border-gray-300 focus:border-t-transparent focus:outline-0 disabled:border-0 disabled:bg-gray-300 placeholder:opacity-0 focus:placeholder:opacity-100 focus:placeholder-transparent selection:bg-[#8c592b] selection:text-black"
-                required=""
-              />
-              <label
-                class="before:content[' '] after:content[' '] pointer-events-none absolute left-0 -top-1.5 flex h-full w-full select-none !overflow-visible truncate text-[11px] font-normal leading-tight text-gray-300 transition-all before:pointer-events-none before:mt-[6.5px] before:mr-1 before:box-border before:block before:h-1.5 before:w-2.5 before:rounded-tl-md before:border-t before:border-l before:border-gray-300 before:transition-all after:pointer-events-none after:mt-[6.5px] after:ml-1 after:box-border after:block after:h-1.5 after:w-2.5 after:flex-grow after:rounded-tr-md after:border-t after:border-r after:border-gray-300 after:transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:leading-[3.75] peer-placeholder-shown:text-gray-300 peer-placeholder-shown:before:border-transparent peer-placeholder-shown:after:border-transparent peer-focus:text-[12px] peer-focus:leading-tight peer-focus:text-gray-300 peer-focus:after:border-t-2 peer-focus:after:border-r-2 peer-focus:after:!border-gray-300 peer-disabled:text-transparent peer-disabled:before:border-transparent peer-disabled:after:border-transparent peer-disabled:peer-placeholder-shown:text-gray-300"
-                >Player IP</label
-              >
-            </div>
-            
-            <div class="relative mx-auto w-full">
-              <input
-                type="text"
-                name="player-serial"
-                placeholder="Player Serial"
-                id="edit-player-serial"
-                class="peer h-full w-full rounded-lg border border-gray-200 border-t-transparent bg-transparent px-3 py-2.5 font-sans text-sm font-normal text-gray-300 outline outline-0 transition-all placeholder-shown:border placeholder-shown:border-gray-300 placeholder-shown:border-t-gray-200 focus:border-gray-300 focus:border-t-transparent focus:outline-0 disabled:border-0 disabled:bg-gray-300 placeholder:opacity-0 focus:placeholder:opacity-100 focus:placeholder-transparent selection:bg-[#8c592b] selection:text-black"
-                required=""
-              />
-              <label
-                class="before:content[' '] after:content[' '] pointer-events-none absolute left-0 -top-1.5 flex h-full w-full select-none !overflow-visible truncate text-[11px] font-normal leading-tight text-gray-300 transition-all before:pointer-events-none before:mt-[6.5px] before:mr-1 before:box-border before:block before:h-1.5 before:w-2.5 before:rounded-tl-md before:border-t before:border-l before:border-gray-300 before:transition-all after:pointer-events-none after:mt-[6.5px] after:ml-1 after:box-border after:block after:h-1.5 after:w-2.5 after:flex-grow after:rounded-tr-md after:border-t after:border-r after:border-gray-300 after:transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:leading-[3.75] peer-placeholder-shown:text-gray-300 peer-placeholder-shown:before:border-transparent peer-placeholder-shown:after:border-transparent peer-focus:text-[12px] peer-focus:leading-tight peer-focus:text-gray-300 peer-focus:after:border-t-2 peer-focus:after:border-r-2 peer-focus:after:!border-gray-300 peer-disabled:text-transparent peer-disabled:before:border-transparent peer-disabled:after:border-transparent peer-disabled:peer-placeholder-shown:text-gray-300"
-                >Player Serial</label
-              >
-            </div>
-            
-
-            <button type="submit" value="" onclick="this.disabled=true; this.form.submit();" class="w-full text-black border-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 border-[#8c592b] bg-[#8c592b] hover:bg-[#b37339]">Save</button>
-          </form>
-          <button data-modal-hide="edit-whitelist-modal" onclick="this.disabled=true; this.form.submit();" class="w-full border-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 text-red-600 border-red-600 hover:bg-red-600 hover:text-black my-3">Cancel</button>
-
-        </div>
+        </form>
+        <button
+          data-modal-hide="edit-whitelist-modal"
+          onclick="this.disabled=true; this.form.submit();"
+          class="w-full border-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 text-red-600 border-red-600 hover:bg-red-600 hover:text-black my-3"
+        >
+          Cancel
+        </button>
       </div>
     </div>
   </div>
-  <!-- End Edit whitelist modal -->
-
-
+</div>
+<!-- End Edit whitelist modal -->
+{% endif %}
 
 <script>
   const sendXhr = (enabled) => {
@@ -338,38 +463,40 @@
     xhr.open("POST", "{% url 'whitelist' %}", true);
     xhr.setRequestHeader("X-CSRFToken", "{{ csrf_token }}");
     xhr.setRequestHeader("Content-Type", "application/json");
-    
+
     xhr.onload = () => {
-      const response = {"success": true, message: "yeeee!!!"};//JSON.parse(xhr.responseText);
+      const response = { success: true, message: "yeeee!!!" }; //JSON.parse(xhr.responseText);
       if (!response["success"]) {
         iziToast.error({ title: "ERROR", message: response["message"] });
       }
     };
-    xhr.send(JSON.stringify({
-      "enable-whitelist": enabled
-    }));
-  }
+    xhr.send(
+      JSON.stringify({
+        "enable-whitelist": enabled,
+      })
+    );
+  };
 
   document.addEventListener("DOMContentLoaded", () => {
     const checkbox = document.getElementById("enable-whitelist");
 
     let lastTime = Math.floor(Date.now() / 1000);
-    let lastCheck = checkbox.checked
+    let lastCheck = checkbox.checked;
 
     checkbox.addEventListener("change", () => {
       const checked = checkbox.checked;
-      
+
       if (checked != lastCheck) {
         const currentTime = Math.floor(Date.now() / 1000);
-        if (currentTime - lastTime > 0.5) { // 1 Second
+        if (currentTime - lastTime > 0.5) {
+          // 1 Second
           lastTime = currentTime;
           lastCheck = checked;
           sendXhr(checked);
-        }
-        else {
-          console.log("fuck u, u are spamming us")
-          iziToast.warning({title: "Timeout", message: "Spam alert"});
-          checkbox.value = lastCheck ? "on" : "off"
+        } else {
+          console.log("fuck u, u are spamming us");
+          iziToast.warning({ title: "Timeout", message: "Spam alert" });
+          checkbox.value = lastCheck ? "on" : "off";
         }
       }
     });

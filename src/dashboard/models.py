@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 from asgiref.sync import sync_to_async
 from anticheat.models import AntiCheatConfigurations, AntiCheatConfigTemplates
 from shared.models import ServerTypes
-from typing import Dict, Any
+from typing import Dict, Any, Union
 
 
 class ServerStatus(models.IntegerChoices):
@@ -68,7 +68,18 @@ class GameServer(models.Model):
         db_table = "gameservers"
         verbose_name = "Game Server"
         verbose_name_plural = "Game Servers"
+        
+    def get_config_by_id(self, config_id: int) -> Union[str, int, bool]:
+        if str(config_id) in self.configurations.config.keys():
+            return self.configurations.config[str(config_id)]
 
+        try:
+            target_config = AntiCheatConfigTemplates.objects.get(id=config_id)
+        except AntiCheatConfigTemplates.DoesNotExist as err:
+            raise ValueError(f"config id ({config_id}) does not exists!") from err
+
+        return target_config.default_value
+    
     async def get_anticheat_configurations(self) -> Dict[str, Any]:
         try:
             target_server = await GameServer.objects.select_related(

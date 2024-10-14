@@ -113,8 +113,8 @@ class Whitelist(models.Model):
     ip = models.CharField(max_length=49, blank=True)
     serial = models.CharField(max_length=64, blank=True)
     game_server = models.ForeignKey(GameServer, on_delete=models.CASCADE)
-    created_at = models.DateTimeField(auto_now_add=True, null=True)
-    last_update_at = models.DateTimeField(null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_update_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = "whitelists"

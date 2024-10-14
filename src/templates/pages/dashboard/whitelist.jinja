@@ -100,18 +100,10 @@
         <td class="px-6 py-4 flex">
           {% if not whitelist_disabled %}
           <button
-            onclick="document.getElementById('target-edit-whitelist').value = '{{
-              whitelist.id
-            }}';
-          document.getElementById('target-edit-whitelist-modal-name').textContent = '{{
-              whitelist.name
-            }}';
-          document.getElementById('edit-player-ip').value = '{{
-              whitelist.ip
-            }}';
-          document.getElementById('edit-player-serial').value = '{{
-              whitelist.serial
-            }}';"
+            onclick="document.getElementById('target-edit-whitelist').value = '{{ whitelist.id }}';
+          document.getElementById('target-edit-whitelist-modal-name').textContent = '{{ whitelist.name }}';
+          document.getElementById('edit-player-ip').value = '{{ whitelist.ip }}';
+          document.getElementById('edit-player-serial').value = '{{ whitelist.serial }}';"
             data-modal-target="edit-whitelist-modal"
             data-modal-toggle="edit-whitelist-modal"
             data-tooltip-target="edit-whitelist-{{ whitelist.id }}"
@@ -125,11 +117,7 @@
           {% endif %}
 
           <button
-            onclick="document.getElementById('target-delete-whitelist').value = '{{
-              whitelist.id
-            }}'; document.getElementById('target-delete-whitelist-modal-name').textContent = '{{
-              whitelist.name
-            }}';"
+            onclick="document.getElementById('target-delete-whitelist').value = '{{ whitelist.id }}'; document.getElementById('target-delete-whitelist-modal-name').textContent = '{{ whitelist.name }}';"
             data-modal-target="delete-whitelist-modal"
             data-modal-toggle="delete-whitelist-modal"
             data-tooltip-target="remove-whitelist-{{ whitelist.id }}"

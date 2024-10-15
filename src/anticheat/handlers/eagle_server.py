@@ -3,11 +3,12 @@ import hashlib
 from asgiref.sync import sync_to_async
 from typing import Dict, Any
 from utils import check_request_body_key, represent_timedelta_string
-from dashboard.models import GameServer
+from dashboard.models import GameServer, Whitelist
 from shared.ws import EagleServerPacketID, WebSocketGroupNames
 from guard_manager.manager import eagle_manager
 from typing import Dict
 from django.conf import settings
+from django.db.models import Q
 from ..models import Ban
 from ..consumers.eagle_server import EagleServerConsumer
 import logging
@@ -174,9 +175,27 @@ async def handle_request_player_join(
             response["join"] = False
             response["message"] = player_scanner.flag_message
 
+        # Check if the server uses whitelist system
+        if consumer.game_server.get_config_by_id(1):  # whitelist id: 1
+            try:
+                whitelisted = Whitelist.objects.filter(
+                    Q(game_server=consumer.game_server)
+                    & (Q(ip=request["ip"]) | Q(serial=request["serial"]))
+                ).exists()
+            except Whitelist.DoesNotExist:
+                whitelisted = False
+
+            if not whitelisted:
+                response["join"] = False
+                response["message"] = (
+                    "Client is not whitelisted, please contact the server admin for a whitelist"
+                )
+
         # Check if the player is banned
-        bans = await sync_to_async(list)(Ban.objects.filter(hwid=player_scanner.hwid).order_by("banned_at"))
-        
+        bans = await sync_to_async(list)(
+            Ban.objects.filter(hwid=player_scanner.hwid).order_by("banned_at")
+        )
+
         if len(bans):
             target_ban = bans[0]
             response["join"] = False

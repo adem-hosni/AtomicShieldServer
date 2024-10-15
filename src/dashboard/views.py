@@ -600,6 +600,7 @@ def render_subscriptions(request: HttpRequest) -> HttpResponse:
 def render_whitelist(request: HttpRequest) -> HttpResponse:
     add_form = WhitelistForm()
     whitelists: List[Whitelist] = []
+    is_whitelist_enabled = True
 
     try:
         target_server = GameServer.objects.get(
@@ -612,7 +613,7 @@ def render_whitelist(request: HttpRequest) -> HttpResponse:
             "-created_at"
         )
         
-    is_whitelist_enabled = target_server.get_config_by_id(1)
+        is_whitelist_enabled = target_server.get_config_by_id(1)
 
     if request.method == "POST":
         request_body = request.POST

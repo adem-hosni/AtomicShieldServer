@@ -18,8 +18,8 @@
 # Eagle Server
 - ~~Check if the key if it's being used~~
 - ~~Check if the player is banned~~
+- ~~Check if the joining player is whitelisted~~
 - Check eagle server status
-- Check if the joining player is whitelisted
 - Compile client scripts
 - Inject Anticheat scripts components to the client
 - Check Eagle Agent disconnect

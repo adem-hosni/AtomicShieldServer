@@ -33,8 +33,6 @@ urlpatterns = [
 
 if settings.DEBUG:
     urlpatterns.append(path("__reload__/", include("django_browser_reload.urls")))
-    urlpatterns += DebugToolbar.get_urls()
-    urlpatterns += [
-        path(r'^__debug__/', include(debug_toolbar.urls)),
-    ]
+    urlpatterns.append(path("__debug__/", include(debug_toolbar.urls)))
+    
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

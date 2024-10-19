@@ -26,8 +26,8 @@ urlpatterns = [
     path("anticheat/", include("anticheat.urls")),
     path("dashboard/", include("dashboard.urls")),
     path("resources/", include("resourcehub.urls")),
-    path("__reload__/", include("django_browser_reload.urls")),  # Debug
 ]
 
 if settings.DEBUG:
+    urlpatterns.append(path("__reload__/", include("django_browser_reload.urls")))
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

@@ -1,0 +1,7 @@
+[project]
+name = "safe-guard"
+version = "0.1b"
+description = "An Advanced Game AntiCheat"
+readme="README.md"
+requires-python = ">=3.11.9"
+dependencies = []

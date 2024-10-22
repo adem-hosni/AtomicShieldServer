@@ -601,6 +601,7 @@ def render_whitelist(request: HttpRequest) -> HttpResponse:
     add_form = WhitelistForm()
     whitelists: List[Whitelist] = []
     is_whitelist_enabled = True
+    target_server: GameServer = None
 
     try:
         target_server = GameServer.objects.get(

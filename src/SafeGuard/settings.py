@@ -67,7 +67,7 @@ if DEBUG:
     INSTALLED_APPS.append("debug_toolbar")
 
     MIDDLEWARE.append("debug_toolbar.middleware.DebugToolbarMiddleware")
-    
+
     INTERNAL_IPS = [
         "127.0.0.1",
     ]
@@ -226,7 +226,6 @@ UNFOLD = {
         },
     },
     # Other configurations...
-
 }
 
 # Authentication Settings
@@ -243,9 +242,7 @@ RECAPTCHA_PRIVATE_KEY = "6Ld5FS8qAAAAAGq5JUx7rsAAL2rFOPHeV9WAwYA4"
 RECAPTCHA_REQUIRED_SCORE = 0.9
 
 
-ADMINS = [
-    ("Hyper", "hosniadem400@gmail.com")
-]
+ADMINS = [("Hyper", "hosniadem400@gmail.com")]
 
 # Mail Settings
 DEFAULT_FROM_EMAIL = "SafeGuard@localhost"

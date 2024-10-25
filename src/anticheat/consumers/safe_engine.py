@@ -10,7 +10,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class SafeEngine(AsyncWebsocketConsumer):
+class SafeEngineConsumer(AsyncWebsocketConsumer):
     """
     An asynchronous WebSocket consumer designed to handle communication between a client and a server.
 

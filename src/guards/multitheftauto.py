@@ -4,15 +4,15 @@ from shared.ws import WebSocketGroupNames
 from typing import List, Union, Any
 
 
-class GuardManager(object):
+class MultiTheftAutoMultiTheftAutoGuardManager(object):
     """
-    GuardManager is responsible for managing SafeGuard servers and scanners.
+    MultiTheftAutoGuardManager is responsible for managing SafeGuard servers and scanners.
     It provides functionalities to add, remove, and check the status of servers and scanners.
     """
 
     def __init__(self) -> None:
         """
-        Initialize GuardManager with empty lists to track Eagle servers and Eagle scanners.
+        Initialize MultiTheftAutoGuardManager with empty lists to track Eagle servers and Eagle scanners.
         """
         self._eagle_servers: List[SafeServerConsumer] = []
         self._eagle_scanners: List[SafeEngineConsumer] = []
@@ -129,5 +129,5 @@ class GuardManager(object):
         return None  # Not Found
 
 
-# Instantiate the GuardManager
-safeguard_manager = GuardManager()
+# Instantiate the MultiTheftAutoGuardManager
+safeguard_manager = MultiTheftAutoMultiTheftAutoGuardManager()

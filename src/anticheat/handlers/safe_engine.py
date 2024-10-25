@@ -1,6 +1,6 @@
 from asgiref.sync import sync_to_async
 from ..consumers.safe_engine import SafeEngineConsumer
-from guard_manager.manager import safeguard_manager
+from guards.multitheftauto import safeguard_manager
 from shared.ws import WebSocketGroupNames, SafeEnginePacketID
 from utils import check_request_body_key
 from asgiref.sync import sync_to_async

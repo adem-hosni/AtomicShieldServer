@@ -27,7 +27,7 @@ class GuardManager(object):
         Returns:
             bool: True if the server was successfully added, False otherwise.
         """
-        if server.group_name != WebSocketGroupNames.EAGLE_SERVERS.value:
+        if server.group_name != WebSocketGroupNames.SAFE_SERVERS.value:
             return False
         self._eagle_servers.append(server)
         return True
@@ -57,7 +57,7 @@ class GuardManager(object):
         Returns:
             bool: True if the scanner was successfully added, False otherwise.
         """
-        if scanner.group_name != WebSocketGroupNames.EAGLE_CLIENTSCANNER.value:
+        if scanner.group_name != WebSocketGroupNames.SAFE_ENGINES.value:
             return False
         self._eagle_scanners.append(scanner)
         return True

@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class EagleServerPacketID(Enum):
+class SafeServerPacketID(Enum):
     NETWORK_JOIN = 1
     SYNC_ANTICHEAT_CONFIGS = 2
     REQUEST_STATUS = 3
@@ -11,7 +11,7 @@ class EagleServerPacketID(Enum):
     SYNC_ANTICHEAT_COMPONENTS = 7
 
 
-class EagleScannerPacketID(Enum):
+class SafeEnginePacketID(Enum):
     NETWORK_JOIN = 1
     SYNC_SIGNATURES = 2
     MALICIOUS_SIGNATURE_DETECTION = 3
@@ -20,5 +20,5 @@ class EagleScannerPacketID(Enum):
 
 
 class WebSocketGroupNames(Enum):
-    EAGLE_SERVERS = "EAGLE_SERVERS"
-    EAGLE_CLIENTSCANNER = "EAGLE_CLIENTSCANNER"
+    SAFE_SERVERS = "SAFE_SERVERS"
+    SAFE_ENGINES = "SAFE_ENGINES"

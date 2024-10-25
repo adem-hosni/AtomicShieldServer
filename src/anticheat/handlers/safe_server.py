@@ -4,7 +4,7 @@ from asgiref.sync import sync_to_async
 from typing import Dict, Any
 from utils import check_request_body_key, represent_timedelta_string
 from dashboard.models import GameServer, Whitelist
-from shared.ws import EagleServerPacketID, WebSocketGroupNames
+from shared.ws import SafeServerPacketID, WebSocketGroupNames
 from guard_manager.manager import eagle_manager
 from typing import Dict
 from django.conf import settings
@@ -46,7 +46,7 @@ async def handle_network_join(
         # Log a warning and send an error message if the server key is invalid
         logger.warning(f"Invalid server key requested! (Key: {request['server_key']})")
         await consumer.send(
-            EagleServerPacketID.NETWORK_JOIN,
+            SafeServerPacketID.NETWORK_JOIN,
             {
                 "success": False,
                 "message": "Invalid server key!\n",
@@ -58,7 +58,7 @@ async def handle_network_join(
     if server.ip != request["ip"]:
         logger.warning(f"Server IP address mismatch ({server.ip} != {request['ip']})")
         await consumer.send(
-            EagleServerPacketID.NETWORK_JOIN,
+            SafeServerPacketID.NETWORK_JOIN,
             {
                 "success": False,
                 "message": "Server IP address mismatch",
@@ -70,7 +70,7 @@ async def handle_network_join(
     if server.port != request["port"]:
         logger.warning(f"Server port mismatch ({server.port} != {request['port']})")
         await consumer.send(
-            EagleServerPacketID.NETWORK_JOIN,
+            SafeServerPacketID.NETWORK_JOIN,
             {
                 "success": False,
                 "message": "Server port mismatch",
@@ -81,7 +81,7 @@ async def handle_network_join(
     # Check if the server is running
     if eagle_manager.is_server_running(server.ip):
         await consumer.send(
-            EagleServerPacketID.NETWORK_JOIN,
+            SafeServerPacketID.NETWORK_JOIN,
             {
                 "success": False,
                 "message": "Server already running",
@@ -90,7 +90,7 @@ async def handle_network_join(
         return await consumer.close()
 
     # Successfully joined, add consumer to the WebSocket group and set it's game server
-    consumer.group_name = WebSocketGroupNames.EAGLE_SERVERS.value
+    consumer.group_name = WebSocketGroupNames.SAFE_SERVERS.value
     consumer.game_server = server
     consumer.channel_layer.group_add(consumer.group_name, consumer.channel_name)
     eagle_manager.add_eagle_server(consumer)
@@ -99,7 +99,7 @@ async def handle_network_join(
     )
 
     await consumer.send(
-        EagleServerPacketID.NETWORK_JOIN, {"success": True, "message": "SUCCESS"}
+        SafeServerPacketID.NETWORK_JOIN, {"success": True, "message": "SUCCESS"}
     )
     return
     # Retrieve and sync anti-cheat configurations
@@ -127,7 +127,7 @@ async def handle_sync_anticheat_configs(
 
     # Send configurations to the consumer
     await consumer.send(
-        EagleServerPacketID.SYNC_ANTICHEAT_CONFIGS,
+        SafeServerPacketID.SYNC_ANTICHEAT_CONFIGS,
         {
             "success": True,
             "configurations": configs,
@@ -205,7 +205,7 @@ async def handle_request_player_join(
             )
 
     return await consumer.send(
-        EagleServerPacketID.REQUEST_PLAYER_JOIN, {"ip": request["ip"], **response}
+        SafeServerPacketID.REQUEST_PLAYER_JOIN, {"ip": request["ip"], **response}
     )
 
 
@@ -244,5 +244,5 @@ async def handle_load_anticheat_scripts(
         f"Synced {len(components)} AntiCheat components for {consumer.address[0]}:{consumer.address[1]}"
     )
     return await consumer.send(
-        EagleServerPacketID.SYNC_ANTICHEAT_COMPONENTS, components
+        SafeServerPacketID.SYNC_ANTICHEAT_COMPONENTS, components
     )

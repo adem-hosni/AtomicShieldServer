@@ -1,7 +1,7 @@
 from asgiref.sync import sync_to_async
 from ..consumers.safe_engine import SafeEngineConsumer
 from guard_manager.manager import eagle_manager
-from shared.ws import WebSocketGroupNames, EagleScannerPacketID
+from shared.ws import WebSocketGroupNames, SafeEnginePacketID
 from utils import check_request_body_key
 from asgiref.sync import sync_to_async
 from django.db.models import Q
@@ -56,7 +56,7 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
 
     logger.info(f'"{request["username"]}" agent asking for network join...')
 
-    consumer.group_name = WebSocketGroupNames.EAGLE_CLIENTSCANNER.value
+    consumer.group_name = WebSocketGroupNames.SAFE_ENGINES.value
     consumer.channel_layer.group_add(consumer.group_name, consumer.channel_name)
     consumer.hwid = hwid
     eagle_manager.add_eagle_scanner(consumer)
@@ -65,7 +65,7 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
     )
 
     return await consumer.send(
-        EagleScannerPacketID.NETWORK_JOIN, {"success": True, "message": ""}
+        SafeEnginePacketID.NETWORK_JOIN, {"success": True, "message": ""}
     )
 
 
@@ -74,7 +74,7 @@ async def handle_signatures_sync(consumer: SafeEngineConsumer, request: Dict[str
         MaliciousSignatures.objects.filter(type=ServerTypes.MTASA).order_by("priority")
     )
     await consumer.send(
-        EagleScannerPacketID.SYNC_SIGNATURES,
+        SafeEnginePacketID.SYNC_SIGNATURES,
         {
             "signatures": {
                 signature.name: signature.signatures for signature in signatures

@@ -1,6 +1,6 @@
 import json
 import logging
-from shared.ws import EagleServerPacketID, WebSocketGroupNames
+from shared.ws import SafeServerPacketID, WebSocketGroupNames
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.contrib.auth.models import User
 from dashboard.models import GameServer
@@ -56,7 +56,7 @@ class SafeServerConsumer(AsyncWebsocketConsumer):
 
     async def send(
         self,
-        packet_id: EagleServerPacketID,
+        packet_id: SafeServerPacketID,
         data: Union[Dict[Any, Any], str, bytes],
         bytes_data=None,
         close=False,
@@ -76,7 +76,7 @@ class SafeServerConsumer(AsyncWebsocketConsumer):
             Awaitable: An awaitable object for the send operation.
         """
         # Check the packet id belongs to our registred packet ids
-        if not packet_id in EagleServerPacketID.__members__.values():
+        if not packet_id in SafeServerPacketID.__members__.values():
             raise ValueError(f"Invalid Packet ID, got {packet_id}")
 
         # If data is bytes, decode it to a string
@@ -116,7 +116,7 @@ class SafeServerConsumer(AsyncWebsocketConsumer):
 
         try:
             # Convert the 'type' field to a PacketID
-            request_body["type"] = EagleServerPacketID(request_body["type"])
+            request_body["type"] = SafeServerPacketID(request_body["type"])
         except ValueError:
             logger.warning(f"Undefined request type (given: {request_body['type']})")
             return self.close()
@@ -130,17 +130,17 @@ class SafeServerConsumer(AsyncWebsocketConsumer):
 
         # Handle the request based on its type
         match request_body["type"]:
-            case EagleServerPacketID.NETWORK_JOIN:
+            case SafeServerPacketID.NETWORK_JOIN:
                 await handle_network_join(self, request_body)
-            case EagleServerPacketID.SYNC_ANTICHEAT_CONFIGS:
+            case SafeServerPacketID.SYNC_ANTICHEAT_CONFIGS:
                 await handle_sync_anticheat_configs(self, request_body)
-            case EagleServerPacketID.REQUEST_PLAYER_JOIN:
+            case SafeServerPacketID.REQUEST_PLAYER_JOIN:
                 await handle_request_player_join(self, request_body)
-            case EagleServerPacketID.SYNC_ANTICHEAT_COMPONENTS:
+            case SafeServerPacketID.SYNC_ANTICHEAT_COMPONENTS:
                 await handle_load_anticheat_scripts(self, request_body)
 
     async def disconnect(self, code):
-        if self._group_name == WebSocketGroupNames.EAGLE_SERVERS.value:
+        if self._group_name == WebSocketGroupNames.SAFE_SERVERS.value:
             from ..handlers.safe_server import handle_server_disconnect
 
             await handle_server_disconnect(self)
@@ -239,12 +239,12 @@ class SafeServerConsumer(AsyncWebsocketConsumer):
     async def kick_player(self, player_scanner, reason: Optional[str] = ""):
         if player_scanner.connected_server == self:
             await self.send(
-                EagleServerPacketID.PLAYER_KICK,
+                SafeServerPacketID.PLAYER_KICK,
                 {"ip": player_scanner.address[0], "reason": reason},
             )
 
     async def request_status(self) -> Dict[str, Union[str, bool, int, float]]:
-        await self.send(EagleServerPacketID.REQUEST_STATUS)
+        await self.send(SafeServerPacketID.REQUEST_STATUS)
 
         response_event = await self.channel_layer.receive(self.channel_name)
         print(response_event)

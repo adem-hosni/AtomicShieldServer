@@ -54,14 +54,14 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
         await hwid.asave()
         logger.info(f'"{hwid.username}" HWID registred!')
 
-    logger.info(f'"{request["username"]}" agent asking for network join...')
+    logger.info(f'"{request["username"]}" engine asking for network join...')
 
     consumer.group_name = WebSocketGroupNames.SAFE_ENGINES.value
     consumer.channel_layer.group_add(consumer.group_name, consumer.channel_name)
     consumer.hwid = hwid
     safeguard_manager.add_eagle_scanner(consumer)
     logger.info(
-        f"{consumer.address[0]}:{consumer.address[1]} agent joined network successfuly!"
+        f"{consumer.address[0]}:{consumer.address[1]}'s engine joined network successfuly!"
     )
 
     return await consumer.send(

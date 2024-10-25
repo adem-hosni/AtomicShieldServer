@@ -6,7 +6,7 @@ from random import randint
 from typing import List, Union
 
 
-class EagleCore:
+class SafeCore:
     def __init__(self) -> None:
         self._aes_keys: List[bytes] = []
         self._aes_ivs: List[bytes] = []
@@ -84,7 +84,7 @@ class EagleCore:
         return unpadder.update(decrypted_padded) + decryptor.finalize()
 
 
-eagle_core = EagleCore()
+eagle_core = SafeCore()
 
 eagle_core.load_ivs([f"../bin/debug/aes_keys/i{i}.bin" for i in range(1, 9)])
 eagle_core.load_keys([f"../bin/debug/aes_keys/k{i}.bin" for i in range(1, 9)])

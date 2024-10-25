@@ -2,7 +2,7 @@ from datetime import timedelta
 from channels.generic.websocket import AsyncWebsocketConsumer
 from .safe_server import SafeServerConsumer
 from ..models import ClientHWID, MaliciousSignatures, Ban
-from shared.ws import EagleScannerPacketID, EagleServerPacketID, WebSocketGroupNames
+from shared.ws import SafeEnginePacketID, SafeServerPacketID, WebSocketGroupNames
 import json
 from typing import Union, Dict, List, Optional, Any
 import logging
@@ -18,7 +18,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
     -----------
     _group_name (str): The name of the WebSocket group.
     _hwid (ClientHWID): The hardware ID of the client.
-    _connected_server (EagleServerConsumer): The connected server instance.
+    _connected_server (SafeServerConsumer): The connected server instance.
     """
 
     def __init__(self, *args, **kwargs):
@@ -79,7 +79,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
 
     async def send(
         self,
-        packet_id: EagleScannerPacketID,
+        packet_id: SafeEnginePacketID,
         data: Union[Dict[Any, Any], str, bytes],
         bytes_data=None,
         close=False,
@@ -99,7 +99,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             Awaitable: An awaitable object for the send operation.
         """
         # Check the packet id belongs to our registred packet ids
-        if not packet_id in EagleScannerPacketID.__members__.values():
+        if not packet_id in SafeEnginePacketID.__members__.values():
             raise ValueError(f"Invalid Packet ID, got {packet_id}")
 
         # If data is bytes, decode it to a string
@@ -169,7 +169,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
 
         try:
             # Convert the 'type' field to a PacketID
-            request_body["type"] = EagleScannerPacketID(request_body["type"])
+            request_body["type"] = SafeEnginePacketID(request_body["type"])
         except ValueError:
             logger.warn(f"Undefined request type (given: {request_body['type']})")
             return self.close()
@@ -182,13 +182,13 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         )
 
         match request_body["type"]:
-            case EagleScannerPacketID.NETWORK_JOIN:
+            case SafeEnginePacketID.NETWORK_JOIN:
                 await handle_network_join(self, request_body)
-            case EagleScannerPacketID.SYNC_SIGNATURES:
+            case SafeEnginePacketID.SYNC_SIGNATURES:
                 await handle_signatures_sync(self, request_body)
-            case EagleScannerPacketID.MALICIOUS_SIGNATURE_DETECTION:
+            case SafeEnginePacketID.MALICIOUS_SIGNATURE_DETECTION:
                 await handle_malicious_signature_detected(self, request_body)
-            case EagleScannerPacketID.GAME_ANTICHEAT_COMPONENT_STATUS:
+            case SafeEnginePacketID.GAME_ANTICHEAT_COMPONENT_STATUS:
                 await handle_game_anticheat_status(self, request_body)
 
     async def disconnect(self, code):
@@ -203,7 +203,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         --------
             Awaitable: An awaitable object for the disconnect operation.
         """
-        if self._group_name == WebSocketGroupNames.EAGLE_CLIENTSCANNER.value:
+        if self._group_name == WebSocketGroupNames.SAFE_ENGINES.value:
             from ..handlers.safe_engine import handle_scanner_disconnect
 
             await handle_scanner_disconnect(self)
@@ -245,7 +245,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
 
         Returns:
         --------
-            EagleServerConsumer: The connected server instance.
+            SafeServerConsumer: The connected server instance.
         """
         return self._connected_server
 
@@ -256,15 +256,15 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
 
         Args:
         -----
-            server (Union[EagleServerConsumer, None]): The new connected server instance. Must be of type EagleServerConsumer.
+            server (Union[SafeServerConsumer, None]): The new connected server instance. Must be of type SafeServerConsumer.
 
         Raises:
         ------
-            TypeError: If the value is not of type EagleServerConsumer.
+            TypeError: If the value is not of type SafeServerConsumer.
         """
         if not isinstance(server, SafeServerConsumer):
             raise TypeError(
-                f"Unable to convert type {type(server)} to 'EagleServerConsumer'"
+                f"Unable to convert type {type(server)} to 'SafeServerConsumer'"
             )
         self._connected_server = server
 
@@ -309,7 +309,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
 
         if self._connected_server:
             await self._connected_server.send(
-                EagleServerPacketID.PLAYER_KICK,
+                SafeServerPacketID.PLAYER_KICK,
                 {"ip": self.address[0], "reason": reason},
             )
             return True

@@ -38,7 +38,7 @@
 - Implement HTTP communication encryption
 - Elevate process handle to protected process
 
-# Eagle Agent (PEB)
+# Eagle Engine (PEB)
 - ~~HWID Checks~~
 - ~~Malicious Tools checking~~
 - ~~Memory scan Pulse (with network sync)~~

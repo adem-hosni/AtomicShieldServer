@@ -5,7 +5,7 @@ from typing import Dict, Any
 from utils import check_request_body_key, represent_timedelta_string
 from dashboard.models import GameServer, Whitelist
 from shared.ws import SafeServerPacketID, WebSocketGroupNames
-from guard_manager.manager import eagle_manager
+from guard_manager.manager import safeguard_manager
 from typing import Dict
 from django.conf import settings
 from django.db.models import Q
@@ -79,7 +79,7 @@ async def handle_network_join(
         return await consumer.close()
 
     # Check if the server is running
-    if eagle_manager.is_server_running(server.ip):
+    if safeguard_manager.is_server_running(server.ip):
         await consumer.send(
             SafeServerPacketID.NETWORK_JOIN,
             {
@@ -93,7 +93,7 @@ async def handle_network_join(
     consumer.group_name = WebSocketGroupNames.SAFE_SERVERS.value
     consumer.game_server = server
     consumer.channel_layer.group_add(consumer.group_name, consumer.channel_name)
-    eagle_manager.add_eagle_server(consumer)
+    safeguard_manager.add_eagle_server(consumer)
     logger.info(
         f"{consumer.address[0]}:{consumer.address[1]} joined SafeGuard Servers Network!"
     )
@@ -156,7 +156,7 @@ async def handle_request_player_join(
     response = {"join": False, "message": "None"}
 
     # Check if the SafeGuard agent is connected
-    player_scanner = eagle_manager.get_scanner_by_ip(request["ip"])
+    player_scanner = safeguard_manager.get_scanner_by_ip(request["ip"])
     response["join"] = not player_scanner is None
     if not response["join"]:
         response["message"] = "PLEASE OPEN SafeGuard ANTICHEAT AGENT"
@@ -213,7 +213,7 @@ async def handle_server_disconnect(consumer: SafeServerConsumer):
     logger.info(
         f"{consumer.address[0]}:{consumer.address[1]} disconnected from SafeGuard servers network."
     )
-    eagle_manager.remove_eagle_server(consumer)
+    safeguard_manager.remove_eagle_server(consumer)
 
 
 async def handle_load_anticheat_scripts(

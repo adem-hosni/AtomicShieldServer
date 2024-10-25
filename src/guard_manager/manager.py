@@ -130,4 +130,4 @@ class GuardManager(object):
 
 
 # Instantiate the GuardManager
-eagle_manager = GuardManager()
+safeguard_manager = GuardManager()

@@ -1,6 +1,6 @@
 from asgiref.sync import sync_to_async
 from ..consumers.safe_engine import SafeEngineConsumer
-from guard_manager.manager import eagle_manager
+from guard_manager.manager import safeguard_manager
 from shared.ws import WebSocketGroupNames, SafeEnginePacketID
 from utils import check_request_body_key
 from asgiref.sync import sync_to_async
@@ -59,7 +59,7 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
     consumer.group_name = WebSocketGroupNames.SAFE_ENGINES.value
     consumer.channel_layer.group_add(consumer.group_name, consumer.channel_name)
     consumer.hwid = hwid
-    eagle_manager.add_eagle_scanner(consumer)
+    safeguard_manager.add_eagle_scanner(consumer)
     logger.info(
         f"{consumer.address[0]}:{consumer.address[1]} agent joined network successfuly!"
     )
@@ -123,4 +123,4 @@ async def handle_game_anticheat_status(consumer: SafeEngineConsumer, request: Di
 
 async def handle_scanner_disconnect(consumer: SafeEngineConsumer):
     logger.info(f"{consumer.hwid.username}'s scanner disconnected from network.")
-    eagle_manager.remove_eagle_scanner(consumer)
+    safeguard_manager.remove_eagle_scanner(consumer)

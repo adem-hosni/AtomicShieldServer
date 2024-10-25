@@ -1,4 +1,4 @@
-# Eagle AntiCheat API
+# SafeGuard AntiCheat Master Server
 
 ## Helpful markdowns
 - [PLAN](./PLAN.md)

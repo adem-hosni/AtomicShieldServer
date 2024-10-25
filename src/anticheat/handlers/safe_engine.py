@@ -1,5 +1,5 @@
 from asgiref.sync import sync_to_async
-from ..consumers.eagle_scanner import EagleScanner
+from ..consumers.safe_engine import SafeEngine
 from guard_manager.manager import eagle_manager
 from shared.ws import WebSocketGroupNames, EagleScannerPacketID
 from utils import check_request_body_key
@@ -13,7 +13,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-async def handle_network_join(consumer: EagleScanner, request: Dict[str, Any]):
+async def handle_network_join(consumer: SafeEngine, request: Dict[str, Any]):
     if not check_request_body_key(request, "disks", list):
         return consumer.close()
 
@@ -69,7 +69,7 @@ async def handle_network_join(consumer: EagleScanner, request: Dict[str, Any]):
     )
 
 
-async def handle_signatures_sync(consumer: EagleScanner, request: Dict[str, Any]):
+async def handle_signatures_sync(consumer: SafeEngine, request: Dict[str, Any]):
     signatures = await sync_to_async(list)(
         MaliciousSignatures.objects.filter(type=ServerTypes.MTASA).order_by("priority")
     )
@@ -87,7 +87,7 @@ async def handle_signatures_sync(consumer: EagleScanner, request: Dict[str, Any]
 
 
 async def handle_malicious_signature_detected(
-    consumer: EagleScanner, request: Dict[str, Any]
+    consumer: SafeEngine, request: Dict[str, Any]
 ):
     if not check_request_body_key(request, "signatures", list):
         return consumer.close()
@@ -112,7 +112,7 @@ async def handle_malicious_signature_detected(
     await consumer.ban(target_ban.ban_message, target_ban.ban_duaration)
 
 
-async def handle_game_anticheat_status(consumer: EagleScanner, request: Dict[str, Any]):
+async def handle_game_anticheat_status(consumer: SafeEngine, request: Dict[str, Any]):
     if not check_request_body_key(request, "status", bool):
         return
 
@@ -121,6 +121,6 @@ async def handle_game_anticheat_status(consumer: EagleScanner, request: Dict[str
         await consumer.kick("MTA:SA AntiCheat Component Blocked", True)
 
 
-async def handle_scanner_disconnect(consumer: EagleScanner):
+async def handle_scanner_disconnect(consumer: SafeEngine):
     logger.info(f"{consumer.hwid.username}'s scanner disconnected from network.")
     eagle_manager.remove_eagle_scanner(consumer)

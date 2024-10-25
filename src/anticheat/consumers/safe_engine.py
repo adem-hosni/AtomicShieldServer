@@ -10,7 +10,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class EagleScanner(AsyncWebsocketConsumer):
+class SafeEngine(AsyncWebsocketConsumer):
     """
     An asynchronous WebSocket consumer designed to handle communication between a client and a server.
 
@@ -174,7 +174,7 @@ class EagleScanner(AsyncWebsocketConsumer):
             logger.warn(f"Undefined request type (given: {request_body['type']})")
             return self.close()
 
-        from ..handlers.eagle_scanner import (
+        from ..handlers.safe_engine import (
             handle_network_join,
             handle_signatures_sync,
             handle_malicious_signature_detected,
@@ -204,7 +204,7 @@ class EagleScanner(AsyncWebsocketConsumer):
             Awaitable: An awaitable object for the disconnect operation.
         """
         if self._group_name == WebSocketGroupNames.EAGLE_CLIENTSCANNER.value:
-            from ..handlers.eagle_scanner import handle_scanner_disconnect
+            from ..handlers.safe_engine import handle_scanner_disconnect
 
             await handle_scanner_disconnect(self)
 

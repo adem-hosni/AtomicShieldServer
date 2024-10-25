@@ -1,5 +1,5 @@
 from anticheat.consumers.eagle_server import EagleServerConsumer
-from anticheat.consumers.eagle_scanner import EagleScanner
+from anticheat.consumers.safe_engine import SafeEngine
 from shared.ws import WebSocketGroupNames
 from typing import List, Union, Any
 
@@ -15,7 +15,7 @@ class GuardManager(object):
         Initialize GuardManager with empty lists to track Eagle servers and Eagle scanners.
         """
         self._eagle_servers: List[EagleServerConsumer] = []
-        self._eagle_scanners: List[EagleScanner] = []
+        self._eagle_scanners: List[SafeEngine] = []
 
     def add_eagle_server(self, server: Union[EagleServerConsumer, Any]) -> bool:
         """
@@ -47,7 +47,7 @@ class GuardManager(object):
                 return True
         return False
 
-    def add_eagle_scanner(self, scanner: EagleScanner) -> bool:
+    def add_eagle_scanner(self, scanner: SafeEngine) -> bool:
         """
         Add an Eagle scanner to the manager if it belongs to the correct WebSocket group.
 
@@ -81,7 +81,7 @@ class GuardManager(object):
                 del self._eagle_servers[self._eagle_servers.index(iter_server)]
                 return True
 
-    def remove_eagle_scanner(self, scanner: EagleScanner) -> bool:
+    def remove_eagle_scanner(self, scanner: SafeEngine) -> bool:
         """
         Remove an Eagle scanner from the manager and trigger a disconnect action.
 
@@ -113,7 +113,7 @@ class GuardManager(object):
         """
         return bool(self.get_scanner_by_ip(scanner_ip))
 
-    def get_scanner_by_ip(self, scanner_ip: str) -> Union[EagleScanner, None]:
+    def get_scanner_by_ip(self, scanner_ip: str) -> Union[SafeEngine, None]:
         """
         Retrieve an Eagle scanner by its IP address.
 

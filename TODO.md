@@ -15,20 +15,20 @@
 - ~~Add Server Edit action~~
 - Add Discord Webhook Logs
 
-# Eagle Server
+# SafeGuard Server
 - ~~Check if the key if it's being used~~
 - ~~Check if the player is banned~~
 - ~~Check if the joining player is whitelisted~~
-- Check eagle server status
+- Check SafeGuard server status
 - Compile client scripts
 - Inject Anticheat scripts components to the client
-- Check Eagle Agent disconnect
-- Open Live Eagle Master Server RPCs
-- Implement server subscription duration (eagle master server side)
+- Check SafeGuard Agent disconnect
+- Open Live SafeGurad Master Server RPCs
+- Implement server subscription duration (SafeGuard master server side)
 - Implement HTTP communication encryption
-- Implement Eagle Server watermark on server name
+- Implement SafeGuard Server watermark on server name
 
-# Eagle Agent (PE)
+# SafeGuard Agent
 - ~~Implement UI (with ImGui)~~
 - ~~Malicious Tools checking~~
 - ~~Hide PEB Agent~~
@@ -38,7 +38,7 @@
 - Implement HTTP communication encryption
 - Elevate process handle to protected process
 
-# Eagle Engine (PEB)
+# SafeGuard Engine
 - ~~HWID Checks~~
 - ~~Malicious Tools checking~~
 - ~~Memory scan Pulse (with network sync)~~

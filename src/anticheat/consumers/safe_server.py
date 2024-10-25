@@ -9,7 +9,7 @@ from typing import Dict, Any, Union, Optional
 logger = logging.getLogger(__name__)
 
 
-class EagleServerConsumer(AsyncWebsocketConsumer):
+class SafeServerConsumer(AsyncWebsocketConsumer):
     """
     A WebSocket consumer for managing connections to the Eagle server.
 
@@ -121,7 +121,7 @@ class EagleServerConsumer(AsyncWebsocketConsumer):
             logger.warning(f"Undefined request type (given: {request_body['type']})")
             return self.close()
 
-        from ..handlers.eagle_server import (
+        from ..handlers.safe_server import (
             handle_network_join,
             handle_sync_anticheat_configs,
             handle_request_player_join,
@@ -141,7 +141,7 @@ class EagleServerConsumer(AsyncWebsocketConsumer):
 
     async def disconnect(self, code):
         if self._group_name == WebSocketGroupNames.EAGLE_SERVERS.value:
-            from ..handlers.eagle_server import handle_server_disconnect
+            from ..handlers.safe_server import handle_server_disconnect
 
             await handle_server_disconnect(self)
         return await super().disconnect(code)

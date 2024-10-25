@@ -1,6 +1,6 @@
 from datetime import timedelta
 from channels.generic.websocket import AsyncWebsocketConsumer
-from .eagle_server import EagleServerConsumer
+from .safe_server import SafeServerConsumer
 from ..models import ClientHWID, MaliciousSignatures, Ban
 from shared.ws import EagleScannerPacketID, EagleServerPacketID, WebSocketGroupNames
 import json
@@ -33,7 +33,7 @@ class SafeEngine(AsyncWebsocketConsumer):
         super().__init__(*args, **kwargs)
         self._group_name = ""
         self._hwid: ClientHWID = None
-        self._connected_server: EagleServerConsumer = None
+        self._connected_server: SafeServerConsumer = None
         self._detected_signatures: List[MaliciousSignatures] = []
         self._flagged: bool = False
         self._flag_message: str = ""
@@ -239,7 +239,7 @@ class SafeEngine(AsyncWebsocketConsumer):
         self._hwid = hwid
 
     @property
-    def connected_server(self) -> EagleServerConsumer:
+    def connected_server(self) -> SafeServerConsumer:
         """
         Gets the connected server.
 
@@ -250,7 +250,7 @@ class SafeEngine(AsyncWebsocketConsumer):
         return self._connected_server
 
     @connected_server.setter
-    def connected_server(self, server: Union[EagleServerConsumer, None]):
+    def connected_server(self, server: Union[SafeServerConsumer, None]):
         """
         Sets the connected server.
 
@@ -262,7 +262,7 @@ class SafeEngine(AsyncWebsocketConsumer):
         ------
             TypeError: If the value is not of type EagleServerConsumer.
         """
-        if not isinstance(server, EagleServerConsumer):
+        if not isinstance(server, SafeServerConsumer):
             raise TypeError(
                 f"Unable to convert type {type(server)} to 'EagleServerConsumer'"
             )

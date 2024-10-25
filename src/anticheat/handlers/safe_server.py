@@ -10,7 +10,7 @@ from typing import Dict
 from django.conf import settings
 from django.db.models import Q
 from ..models import Ban
-from ..consumers.eagle_server import EagleServerConsumer
+from ..consumers.safe_server import SafeServerConsumer
 import logging
 
 # Set up logging for this module
@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 async def handle_network_join(
-    consumer: EagleServerConsumer, request: Dict[str, Any]
+    consumer: SafeServerConsumer, request: Dict[str, Any]
 ) -> None:
     """
     Handles the network join request from an EagleServerConsumer.
@@ -106,7 +106,7 @@ async def handle_network_join(
 
 
 async def handle_sync_anticheat_configs(
-    consumer: EagleServerConsumer, request: Dict[str, Any]
+    consumer: SafeServerConsumer, request: Dict[str, Any]
 ):
     """
     Handles requests for anti-cheat configurations from an EagleServerConsumer.
@@ -138,7 +138,7 @@ async def handle_sync_anticheat_configs(
 
 
 async def handle_request_player_join(
-    consumer: EagleServerConsumer, request: Dict[str, Any]
+    consumer: SafeServerConsumer, request: Dict[str, Any]
 ):
     if not check_request_body_key(request, "ip", str):
         return
@@ -209,7 +209,7 @@ async def handle_request_player_join(
     )
 
 
-async def handle_server_disconnect(consumer: EagleServerConsumer):
+async def handle_server_disconnect(consumer: SafeServerConsumer):
     logger.info(
         f"{consumer.address[0]}:{consumer.address[1]} disconnected from SafeGuard servers network."
     )
@@ -217,7 +217,7 @@ async def handle_server_disconnect(consumer: EagleServerConsumer):
 
 
 async def handle_load_anticheat_scripts(
-    consumer: EagleServerConsumer, request: Dict[str, Any]
+    consumer: SafeServerConsumer, request: Dict[str, Any]
 ):
     components: Dict[str, str] = {}
 

@@ -1,4 +1,4 @@
-from anticheat.consumers.eagle_server import EagleServerConsumer
+from anticheat.consumers.safe_server import SafeServerConsumer
 from anticheat.consumers.safe_engine import SafeEngine
 from shared.ws import WebSocketGroupNames
 from typing import List, Union, Any
@@ -14,10 +14,10 @@ class GuardManager(object):
         """
         Initialize GuardManager with empty lists to track Eagle servers and Eagle scanners.
         """
-        self._eagle_servers: List[EagleServerConsumer] = []
+        self._eagle_servers: List[SafeServerConsumer] = []
         self._eagle_scanners: List[SafeEngine] = []
 
-    def add_eagle_server(self, server: Union[EagleServerConsumer, Any]) -> bool:
+    def add_eagle_server(self, server: Union[SafeServerConsumer, Any]) -> bool:
         """
         Add an Eagle server to the manager if it belongs to the correct WebSocket group.
 
@@ -62,7 +62,7 @@ class GuardManager(object):
         self._eagle_scanners.append(scanner)
         return True
 
-    def remove_eagle_server(self, server: EagleServerConsumer) -> bool:
+    def remove_eagle_server(self, server: SafeServerConsumer) -> bool:
         """
         Remove an Eagle server from the manager.
 

@@ -188,11 +188,10 @@ async def handle_request_player_join(
                 whitelisted = False
 
             if not whitelisted:
-                response["join"] = False
-                await consumer.game_server.get_config_by_id(config_ids.CLIENT_WHITELIST_KICK_MESSAGE)
-                response["message"] = (
-                    "Client is not whitelisted, please contact the server admin for a whitelist"
-                )
+                kick_message = await consumer.game_server.get_config_by_id(config_ids.CLIENT_WHITELIST_KICK_MESSAGE)
+                
+                response["join"] = False                
+                response["message"] = kick_message
 
         # Check if the player is banned
         bans = await sync_to_async(list)(

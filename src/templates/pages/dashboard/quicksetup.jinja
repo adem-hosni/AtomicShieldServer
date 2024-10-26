@@ -8,57 +8,81 @@
 <div class="w-full bg-[#0D0D0D] p-6 rounded-xl mt-4" style="overflow-y: auto">
   <div class="flex items-center mb-4 md:mb-0 gap-3">
     <div>
-      <div
-        class="w-12 h-12 flex group items-center transition-all justify-center rounded-xl text-white group-hover:text-white bg-zinc-900 text-white transition-all duration-300"
-      >
-        <div
-          class="flex items-center justify-center relative w-8 h-8 undefined"
-        >
-          <i class="absolute fas fa-gear opacity-20"></i>
-          <i class="absolute fa fa-gear"></i>
+      <div class="w-12 h-12 flex group items-center transition-all justify-center rounded-xl text-white group-hover:text-white bg-zinc-900 text-white transition-all duration-300">
+        <div class="flex items-center justify-center relative w-8 h-8 undefined">
+          <i class="absolute fas fa-cubes opacity-20"></i>
+          <i class="absolute fa fa-cubes"></i>
         </div>
       </div>
     </div>
     <div class="w-full">
       <div class="flex items-center gap-1">
-        <div
-          class="flex items-center justify-center mr-3 bg-input rounded-full text-lg bg-transparent"
-        >
-          <i class="fa fa-brackets-curly text-blue-500"></i>
-        </div>
-        <h3
-          class="min-w-min text-white font-semibold text-sm md:text-lg line-clamp-1"
-        >
-          Quick Setup
-        </h3>
+        <h3 class="min-w-min text-white font-semibold text-sm md:text-lg line-clamp-1">Servers</h3>
       </div>
-      <h4 class="text-gray-400 text-sm">
-        Download the Eagle AntiCheat's server
-      </h4>
+      <h4 class="text-gray-400 text-sm">Download required anticheat files to run SafeGuard AntiCheat</h4>
     </div>
   </div>
-</div>
-
-<div class="mt-4 flex flex-col items-stretch item-center justify-center"></div>
-<div class="gap-3 rounded-xl bg-[#0D0D0D] px-6 py-2.5 space-y-2 items-center text-gray-400">
-  <p class="">Download the above required files to use EagleAntiCheat</p>
-  <form method="POST">
-    {% csrf_token %}
-    <div class="flex flex-col ml-auto w-32">
-      <button class="rounded-lg bg-transparent border px-4 py-2 text-white border-white font-medium hover:text-black hover:bg-white transition-all duration-300 cursor-pointer">Download</button>
-      {{ form.distribution }}
-    </div>
-  </form>
-</div>
-
-<div class="mt-4 flex flex-col items-stretch item-center justify-center w-max">
-  <div class="gap-6 rounded-xl bg-[#0D0D0D] px-6 py-3.5 items-center flex">
-    {% for file in files %}
-      <div class="bg-[#161616] py-2 px-3 rounded-lg w-32 h-36 text-center flex flex-col transition-all duration-300 hover:translate-y-[-3px] hover:bg-[#181818]">
-        <i class="fa-solid fa-file text-gray-400 fa-6x my-auto"></i>
-        <p class="py-2 text-gray-400">{{ file }}</p>
-      </div>
+  <div class="w-full flex gap-4">
+    <select name="selected-dist" id="select-dist" class="ml-auto cursor-pointer text-center rounded-lg text-gray-300 font-medium bg-[#0d0d0d] border p-2">
+      {% for dist in dists %}
+        <option value="{{ dist }}">{{ dist }}</option>
       {% endfor %}
+    </select>
+    <button class="border border-2 border-white px-3 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-white hover:text-black cursor-pointer">Download</button>
   </div>
 </div>
+
+<div class="w-full bg-[#0D0D0D] p-6 rounded-xl mt-4 flex gap-6" style="overflow-y: auto" id="file-container">
+  <div class="w-36 h-40 bg-[#141414] rounded-lg flex">
+    <div class="mx-auto my-auto">
+      <i class="fa-solid fa-file fa-6x text-yellow-800"></i>
+      <p class="block text-center font-medium text-gray-400 pt-2">file.zip</p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const fileContainer = document.getElementById("file-container");
+  const selectDist = document.getElementById("select-dist");
+
+  const addFile = (filename, icon = "fa-file") => {
+    const divContainerTop = document.createElement("div");
+    divContainerTop.classList.add("w-36", "h-40", "bg-[#141414]", "rounded-lg", "flex");
+    
+    const divLayout = document.createElement("div");
+    divLayout.classList.add("mx-auto", "my-auto");
+
+    const fileIcon = document.createElement("i");
+    fileIcon.classList.add("fa-solid", icon, "fa-6x", "text-yellow-800");
+
+    const filenameParagraph = document.createElement("p");
+    filenameParagraph.classList.add("block", "text-center", "font-medium", "text-gray-400", "pt-2")
+    filenameParagraph.textContent = filename;
+
+    divLayout.appendChild(fileIcon);
+    divLayout.appendChild(filenameParagraph);
+
+    divContainerTop.appendChild(divLayout);
+    fileContainer.appendChild(divContainerTop);
+  }
+
+  const clearList = () => fileContainer.innerHTML = "";
+
+  const dists = {{ dists|safe }};
+
+  let lastValue = selectDist.value;
+  selectDist.addEventListener("change", () => {
+    const value = selectDist.value;
+
+    if (value !== lastValue && value in dists) {
+      clearList();
+      const files = dists[value];
+      console.log(files);
+      files.forEach(iterFile => addFile(iterFile));
+      lastValue = value;
+    }
+  })
+</script>
+
 {% endblock %}

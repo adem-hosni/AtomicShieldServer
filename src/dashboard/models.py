@@ -70,6 +70,7 @@ class GameServer(models.Model):
         verbose_name_plural = "Game Servers"
         
     async def get_config_by_id(self, config_id: int) -> Union[str, int, bool]:
+        await self.arefresh_from_db()
         keys = await sync_to_async(lambda: dict(self.configurations.config))()
 
         if str(config_id) in keys:

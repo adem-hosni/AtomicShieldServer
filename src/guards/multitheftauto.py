@@ -4,7 +4,7 @@ from shared.ws import WebSocketGroupNames
 from typing import List, Union, Any
 
 
-class MultiTheftAutoMultiTheftAutoGuardManager(object):
+class MultiTheftAutoGuardManager(object):
     """
     MultiTheftAutoGuardManager is responsible for managing SafeGuard servers and scanners.
     It provides functionalities to add, remove, and check the status of servers and scanners.
@@ -130,4 +130,4 @@ class MultiTheftAutoMultiTheftAutoGuardManager(object):
 
 
 # Instantiate the MultiTheftAutoGuardManager
-safeguard_manager = MultiTheftAutoMultiTheftAutoGuardManager()
+safeguard_manager = MultiTheftAutoGuardManager()

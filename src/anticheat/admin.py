@@ -11,23 +11,17 @@ from .models import (
 
 
 class ClientHWIDAdmin(ModelAdmin):
-    list_display = ["username", "serial", "motherboard_serial", "bios_version"]
-
-    @admin.display(description="Username")
-    def username(self, obj: ClientHWID):
-        return obj.username
+    list_display = [
+        "username",
+        "computer_name",
+        "serial",
+        "motherboard_serial",
+        "bios_version",
+    ]
 
     @admin.display(description="Serial")
     def serial(self, obj: ClientHWID):
         return obj.mta_serial
-
-    @admin.display(description="Motherboard Serial")
-    def motherboard_serial(self, obj: ClientHWID):
-        return obj.motherboard_serial
-
-    @admin.display(description="BOIS Version")
-    def motherboard_serial(self, obj: ClientHWID):
-        return obj.bios_version
 
 
 class AntiCheatConfigurationsAdmin(ModelAdmin):

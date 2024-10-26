@@ -23,7 +23,7 @@ class ClientHWIDAdmin(ModelAdmin):
     @admin.display(description="Serial")
     def display_serial(self, obj: ClientHWID):
         return obj.mta_serial
-    
+
     @admin.display(description="Disks")
     def display_disks(self, obj: ClientHWID):
         return "-".join(obj.disks)

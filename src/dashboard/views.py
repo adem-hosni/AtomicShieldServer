@@ -1,7 +1,9 @@
-import re
+import os
 import logging
 import json
+from datetime import datetime
 from django.shortcuts import render, redirect
+from django.conf import settings
 from django.contrib import messages
 from django.urls import reverse
 from django.db.models import Q
@@ -22,6 +24,7 @@ from anticheat.models import (
     AntiCheatConfigurations,
     AntiCheatConfigurationCategories,
     AntiCheatConfigDataTypes,
+    Ban,
 )
 from .forms import (
     AddServerForm,
@@ -86,9 +89,35 @@ def render_maindashboard(request: HttpRequest) -> HttpResponse:
 
 
 @login_required
-def render_users(request: HttpRequest) -> HttpResponse:
+def render_bans(request: HttpRequest) -> HttpResponse:
+    try:
+        target_server = GameServer.objects.get(
+            owner=request.user, id=request.session.get("selected_server", -1)
+        )
+    except GameServer.DoesNotExist:
+        messages.error(request, "The selected server does not exists!")
+    else:
+        bans = Ban.objects.filter(game_server=target_server)
+
     return render(
-        request, "pages/dashboard/users.jinja", {"username": request.user.username}
+        request,
+        "pages/dashboard/bans.jinja",
+        {
+            "bans": [
+                {
+                    "id": ban.id,
+                    "username": ban.hwid.username,
+                    "banned_at": ban.banned_at,
+                    "game_serial": "XXX",
+                    "duration": ban.duration,
+                    "status": (
+                        2 if ban.duration < datetime.now() else ban.active
+                    ),  # 0: Disabled, 1: Banned, 2: Expired
+                    "reason": ban.reason,
+                }
+                for ban in bans
+            ]
+        },
     )
 
 
@@ -559,18 +588,16 @@ def render_quicksetup(request: HttpRequest) -> HttpResponse:
             if int(target_dist) in [int(dist[0]) for dist in supported_dists]:
                 ...
 
+    dists_dir = os.path.join(settings.BIN_DIR, "setup_dist")
     return render(
         request,
         "pages/dashboard/quicksetup.jinja",
         {
             "form": form,
-            "files": ["deathmatch.dll", "mtaserver.conf"],
-            "distributions": [
-                "Windows",
-                "Ubuntu",
-                "Debian",
-                "Kali",
-            ],
+            "dists": {
+                element.title(): os.listdir(os.path.join(dists_dir, element))
+                for element in os.listdir(dists_dir)
+            },
         },
     )
 
@@ -613,7 +640,7 @@ def render_whitelist(request: HttpRequest) -> HttpResponse:
         whitelists = Whitelist.objects.filter(game_server=target_server).order_by(
             "-created_at"
         )
-        
+
         is_whitelist_enabled = target_server.get_config_by_id(1)
 
     if request.method == "POST":
@@ -624,9 +651,11 @@ def render_whitelist(request: HttpRequest) -> HttpResponse:
                     add_form = WhitelistForm(request_body)
                     if add_form.is_valid():
                         if not is_whitelist_enabled:
-                            messages.error(request, "Whitelist configuration is disabled!")
+                            messages.error(
+                                request, "Whitelist configuration is disabled!"
+                            )
                             return redirect(request.path)
-                        
+
                         player_name = add_form.cleaned_data["name"]
                         ip = add_form.cleaned_data["ip"]
                         serial = add_form.cleaned_data["serial"]
@@ -691,7 +720,7 @@ def render_whitelist(request: HttpRequest) -> HttpResponse:
                     ):
                         messages.error(request, "Unexptected error!")
                         return HttpResponseRedirect(request.path)
-                    
+
                     if not is_whitelist_enabled:
                         messages.error(request, "Whitelist configuration is disabled!")
                         return redirect(request.path)

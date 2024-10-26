@@ -119,6 +119,7 @@ class Ban(models.Model):
     banned_at = models.DateTimeField(auto_now_add=True)
     duration = models.DurationField(null=True, editable=True)  # null
     game_server = models.ForeignKey("dashboard.GameServer", on_delete=models.CASCADE)
+    active = models.BooleanField(default=True)
     reason = models.CharField(null=True, max_length=96)
 
     class Meta:

@@ -36,7 +36,6 @@
 - SSL Verification
 - VM Verification
 - Implement HTTP communication encryption
-- Elevate process handle to protected process
 
 # SafeGuard Engine
 - ~~HWID Checks~~

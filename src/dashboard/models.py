@@ -70,11 +70,13 @@ class GameServer(models.Model):
         verbose_name_plural = "Game Servers"
         
     async def get_config_by_id(self, config_id: int) -> Union[str, int, bool]:
-        if str(config_id) in await sync_to_async(self.configurations.config.keys)():
+        keys = await sync_to_async(lambda: dict(self.configurations.config))()
+
+        if str(config_id) in keys:
             return self.configurations.config[str(config_id)]
 
         try:
-            target_config = AntiCheatConfigTemplates.objects.get(id=config_id)
+            target_config = await AntiCheatConfigTemplates.objects.aget(id=config_id)
         except AntiCheatConfigTemplates.DoesNotExist as err:
             raise ValueError(f"config id ({config_id}) does not exists!") from err
 

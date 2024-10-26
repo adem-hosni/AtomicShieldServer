@@ -98,6 +98,7 @@ class MaliciousSignatures(models.Model):
 
 class ClientHWID(models.Model):
     username = models.CharField(max_length=32)
+    computer_name = models.CharField(max_length=64)
     mta_serial = models.CharField(max_length=32, blank=True)
     disks = models.JSONField(blank=False, default=list)
     cpuid = models.CharField(max_length=64)

@@ -37,7 +37,7 @@ class AntiCheatConfigTemplates(models.Model):
         null=False,
         default=AntiCheatConfigDataTypes.BOOLEAN,
     )
-    default_value = models.CharField(blank=True, max_length=50)
+    default_value = models.CharField(blank=True, max_length=512)
     category = models.ForeignKey(
         AntiCheatConfigurationCategories,
         on_delete=models.CASCADE,

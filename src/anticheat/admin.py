@@ -12,16 +12,21 @@ from .models import (
 
 class ClientHWIDAdmin(ModelAdmin):
     list_display = [
+        "display_disks",
         "username",
         "computer_name",
-        "serial",
+        "display_serial",
         "motherboard_serial",
         "bios_version",
     ]
 
     @admin.display(description="Serial")
-    def serial(self, obj: ClientHWID):
+    def display_serial(self, obj: ClientHWID):
         return obj.mta_serial
+    
+    @admin.display(description="Disks")
+    def display_disks(self, obj: ClientHWID):
+        return "-".join(obj.disks)
 
 
 class AntiCheatConfigurationsAdmin(ModelAdmin):

@@ -54,7 +54,7 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
         await hwid.asave()
         logger.info(f'"{hwid.username}" HWID registred!')
 
-    logger.info(f'"{request["username"]}" engine asking for network join...')
+    logger.info(f"{request['username']}'s engine asking for network join (Bios Version: \"{hwid.bios_version}\", CPU ID: \"{hwid.cpuid}\", Motherboard Serial: \"{hwid.motherboard_serial}\")")
 
     consumer.group_name = WebSocketGroupNames.SAFE_ENGINES.value
     consumer.channel_layer.group_add(consumer.group_name, consumer.channel_name)

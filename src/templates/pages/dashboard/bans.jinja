@@ -34,4 +34,90 @@
       </div>
     </div>
 </section>
+
+<div class="relative overflow-x-auto shadow-md sm:rounded-lg">
+  <table
+    class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400"
+  >
+    <thead
+      class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-[#0d0d0d] dark:text-gray-400"
+    >
+      <tr>
+        <th scope="col" class="px-6 py-3">NAME</th>
+        <th scope="col" class="px-3 py-3">GAME SERIAL</th>
+        <th scope="col" class="px-3 py-3">BANNED AT</th>
+        <th scope="col" class="pl-6 py-3">DURATION</th>
+        <th scope="col" class="pl-6 py-3">STATUS</th>
+        <th scope="col" class="pl-6 py-3">REASON</th>
+        <th scope="col" class="px-6 py-3">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for ban in bans %}
+      <tr
+        class="transition-all duration:300 bg-white border-b dark:bg-[#161616] dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#212121]"
+      >
+        <td class="px-6 py-4 font-medium">{{ ban.username }}</td>
+
+        <th
+          scope="row"
+          class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-gray-400 dark:hover:text-white cursor-pointer"
+          onclick="navigator.clipboard.writeText('{{ ban.key }}').then(() => iziToast.success({title: 'SUCCESS', message: 'Successfuly key copied to clipboard!'}))"
+        >
+          <span class="blur-sm hover:blur-0 transition duration-300">{{ ban.game_serial }}</span>
+        </th>
+        
+        <td class="px-6 py-4">{{ ban.banned_at }}</td>
+        <td class="px-6 py-4">{{ ban.duration }}</td>
+        <td class="px-6 py-4">
+          {% if ban.status == 2 %}
+            <span class="px-2 border font-medium border-zinc-300 rounded p-1 text-zinc-300 transition-all duration-300 hover:bg-zinc-300 hover:text-black select-none">EXPIRED</span>
+          {% elif ban.status == 1 %}
+            <span class="px-2 border font-medium border-red-500 rounded p-1 text-red-500 transition-all duration-300 hover:bg-red-500 hover:text-black select-none">BANNED</span>
+          {% elif ban.status == 0 %}
+            <span class="px-2 border font-medium border-yellow-600 rounded p-1 text-yellow-600 transition-all duration-300 hover:bg-yellow-600 hover:text-black select-none">UNBANNED</span>
+          {% endif %}
+        </td>
+        <td class="px-6 py-4 font-bold">{{ ban.reason }}</td>
+        <td class="px-6 py-4 flex">
+
+          <button
+            onclick="document.getElementById('target-delete-whitelist').value = '{{ whitelist.id }}'; document.getElementById('target-delete-whitelist-modal-name').textContent = '{{ whitelist.name }}';"
+            data-modal-target="delete-whitelist-modal"
+            data-modal-toggle="delete-whitelist-modal"
+            data-tooltip-target="remove-whitelist-{{ whitelist.id }}"
+            data-tooltip-style="dark"
+            class="font-medium text-blue-600 dark:text-blue-500 hover:underline"
+          >
+            <i
+              class="fa-regular fa-circle-check text-[#8c592b] transition-all duration-300 hover:bg-[#8c592b] hover:text-black rounded-full p-1"
+            ></i>
+          </button>
+
+          <div
+            id="remove-whitelist-{{ whitelist.id }}"
+            role="tooltip"
+            class="z-10 invisible inline-block px-3 py-2 text-sm font-medium text-black bg-[#8c592b] rounded-lg shadow-sm opacity-0 tooltip transition-all duration-300"
+          >
+            Disable Ban
+            <div class="tooltip-arrow" data-popper-arrow></div>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% if bans|length == 0 %}
+  <div
+    class="transition-all duration:300 bg-white border-b dark:bg-[#161616] dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#181818] flex text-center"
+  >
+    <div
+      scope="row"
+      class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-gray-400 dark:hover:text-white w-full"
+    >
+      No bans were found
+    </div>
+  </div>
+  {% endif %}
+</div>
 {% endblock content %}

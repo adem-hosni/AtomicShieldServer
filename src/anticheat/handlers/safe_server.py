@@ -11,6 +11,7 @@ from django.conf import settings
 from django.db.models import Q
 from ..models import Ban
 from ..consumers.safe_server import SafeServerConsumer
+from .. import config_ids
 import logging
 
 # Set up logging for this module
@@ -188,6 +189,7 @@ async def handle_request_player_join(
 
             if not whitelisted:
                 response["join"] = False
+                await consumer.game_server.get_config_by_id(config_ids.CLIENT_WHITELIST_KICK_MESSAGE)
                 response["message"] = (
                     "Client is not whitelisted, please contact the server admin for a whitelist"
                 )

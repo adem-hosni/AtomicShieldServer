@@ -69,8 +69,8 @@ class GameServer(models.Model):
         verbose_name = "Game Server"
         verbose_name_plural = "Game Servers"
         
-    def get_config_by_id(self, config_id: int) -> Union[str, int, bool]:
-        if str(config_id) in self.configurations.config.keys():
+    async def get_config_by_id(self, config_id: int) -> Union[str, int, bool]:
+        if str(config_id) in await sync_to_async(self.configurations.config.keys)():
             return self.configurations.config[str(config_id)]
 
         try:

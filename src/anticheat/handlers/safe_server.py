@@ -178,10 +178,11 @@ async def handle_request_player_join(
         # Check if the server uses whitelist system
         if consumer.game_server.get_config_by_id(1):  # whitelist id: 1
             try:
-                whitelisted = Whitelist.objects.filter(
+                whitelists = await sync_to_async(Whitelist.objects.filter)(
                     Q(game_server=consumer.game_server)
                     & (Q(ip=request["ip"]) | Q(serial=request["serial"]))
-                ).exists()
+                )
+                whitelisted = await whitelists.aexists()
             except Whitelist.DoesNotExist:
                 whitelisted = False
 

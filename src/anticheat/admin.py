@@ -80,17 +80,6 @@ class BanAdminModel(ModelAdmin):
     def username(self, obj: Ban):
         return obj.hwid.username
 
-    @admin.display(description="Duration")
-    def duration(self, obj: Ban):
-        hours = obj.duration.hour
-        if hours == 0:
-            return f"{obj.duration.minute}m"
-        return f"{obj.duration.hour}h"
-
-    @admin.display(description="Reason")
-    def reason(self, obj: Ban):
-        return obj.reason
-
 
 admin.site.register(
     AntiCheatConfigurationCategories, AntiCheatConfigurationsCategoriesAdmin

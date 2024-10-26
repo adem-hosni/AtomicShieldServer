@@ -23,6 +23,7 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
         "cpu",
         "motherboard_serial",
         "bios",
+        "computer_name"
     ]:
         if not check_request_body_key(request, key, str):
             return consumer.close()
@@ -50,6 +51,7 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
             cpuid=request["cpu"],
             motherboard_serial=request["motherboard_serial"],
             bios_version=request["bios"],
+            computer_name = request["computer_name"],
         )
         await hwid.asave()
         logger.info(f'"{hwid.username}" HWID registred!')

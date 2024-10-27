@@ -50,7 +50,7 @@ async def handle_network_join(
             SafeServerPacketID.NETWORK_JOIN,
             {
                 "success": False,
-                "message": "Invalid server key!\n",
+                "message": "Invalid server key!",
             },
         )
         return await consumer.close()

@@ -608,7 +608,7 @@ def render_subscriptions(request: HttpRequest) -> HttpResponse:
                     "type": subscription.type,
                     "started_at": subscription.started_at,
                     "name": subscription.name,
-                    "status": subscription.status,
+                    "status": 2 if not subscription.is_valid_for_now() else subscription.status,
                 }
                 for subscription in ServerSubscription.objects.filter(
                     owner=request.user

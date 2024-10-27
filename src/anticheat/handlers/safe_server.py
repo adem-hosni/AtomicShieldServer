@@ -89,6 +89,19 @@ async def handle_network_join(
             },
         )
         return await consumer.close()
+    
+    # Check subscription's health
+    last_subscription = await server.subscriptions.alast()
+    if not last_subscription.is_valid_for_now():
+        await consumer.send(
+            SafeServerPacketID.NETWORK_JOIN,
+            {
+                "success": False,
+                "message": "Subscription ended",
+            },
+        )
+        return await consumer.close()
+        
 
     # Successfully joined, add consumer to the WebSocket group and set it's game server
     consumer.group_name = WebSocketGroupNames.SAFE_SERVERS.value

@@ -19,11 +19,11 @@
 - ~~Check if the key if it's being used~~
 - ~~Check if the player is banned~~
 - ~~Check if the joining player is whitelisted~~
+- ~~Implement server subscription duration (SafeGuard master server side)~~
 - Check SafeGuard server status
 - Compile client scripts
 - Inject Anticheat scripts components to the client
 - Check SafeGuard Agent disconnect
-- Implement server subscription duration (SafeGuard master server side)
 - Implement HTTP communication encryption
 - Implement SafeGuard Server watermark on server name
 

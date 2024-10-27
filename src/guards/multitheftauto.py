@@ -22,7 +22,7 @@ class MultiTheftAutoGuardManager(object):
         Add an Eagle server to the manager if it belongs to the correct WebSocket group.
 
         Args:
-            server (Union[EagleServerConsumer, Any]): The server instance to be added.
+            server (Union[SafeServerConsumer, Any]): The server instance to be added.
 
         Returns:
             bool: True if the server was successfully added, False otherwise.
@@ -67,7 +67,7 @@ class MultiTheftAutoGuardManager(object):
         Remove an Eagle server from the manager.
 
         Args:
-            server (EagleServerConsumer): The server instance to be removed.
+            server (SafeServerConsumer): The server instance to be removed.
 
         Returns:
             bool: True if the server was successfully removed, False otherwise.

@@ -165,12 +165,16 @@ async def handle_request_player_join(
     else:
         player_scanner.connected_server = consumer
         if player_scanner.is_flagged:
-            logger.info(f'Connection refused: Client is flagged: "{player_scanner.flag_message}"')
+            logger.info(
+                f'Connection refused: Client is flagged: "{player_scanner.flag_message}"'
+            )
             response["join"] = False
             response["message"] = player_scanner.flag_message
 
         if len(player_scanner.detected_signatures) > 0:
-            logger.info(f'Connection refused: Malicious signatures detected on the client: "{player_scanner.detected_signatures[0].ban_message}"')
+            logger.info(
+                f'Connection refused: Malicious signatures detected on the client: "{player_scanner.detected_signatures[0].ban_message}"'
+            )
             response["join"] = False
             response["message"] = player_scanner.detected_signatures[0].ban_message
 

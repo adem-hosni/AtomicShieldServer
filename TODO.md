@@ -23,7 +23,6 @@
 - Compile client scripts
 - Inject Anticheat scripts components to the client
 - Check SafeGuard Agent disconnect
-- Open Live SafeGurad Master Server RPCs
 - Implement server subscription duration (SafeGuard master server side)
 - Implement HTTP communication encryption
 - Implement SafeGuard Server watermark on server name

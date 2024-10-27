@@ -86,7 +86,7 @@ async def handle_signatures_sync(consumer: SafeEngineConsumer, request: Dict[str
         },
     )
     logger.info(
-        f"{consumer.address[0]}:{consumer.address[1]} Signatures Synced Successfuly!"
+        f"{consumer.address[0]}:{consumer.address[1]} {len(signatures)} Signatures Synced Successfuly!"
     )
 
 

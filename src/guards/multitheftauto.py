@@ -52,7 +52,7 @@ class MultiTheftAutoGuardManager(object):
         Add an Eagle scanner to the manager if it belongs to the correct WebSocket group.
 
         Args:
-            scanner (EagleScanner): The scanner instance to be added.
+            scanner (SafeEngineConsumer): The scanner instance to be added.
 
         Returns:
             bool: True if the scanner was successfully added, False otherwise.
@@ -86,7 +86,7 @@ class MultiTheftAutoGuardManager(object):
         Remove an Eagle scanner from the manager and trigger a disconnect action.
 
         Args:
-            scanner (EagleScanner): The scanner instance to be removed.
+            scanner (SafeEngineConsumer): The scanner instance to be removed.
 
         Returns:
             bool: True if the scanner was successfully removed, False otherwise.
@@ -121,7 +121,7 @@ class MultiTheftAutoGuardManager(object):
             scanner_ip (str): The IP address of the scanner to retrieve.
 
         Returns:
-            Union[EagleScanner, None]: The scanner instance if found, otherwise None.
+            Union[SafeEngineConsumer, None]: The scanner instance if found, otherwise None.
         """
         for iter_scanner in self._eagle_scanners:
             if iter_scanner.address[0] == scanner_ip:

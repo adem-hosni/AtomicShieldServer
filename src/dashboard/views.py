@@ -90,6 +90,7 @@ def render_maindashboard(request: HttpRequest) -> HttpResponse:
 
 @login_required
 def render_bans(request: HttpRequest) -> HttpResponse:
+    bans = []
     try:
         target_server = GameServer.objects.get(
             owner=request.user, id=request.session.get("selected_server", -1)

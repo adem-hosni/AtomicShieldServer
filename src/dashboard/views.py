@@ -511,18 +511,12 @@ def refresh_server_key(request: HttpRequest) -> HttpResponse:
 
 @login_required
 def render_configurations(request: HttpRequest) -> HttpResponse:
-    if not "selected_server" in request.session.keys():
-        return render(
-            request,
-            "pages/dashboard/configurations.jinja",
-            {"error": "The selected server does not exists!"},
-        )
-
     try:
         target_server = GameServer.objects.get(
-            id=request.session["selected_server"], owner=request.user
+            id=request.session.get("selected_server", -1), owner=request.user
         )
     except GameServer.DoesNotExist:
+        messages.error(request, "The selected server does not exists!")
         return render(
             request,
             "pages/dashboard/configurations.jinja",

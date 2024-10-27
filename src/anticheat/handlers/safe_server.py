@@ -165,16 +165,14 @@ async def handle_request_player_join(
     else:
         player_scanner.connected_server = consumer
         if player_scanner.is_flagged:
+            logger.info(f'Connection refused: Client is flagged: "{player_scanner.flag_message}"')
             response["join"] = False
             response["message"] = player_scanner.flag_message
 
         if len(player_scanner.detected_signatures) > 0:
+            logger.info(f'Connection refused: Malicious signatures detected on the client: "{player_scanner.detected_signatures[0].ban_message}"')
             response["join"] = False
             response["message"] = player_scanner.detected_signatures[0].ban_message
-
-        if player_scanner._flagged:
-            response["join"] = False
-            response["message"] = player_scanner.flag_message
 
         # Check if the server uses whitelist system
         if consumer.game_server.get_config_by_id(1):  # whitelist id: 1
@@ -188,9 +186,12 @@ async def handle_request_player_join(
                 whitelisted = False
 
             if not whitelisted:
-                kick_message = await consumer.game_server.get_config_by_id(config_ids.CLIENT_WHITELIST_KICK_MESSAGE)
-                
-                response["join"] = False                
+                logger.info('Connection refused: "Client is not whitelisted"')
+                kick_message = await consumer.game_server.get_config_by_id(
+                    config_ids.CLIENT_WHITELIST_KICK_MESSAGE
+                )
+
+                response["join"] = False
                 response["message"] = kick_message
 
         # Check if the player is banned
@@ -245,6 +246,4 @@ async def handle_load_anticheat_scripts(
     logger.info(
         f"Synced {len(components)} AntiCheat components for {consumer.address[0]}:{consumer.address[1]}"
     )
-    return await consumer.send(
-        SafeServerPacketID.SYNC_ANTICHEAT_COMPONENTS, components
-    )
+    return await consumer.send(SafeServerPacketID.SYNC_ANTICHEAT_COMPONENTS, components)

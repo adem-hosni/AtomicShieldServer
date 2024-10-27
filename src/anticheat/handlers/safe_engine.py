@@ -23,7 +23,7 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
         "cpu",
         "motherboard_serial",
         "bios",
-        "computer_name"
+        "computer_name",
     ]:
         if not check_request_body_key(request, key, str):
             return consumer.close()
@@ -51,12 +51,14 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
             cpuid=request["cpu"],
             motherboard_serial=request["motherboard_serial"],
             bios_version=request["bios"],
-            computer_name = request["computer_name"],
+            computer_name=request["computer_name"],
         )
         await hwid.asave()
         logger.info(f'"{hwid.username}" HWID registred!')
 
-    logger.info(f"{request['username']}'s engine asking for network join (Computer Name: \"{hwid.computer_name}\", Bios Version: \"{hwid.bios_version}\", CPU ID: \"{hwid.cpuid}\", Motherboard Serial: \"{hwid.motherboard_serial}\")")
+    logger.info(
+        f"{request['username']}'s engine asking for network join (Computer Name: \"{hwid.computer_name}\", Bios Version: \"{hwid.bios_version}\", CPU ID: \"{hwid.cpuid}\", Motherboard Serial: \"{hwid.motherboard_serial}\")"
+    )
 
     consumer.group_name = WebSocketGroupNames.SAFE_ENGINES.value
     consumer.channel_layer.group_add(consumer.group_name, consumer.channel_name)
@@ -111,10 +113,16 @@ async def handle_malicious_signature_detected(
 
     target_ban = signatures_queryset[0]
     consumer.detected_signatures += signatures_queryset
-    await consumer.ban(target_ban.ban_message, target_ban.ban_duaration)
+    await consumer.ban(
+        target_ban.ban_message,
+        target_ban.ban_duaration,
+        consumer.connected_server.game_server,
+    )
 
 
-async def handle_game_anticheat_status(consumer: SafeEngineConsumer, request: Dict[str, Any]):
+async def handle_game_anticheat_status(
+    consumer: SafeEngineConsumer, request: Dict[str, Any]
+):
     if not check_request_body_key(request, "status", bool):
         return
 

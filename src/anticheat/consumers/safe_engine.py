@@ -315,7 +315,12 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             return True
         return False
 
-    async def ban(self, reason: str, duration: timedelta):
+    async def ban(self, reason: str, duration: timedelta, target_game_server):
         self.kick(reason, flag=True)
-        ban = Ban(hwid=self._hwid, duration=duration, reason=reason)
+        ban = Ban(
+            hwid=self._hwid,
+            duration=duration,
+            reason=reason,
+            game_server=target_game_server,
+        )
         ban.save()

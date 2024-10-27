@@ -134,3 +134,4 @@ async def handle_game_anticheat_status(
 async def handle_scanner_disconnect(consumer: SafeEngineConsumer):
     logger.info(f"{consumer.hwid.username}'s scanner disconnected from network.")
     safeguard_manager.remove_eagle_scanner(consumer)
+    await consumer.kick("Anticheat Agent Closed! Please re-open the agent.", True)

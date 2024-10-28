@@ -192,7 +192,7 @@ async def handle_request_player_join(
             response["message"] = player_scanner.detected_signatures[0].ban_message
 
         # Check if the server uses whitelist system
-        if consumer.game_server.get_config_by_id(1):  # whitelist id: 1
+        if await consumer.game_server.get_config_by_id(1):  # whitelist id: 1
             try:
                 whitelists = await sync_to_async(Whitelist.objects.filter)(
                     Q(game_server=consumer.game_server)
@@ -206,7 +206,7 @@ async def handle_request_player_join(
                 logger.info('Connection refused: "Client is not whitelisted"')
                 kick_message = await consumer.game_server.get_config_by_id(
                     config_ids.CLIENT_WHITELIST_KICK_MESSAGE
-                )
+                ) or "Client is not whitelisted"
 
                 response["join"] = False
                 response["message"] = kick_message

@@ -71,8 +71,7 @@ class GameServer(models.Model):
         
     async def get_config_by_id(self, config_id: int) -> Union[str, int, bool]:
         await self.arefresh_from_db()
-        keys = await sync_to_async(lambda: dict(self.configurations.config))()
-
+        keys = (await sync_to_async(lambda: dict(self.configurations.config))()).keys()
         if str(config_id) in keys:
             return self.configurations.config[str(config_id)]
 

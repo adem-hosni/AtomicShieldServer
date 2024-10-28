@@ -526,11 +526,14 @@ def render_configurations(request: HttpRequest) -> HttpResponse:
     if request.method == "POST":
         for config in AntiCheatConfigTemplates.objects.all():
             config_id = str(config.id)
-
-            if config.config_type == AntiCheatConfigDataTypes.BOOLEAN:
-                config_value = request.POST.get(config_id, False)
-            else:
-                config_value = request.POST[config_id]
+            
+            match config.config_type:
+                case AntiCheatConfigDataTypes.BOOLEAN:
+                    config_value = request.POST.get(config_id, False)
+                case AntiCheatConfigDataTypes.INTEGER:
+                    config_value = request.POST.get(config_id, 0)
+                case AntiCheatConfigDataTypes.STRING:
+                    config_value = request.POST.get(config_id, "")
 
             target_server.configurations.config[config_id] = config_value
         target_server.configurations.save()

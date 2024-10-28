@@ -7,7 +7,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.urls import reverse
 from django.db.models import Q
-from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, FileResponse
 from django.contrib.auth.decorators import login_required
 from guards.multitheftauto import safeguard_manager
 from utils import check_request_body_key
@@ -30,7 +30,6 @@ from .forms import (
     AddServerForm,
     QuickSetupForm,
     WhitelistForm,
-    supported_dists,
 )
 import utils
 from typing import Dict, Union, List
@@ -569,24 +568,39 @@ def render_configurations(request: HttpRequest) -> HttpResponse:
 
 @login_required
 def render_quicksetup(request: HttpRequest) -> HttpResponse:
-    form = QuickSetupForm()
-    if request.method == "POST":
-        form = QuickSetupForm(request.POST)
-        if form.is_valid():
-            target_dist = form.cleaned_data["distribution"]
-            if int(target_dist) in [int(dist[0]) for dist in supported_dists]:
-                ...
-
     dists_dir = os.path.join(settings.BIN_DIR, "setup_dist")
+
+    if request.method == "POST":
+        target_dist = str(request.POST["selected-dist"]).lower()
+        supported_dists = os.listdir(dists_dir)
+
+        # Check if the requested distribution exists
+        if not target_dist in supported_dists:
+            messages.error(request, "Unsupported distribution!")
+            return redirect(request.path)
+
+        distribution_path = os.path.join(dists_dir, target_dist, "download.zip")
+        if not os.path.isfile(distribution_path):
+            messages.error(
+                request, f"Failed to download {target_dist.title()} distribution!"
+            )
+            return redirect(request.path)
+
+        return FileResponse(
+            open(distribution_path, "rb"),
+            filename=f"{settings.ANTICHEAT_NAME_LONG} {target_dist.title()} Distribution.zip",
+        )
+
+    dists = {}
+    for dist in os.listdir(dists_dir):
+        with open(os.path.join(dists_dir, dist, "content.json"), "r") as file:
+            dists[dist.title()] = json.loads(file.read())
+
     return render(
         request,
         "pages/dashboard/quicksetup.jinja",
         {
-            "form": form,
-            "dists": {
-                element.title(): os.listdir(os.path.join(dists_dir, element))
-                for element in os.listdir(dists_dir)
-            },
+            "dists": dists,
         },
     )
 

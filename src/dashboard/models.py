@@ -68,7 +68,7 @@ class GameServer(models.Model):
         db_table = "gameservers"
         verbose_name = "Game Server"
         verbose_name_plural = "Game Servers"
-        
+
     async def get_config_by_id(self, config_id: int) -> Union[str, int, bool]:
         await self.arefresh_from_db()
         keys = (await sync_to_async(lambda: dict(self.configurations.config))()).keys()
@@ -81,7 +81,7 @@ class GameServer(models.Model):
             raise ValueError(f"config id ({config_id}) does not exists!") from err
 
         return target_config.default_value
-    
+
     async def get_anticheat_configurations(self) -> Dict[str, Any]:
         try:
             target_server = await GameServer.objects.select_related(

@@ -23,7 +23,6 @@
 - ~~Check SafeGuard Agent disconnect~~
 - ~~Check if the player disconnected from MTA:SA server~~
 - Check SafeGuard server status
-- Compile client scripts
 - Inject Anticheat scripts components to the client
 - Implement HTTP communication encryption
 - Implement SafeGuard Server watermark on server name

@@ -24,7 +24,6 @@ from anticheat.models import (
     AntiCheatConfigTemplates,
     AntiCheatConfigurations,
     AntiCheatConfigurationCategories,
-    AntiCheatConfigDataTypes,
     Ban,
 )
 from .forms import (

@@ -98,8 +98,6 @@ class MultiTheftAutoGuardManager(object):
             if iter_scanner == scanner:
                 # Remove the scanner from the list
                 del self._eagle_scanners[self._eagle_scanners.index(iter_scanner)]
-                # Trigger the disconnect action for the scanner
-                iter_scanner.kick("Eagle Agent Disconnected")
 
     def is_scanner_connected_to_eagle(self, scanner_ip: str) -> bool:
         """

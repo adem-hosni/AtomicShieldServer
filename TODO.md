@@ -22,7 +22,7 @@
 - ~~Implement server subscription duration (SafeGuard master server side)~~
 - ~~Check SafeGuard Agent disconnect~~
 - ~~Check if the player disconnected from MTA:SA server~~
-- Check SafeGuard server status
+- ~~Check SafeGuard server status~~
 - Inject Anticheat scripts components to the client
 - Implement HTTP communication encryption
 - Implement SafeGuard Server watermark on server name

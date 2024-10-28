@@ -67,9 +67,13 @@
     fileContainer.appendChild(divContainerTop);
   }
 
+  const addFiles = (files) => files.forEach(file => addFile(file));
+
   const clearList = () => fileContainer.innerHTML = "";
 
   const dists = {{ dists|safe }};
+  clearList();
+  addFiles(Object.values(dists)[0]);
 
   let lastValue = selectDist.value;
   selectDist.addEventListener("change", () => {
@@ -77,9 +81,7 @@
 
     if (value !== lastValue && value in dists) {
       clearList();
-      const files = dists[value];
-      console.log(files);
-      files.forEach(iterFile => addFile(iterFile));
+      addFiles(dists[value])
       lastValue = value;
     }
   })

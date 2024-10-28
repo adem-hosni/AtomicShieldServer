@@ -609,7 +609,11 @@ def render_subscriptions(request: HttpRequest) -> HttpResponse:
                     "started_at": subscription.started_at,
                     "expires_at": subscription.started_at + subscription.expires_at,
                     "name": subscription.name,
-                    "status": 2 if not subscription.is_valid_for_now() else subscription.status,
+                    "status": (
+                        2
+                        if not subscription.is_valid_for_now()
+                        else subscription.status
+                    ),
                 }
                 for subscription in ServerSubscription.objects.filter(
                     owner=request.user

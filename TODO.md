@@ -20,10 +20,10 @@
 - ~~Check if the player is banned~~
 - ~~Check if the joining player is whitelisted~~
 - ~~Implement server subscription duration (SafeGuard master server side)~~
+- ~~Check SafeGuard Agent disconnect~~
 - Check SafeGuard server status
 - Compile client scripts
 - Inject Anticheat scripts components to the client
-- Check SafeGuard Agent disconnect
 - Implement HTTP communication encryption
 - Implement SafeGuard Server watermark on server name
 

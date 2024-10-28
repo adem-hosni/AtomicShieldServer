@@ -524,18 +524,9 @@ def render_configurations(request: HttpRequest) -> HttpResponse:
         )
 
     if request.method == "POST":
-        for config in AntiCheatConfigTemplates.objects.filter(server_type=target_server.type):
-            config_id = str(config.id)
-            
-            match config.config_type:
-                case AntiCheatConfigDataTypes.BOOLEAN:
-                    config_value = request.POST.get(config_id, False)
-                case AntiCheatConfigDataTypes.INTEGER:
-                    config_value = request.POST.get(config_id, 0)
-                case AntiCheatConfigDataTypes.STRING:
-                    config_value = request.POST.get(config_id, "")
-
-            target_server.configurations.config[config_id] = config_value
+        for config_id, config_value in request.POST.items():
+            if config_id != "csrfmiddlewaretoken":
+                target_server.configurations.config[config_id] = config_value
         target_server.configurations.save()
         return redirect(request.path)
 

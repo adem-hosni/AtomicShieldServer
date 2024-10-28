@@ -21,6 +21,7 @@
 - ~~Check if the joining player is whitelisted~~
 - ~~Implement server subscription duration (SafeGuard master server side)~~
 - ~~Check SafeGuard Agent disconnect~~
+- ~~Check if the player disconnected from MTA:SA server~~
 - Check SafeGuard server status
 - Compile client scripts
 - Inject Anticheat scripts components to the client

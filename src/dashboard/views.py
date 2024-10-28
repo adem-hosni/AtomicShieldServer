@@ -607,6 +607,7 @@ def render_subscriptions(request: HttpRequest) -> HttpResponse:
                 {
                     "type": subscription.type,
                     "started_at": subscription.started_at,
+                    "expires_at": subscription.started_at + subscription.expires_at,
                     "name": subscription.name,
                     "status": 2 if not subscription.is_valid_for_now() else subscription.status,
                 }

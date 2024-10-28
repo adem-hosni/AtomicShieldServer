@@ -541,7 +541,7 @@ def render_configurations(request: HttpRequest) -> HttpResponse:
 
     server_configs = target_server.configurations.config
     configurations = []
-    AntiCheatConfigurationCategories
+
     for category in AntiCheatConfigurationCategories.objects.filter(
         server_type=ServerTypes.MTASA
     ):

@@ -206,7 +206,7 @@ async def handle_request_player_join(
                 logger.info('Connection refused: "Client is not whitelisted"')
                 kick_message = await consumer.game_server.get_config_by_id(
                     config_ids.CLIENT_WHITELIST_KICK_MESSAGE
-                ) or "Client is not whitelisted"
+                ) or "You are not whitelisted on this server. Please apply for access to join. Contact an admin for more details."
 
                 response["join"] = False
                 response["message"] = kick_message

@@ -524,7 +524,7 @@ def render_configurations(request: HttpRequest) -> HttpResponse:
         )
 
     if request.method == "POST":
-        for config in AntiCheatConfigTemplates.objects.all():
+        for config in AntiCheatConfigTemplates.objects.filter(server_type=target_server.type):
             config_id = str(config.id)
             
             match config.config_type:

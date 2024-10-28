@@ -89,7 +89,7 @@ async def handle_network_join(
             },
         )
         return await consumer.close()
-    
+
     # Check subscription's health
     last_subscription = await server.subscriptions.alast()
     if not last_subscription.is_valid_for_now():
@@ -101,7 +101,6 @@ async def handle_network_join(
             },
         )
         return await consumer.close()
-        
 
     # Successfully joined, add consumer to the WebSocket group and set it's game server
     consumer.group_name = WebSocketGroupNames.SAFE_SERVERS.value
@@ -204,9 +203,12 @@ async def handle_request_player_join(
 
             if not whitelisted:
                 logger.info('Connection refused: "Client is not whitelisted"')
-                kick_message = await consumer.game_server.get_config_by_id(
-                    config_ids.CLIENT_WHITELIST_KICK_MESSAGE
-                ) or "You are not whitelisted on this server. Please apply for access to join. Contact an admin for more details."
+                kick_message = (
+                    await consumer.game_server.get_config_by_id(
+                        config_ids.CLIENT_WHITELIST_KICK_MESSAGE
+                    )
+                    or "You are not whitelisted on this server. Please apply for access to join. Contact an admin for more details."
+                )
 
                 response["join"] = False
                 response["message"] = kick_message
@@ -223,6 +225,9 @@ async def handle_request_player_join(
                 f"Banned by {settings.ANTICHEAT_NAME} AntiCheat: {target_ban.reason} "
                 f"(Timeleft: {represent_timedelta_string(target_ban.duration)})"
             )
+
+    if response["join"]:
+        logger.info(f"{request['ip']}'s MTA:SA server connection accepted successfuly!")
 
     return await consumer.send(
         SafeServerPacketID.REQUEST_PLAYER_JOIN, {"ip": request["ip"], **response}
@@ -264,3 +269,40 @@ async def handle_load_anticheat_scripts(
         f"Synced {len(components)} AntiCheat components for {consumer.address[0]}:{consumer.address[1]}"
     )
     return await consumer.send(SafeServerPacketID.SYNC_ANTICHEAT_COMPONENTS, components)
+
+
+async def handle_player_quit(consumer: SafeServerConsumer, request: Dict[str, Any]):
+    if not check_request_body_key(request, "ip", str):
+        return
+
+    if not check_request_body_key(request, "name", str):
+        return
+
+    if not check_request_body_key(request, "reason", str):
+        return
+
+    player_engine = safeguard_manager.get_scanner_by_ip(request["ip"])
+    if not player_engine:
+        logger.warning(
+            f"Unauthorized player engine disconnected due to {request['reason']}! (ip: {request['ip']}, name: {request['name']})"
+        )
+        return await consumer.send(
+            SafeServerPacketID.PLAYER_QUIT,
+            {
+                "success": False,
+                "message": "Unauthorized player!",
+            },
+        )
+
+    player_engine.connected_server = None
+    logger.info(
+        f"\"{request['name']}\" engine disconnected from SafeGuard network due to \"{request['reason']}\"."
+    )
+
+    return await consumer.send(
+        SafeServerPacketID.PLAYER_QUIT,
+        {
+            "success": True,
+            "message": "",
+        },
+    )

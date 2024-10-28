@@ -111,7 +111,9 @@ class SafeServerConsumer(AsyncWebsocketConsumer):
 
         # Check if the request body contains a 'type' key
         if not "type" in request_body.keys():
-            logger.warning(f"Failed to get request type. (given request: {request_body})")
+            logger.warning(
+                f"Failed to get request type. (given request: {request_body})"
+            )
             return self.close()
 
         try:
@@ -126,6 +128,7 @@ class SafeServerConsumer(AsyncWebsocketConsumer):
             handle_sync_anticheat_configs,
             handle_request_player_join,
             handle_load_anticheat_scripts,
+            handle_player_quit,
         )
 
         # Handle the request based on its type
@@ -138,6 +141,8 @@ class SafeServerConsumer(AsyncWebsocketConsumer):
                 await handle_request_player_join(self, request_body)
             case SafeServerPacketID.SYNC_ANTICHEAT_COMPONENTS:
                 await handle_load_anticheat_scripts(self, request_body)
+            case SafeServerPacketID.PLAYER_QUIT:
+                await handle_player_quit(self, request_body)
 
     async def disconnect(self, code):
         if self._group_name == WebSocketGroupNames.SAFE_SERVERS.value:

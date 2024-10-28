@@ -9,6 +9,7 @@ class SafeServerPacketID(Enum):
     PLAYER_KICK = 5
     OBFUSCATE_CLIENT_SCRIPT = 6
     SYNC_ANTICHEAT_COMPONENTS = 7
+    PLAYER_QUIT = 8
 
 
 class SafeEnginePacketID(Enum):

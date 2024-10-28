@@ -9,6 +9,7 @@ from django.urls import reverse
 from django.db.models import Q
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
+from guards.multitheftauto import safeguard_manager
 from utils import check_request_body_key
 from .models import (
     Announcements,
@@ -345,7 +346,7 @@ def render_servers(request: HttpRequest) -> HttpResponse:
                     "port": server.port,
                     "name": server.name,
                     "type": server.type,
-                    "duration": "30 Days",
+                    "status": safeguard_manager.is_server_running(server.ip),
                     "subscription_status": server.subscriptions.last(),
                 }
                 for server in servers.reverse()

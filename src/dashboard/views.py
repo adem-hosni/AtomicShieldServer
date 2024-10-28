@@ -543,7 +543,7 @@ def render_configurations(request: HttpRequest) -> HttpResponse:
     configurations = []
 
     for category in AntiCheatConfigurationCategories.objects.filter(
-        server_type=ServerTypes.MTASA
+        server_type=target_server.type
     ):
         configurations.append(
             {

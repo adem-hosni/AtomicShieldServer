@@ -13,7 +13,7 @@
 - ~~Add "whitelist add" functionality~~
 - ~~Add whitelist actions~~
 - ~~Add Server Edit action~~
-- Add Discord Webhook Logs
+- ~~Add Discord Webhook Logs~~
 
 # SafeGuard Server
 - ~~Check if the key if it's being used~~

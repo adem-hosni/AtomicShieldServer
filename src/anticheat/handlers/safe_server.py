@@ -111,11 +111,9 @@ async def handle_network_join(
         f"{consumer.address[0]}:{consumer.address[1]} joined SafeGuard Servers Network!"
     )
 
-    await consumer.send(
+    return await consumer.send(
         SafeServerPacketID.NETWORK_JOIN, {"success": True, "message": "SUCCESS"}
     )
-    return
-    # Retrieve and sync anti-cheat configurations
 
 
 async def handle_sync_anticheat_configs(

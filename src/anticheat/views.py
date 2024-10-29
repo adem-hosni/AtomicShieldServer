@@ -20,8 +20,8 @@ def server_status(request: HttpRequest) -> HttpResponse:
     return HttpResponse(
         json.dumps(
             {
-                "alive": False,
-                "message": "Maintening...",
+                "alive": True,
+                "message": "",
             }
         )
     )

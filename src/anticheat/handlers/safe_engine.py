@@ -7,7 +7,8 @@ from shared.flags import FlagType
 from utils import check_request_body_key, discord
 from asgiref.sync import sync_to_async
 from django.db.models import Q
-from ..models import MaliciousSignatures, ClientHWID, ServerTypes, Ban
+from ..models import MaliciousSignatures, ClientHWID, ServerTypes
+from .. import config_ids
 from typing import Dict, List, Any
 import logging
 
@@ -133,9 +134,16 @@ async def handle_game_anticheat_status(
             await consumer.flag_as(FlagType.MISSING_MTASA_AC_COMPONENT, "MTA:SA AntiCheat Component Blocked")
             logger.warning(f"MTA:SA AntiCheat component blocked for {consumer.address}")
 
+            message_description = f"""Missing MTA:SA anticheat component for **{consumer.hwid.username}**."""
             await discord.send_discord_embed(settings.DETECTIONS_WEBHOOK_URL, "AntiCheat Alert",
-                                            f"""Missing MTA:SA anticheat component for **{consumer.hwid.username}**, last chance.""",
+                                             description=message_description,
                                             footer="SafeGuard")
+            
+            detections_webhook_url = consumer.connected_server.game_server.get_config_by_id(config_ids.PLAYER_DETECTION_WEBHOOK_URL)
+            if len(detections_webhook_url):
+                await discord.send_discord_embed(detections_webhook_url, "AntiCheat Alert",
+                                                description=message_description,
+                                                footer="SafeGuard")
 
 async def handle_scanner_disconnect(consumer: SafeEngineConsumer):
     logger.info(f"{consumer.hwid.username}'s scanner disconnected from network.")

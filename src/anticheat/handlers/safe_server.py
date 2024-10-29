@@ -294,7 +294,7 @@ async def handle_player_quit(consumer: SafeServerConsumer, request: Dict[str, An
 
     player_engine.connected_server = None
     logger.info(
-        f"\"{request['name']}\" engine disconnected from SafeGuard network due to \"{request['reason']}\"."
+        f"\"{request['name']}\" engine disconnected from SafeGuard MTA:SA server due to \"{request['reason']}\"."
     )
 
     return await consumer.send(

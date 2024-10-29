@@ -201,12 +201,18 @@ LOGGING = {
     },
 }
 
-DISCORD_INVITE = "https://discord.gg/eKtP7W4hXN"
-
 # Project names
 ANTICHEAT_NAME = "SafeGuard"
 ANTICHEAT_VERSION = "1.0b"
 ANTICHEAT_NAME_LONG = f"{ANTICHEAT_NAME} {ANTICHEAT_VERSION}"
+
+# Discord settings
+DISCORD_INVITE = "https://discord.gg/dCsCcMMh3B"
+BOT_AVATAR_URL = "https://cdn.discordapp.com/icons/1164637086637371505/020e433238f8e8302c51276a0327b09d.png?size=1024"
+if DEBUG:
+    DETECTIONS_WEBHOOK_URL = "https://discord.com/api/webhooks/1300813067138891828/N09MygqqoFn2FlSFH1ipxe1-c-oEboMUfM8UKIMHAJzWnNcHP-EmyCiQeEZPrBjOM86o"
+else:
+    DETECTIONS_WEBHOOK_URL = "https://discord.com/api/webhooks/1300458014465069178/8qiRmcUnCdS6LZfyrCqueHlTQCU5wNZxP_c4y1YgtKpcz9lCnTiIZUuRl3bK4YALtjkr"
 
 UNFOLD = {
     "SITE_HEADER": f"{ANTICHEAT_NAME} STAFF",

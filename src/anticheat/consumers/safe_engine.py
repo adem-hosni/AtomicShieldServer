@@ -1,8 +1,11 @@
 from datetime import timedelta
 from channels.generic.websocket import AsyncWebsocketConsumer
 from .safe_server import SafeServerConsumer
+from django.conf import settings
 from ..models import ClientHWID, MaliciousSignatures, Ban
+from utils import discord, represent_timedelta_string
 from shared.ws import SafeEnginePacketID, SafeServerPacketID, WebSocketGroupNames
+from shared.flags import Flag, FlagType
 import json
 from typing import Union, Dict, List, Optional, Any
 import logging
@@ -36,32 +39,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         self._connected_server: SafeServerConsumer = None
         self._detected_signatures: List[MaliciousSignatures] = []
         self._flagged: bool = False
-        self._flag_message: str = ""
-
-    @property
-    def is_flagged(self) -> bool:
-        """
-        Check if the player is flagged from EagleAntiCheat
-
-        Returns:
-            bool: True if flagged else False
-        """
-        return self._flagged
-
-    @property
-    def flag_message(self) -> str:
-        """Gets the player flag message
-
-        Returns:
-            str: The flag message
-        """
-        return self._flag_message
-
-    @flag_message.setter
-    def flag_message(self, message: str):
-        if not isinstance(message, str):
-            raise TypeError(f"expected type 'str', got '{type(message)}'")
-        self._flag_message = message
+        self._flags: List[Flag] = []
 
     async def connect(self):
         """
@@ -257,15 +235,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         Args:
         -----
             server (Union[SafeServerConsumer, None]): The new connected server instance. Must be of type SafeServerConsumer.
-
-        Raises:
-        ------
-            TypeError: If the value is not of type SafeServerConsumer.
         """
-        if not isinstance(server, SafeServerConsumer):
-            raise TypeError(
-                f"Unable to convert type {type(server)} to 'SafeServerConsumer'"
-            )
         self._connected_server = server
 
     @property
@@ -286,6 +256,37 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                 )
 
         self._detected_signatures = value
+        
+    @property
+    def is_flagged(self) -> bool:
+        """
+        Check if the player is flagged from EagleAntiCheat
+
+        Returns:
+            bool: True if flagged else False
+        """
+        return len(self._flags) > 0
+
+    @property
+    def flag_message(self) -> str:
+        """Gets the player flag message
+
+        Returns:
+            str: The flag message
+        """
+        if self.is_flagged:
+            return self._flags[0]._message
+        return ""
+        
+    async def flag_as(self, flag_type: FlagType, message: str):
+        self._flags.append(Flag(flag_type, message))
+        await self.kick(message)
+        
+    def is_flagged_as(self, flag_type: FlagType) -> bool:
+        for flag in self._flags:
+            if flag.type == flag_type:
+                return True
+        return False
 
     async def kick(
         self, reason: Optional[str] = "", flag: Optional[bool] = False
@@ -302,10 +303,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             bool: True if the kick was successful, False otherwise.
         """
         if flag:
-            self._flagged = True
-            self._flag_message = (
-                reason if len(reason) else "UnNormal behaviour detected"
-            )
+            self._flags.append(Flag(FlagType.CUSTOM, reason if len(reason) else "UnNormal behaviour detected"))
 
         if self._connected_server:
             await self._connected_server.send(
@@ -324,3 +322,11 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             game_server=target_game_server,
         )
         ban.save()
+        
+        await discord.send_discord_embed(settings.DETECTIONS_WEBHOOK_URL,
+                                         "Banned Player", f"""
+                                         {self._hwid.username} banned due to ```
+                                         {reason}
+                                         ```
+                                         **Ban Duration**: `**{represent_timedelta_string(ban.duration)}**`
+                                         """)

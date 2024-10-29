@@ -1,8 +1,10 @@
 from asgiref.sync import sync_to_async
 from ..consumers.safe_engine import SafeEngineConsumer
 from guards.multitheftauto import safeguard_manager
+from django.conf import settings
 from shared.ws import WebSocketGroupNames, SafeEnginePacketID
-from utils import check_request_body_key
+from shared.flags import FlagType
+from utils import check_request_body_key, discord
 from asgiref.sync import sync_to_async
 from django.db.models import Q
 from ..models import MaliciousSignatures, ClientHWID, ServerTypes, Ban
@@ -127,9 +129,13 @@ async def handle_game_anticheat_status(
         return
 
     if not request["status"]:
-        logger.warning(f"MTA:SA AntiCheat component blocked for {consumer.address}")
-        await consumer.kick("MTA:SA AntiCheat Component Blocked", True)
+        if not consumer.is_flagged_as(FlagType.MISSING_MTASA_AC_COMPONENT):
+            await consumer.flag_as(FlagType.MISSING_MTASA_AC_COMPONENT, "MTA:SA AntiCheat Component Blocked")
+            logger.warning(f"MTA:SA AntiCheat component blocked for {consumer.address}")
 
+            await discord.send_discord_embed(settings.DETECTIONS_WEBHOOK_URL, "AntiCheat Alert",
+                                            f"""Missing MTA:SA anticheat component for **{consumer.hwid.username}**, last chance.""",
+                                            footer="SafeGuard")
 
 async def handle_scanner_disconnect(consumer: SafeEngineConsumer):
     logger.info(f"{consumer.hwid.username}'s scanner disconnected from network.")

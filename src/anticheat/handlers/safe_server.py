@@ -173,7 +173,6 @@ async def handle_request_player_join(
         response["message"] = "PLEASE OPEN SafeGuard ANTICHEAT AGENT"
         logger.info('Connection refused: "SafeGuard Agent Not Connected"')
     else:
-        player_scanner.connected_server = consumer
         if player_scanner.is_flagged:
             logger.info(
                 f'Connection refused: Client is flagged: "{player_scanner.flag_message}"'
@@ -225,6 +224,7 @@ async def handle_request_player_join(
             )
 
     if response["join"]:
+        player_scanner.connected_server = consumer
         logger.info(f"{request['ip']}'s MTA:SA server connection accepted successfuly!")
 
     return await consumer.send(

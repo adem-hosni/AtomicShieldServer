@@ -150,7 +150,7 @@
               </div>
             </div>
 
-            {% if forloop.counter != configs|length %}
+            {% if forloop.counter < configs|length %}
             <hr class="my-2 border-t-2 border-[#8c592b] w-[100%] mx-auto" />
             {% endif %} {% endfor %}
             <input

@@ -101,7 +101,7 @@ async def handle_malicious_signature_detected(
 
     try:
         signatures_queryset: List[MaliciousSignatures] = [
-            await MaliciousSignatures.objects.aget(name=signature).order_by("priority")
+            await MaliciousSignatures.objects.aget(name=signature)
             for signature in request["signatures"]
         ]
     except MaliciousSignatures.DoesNotExist:

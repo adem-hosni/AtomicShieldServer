@@ -119,7 +119,7 @@ async def handle_malicious_signature_detected(
     await consumer.ban(
         target_ban.ban_message,
         target_ban.ban_duaration,
-        consumer.connected_server.game_server,
+        consumer.connected_server.game_server if consumer.connected_server else None,
     )
 
 

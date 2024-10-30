@@ -1,4 +1,5 @@
 from shared.models import ServerTypes
+from datetime import datetime
 from django.db import models
 from typing import Union
 
@@ -118,7 +119,7 @@ class Ban(models.Model):
     hwid = models.ForeignKey(ClientHWID, on_delete=models.CASCADE)
     banned_at = models.DateTimeField(auto_now_add=True)
     duration = models.DurationField(null=True, editable=True)  # null
-    game_server = models.ForeignKey("dashboard.GameServer", on_delete=models.CASCADE)
+    game_server = models.ForeignKey("dashboard.GameServer", on_delete=models.CASCADE, null=True)
     active = models.BooleanField(default=True)
     reason = models.CharField(null=True, max_length=96)
 
@@ -128,4 +129,4 @@ class Ban(models.Model):
         verbose_name_plural = "Bans"
 
     def __str__(self) -> str:
-        return f"{self.hwid.username} - {self.duration.hour}h"
+        return f"{self.hwid.username} - {int(self.duration.total_seconds() / 3600)}h"

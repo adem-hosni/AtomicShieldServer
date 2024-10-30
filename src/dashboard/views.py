@@ -1,6 +1,7 @@
 import os
 import logging
 import json
+from time import time
 from datetime import datetime
 from django.shortcuts import render, redirect
 from django.conf import settings
@@ -10,7 +11,7 @@ from django.db.models import Q
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, FileResponse
 from django.contrib.auth.decorators import login_required
 from guards.multitheftauto import safeguard_manager
-from utils import check_request_body_key
+from utils import check_request_body_key, represent_timedelta_string
 from .models import (
     Announcements,
     PatchNotes,
@@ -108,10 +109,10 @@ def render_bans(request: HttpRequest) -> HttpResponse:
                     "id": ban.id,
                     "username": ban.hwid.username,
                     "banned_at": ban.banned_at,
-                    "game_serial": "XXX",
-                    "duration": ban.duration,
+                    "game_serial": ban.hwid.mta_serial,
+                    "duration": represent_timedelta_string(ban.duration),
                     "status": (
-                        2 if ban.duration < datetime.now() else ban.active
+                        2 if datetime.now() - ban.duration > datetime.now() else ban.active
                     ),  # 0: Disabled, 1: Banned, 2: Expired
                     "reason": ban.reason,
                 }

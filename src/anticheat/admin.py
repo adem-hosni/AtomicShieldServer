@@ -74,11 +74,15 @@ class MaliciousSignaturesAdmin(ModelAdmin):
 
 
 class BanAdminModel(ModelAdmin):
-    list_display = ["username", "duration", "reason"]
+    list_display = ["username", "duration", "state", "reason"]
 
     @admin.display(description="Username")
     def username(self, obj: Ban):
         return obj.hwid.username
+    
+    @admin.display(description="Banned", boolean=True)
+    def state(self, obj: Ban):
+        return obj.is_expired if obj.is_expired else obj.active
 
 
 admin.site.register(

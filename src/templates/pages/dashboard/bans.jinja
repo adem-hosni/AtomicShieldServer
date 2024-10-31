@@ -80,30 +80,35 @@
           {% endif %}
         </td>
         <td class="px-6 py-4 font-bold">{{ ban.reason }}</td>
-        <td class="px-6 py-4 flex">
+        {% if ban.status != 2 %}
+          <td class="px-6 py-4 flex">
+            <button
+              onclick="document.getElementById('target-delete-whitelist').value = '{{ whitelist.id }}'; document.getElementById('target-delete-whitelist-modal-name').textContent = '{{ whitelist.name }}';"
+              data-modal-target="delete-whitelist-modal"
+              data-modal-toggle="delete-whitelist-modal"
+              data-tooltip-target="remove-whitelist-{{ whitelist.id }}"
+              data-tooltip-style="dark"
+              class="font-medium text-blue-600 dark:text-blue-500 hover:underline"
+            >
+              <i
+                class="fa-regular fa-circle-check text-[#8c592b] transition-all duration-300 hover:bg-[#8c592b] hover:text-black rounded-full p-1"
+              ></i>
+            </button>
 
-          <button
-            onclick="document.getElementById('target-delete-whitelist').value = '{{ whitelist.id }}'; document.getElementById('target-delete-whitelist-modal-name').textContent = '{{ whitelist.name }}';"
-            data-modal-target="delete-whitelist-modal"
-            data-modal-toggle="delete-whitelist-modal"
-            data-tooltip-target="remove-whitelist-{{ whitelist.id }}"
-            data-tooltip-style="dark"
-            class="font-medium text-blue-600 dark:text-blue-500 hover:underline"
-          >
-            <i
-              class="fa-regular fa-circle-check text-[#8c592b] transition-all duration-300 hover:bg-[#8c592b] hover:text-black rounded-full p-1"
-            ></i>
-          </button>
-
-          <div
-            id="remove-whitelist-{{ whitelist.id }}"
-            role="tooltip"
-            class="z-10 invisible inline-block px-3 py-2 text-sm font-medium text-black bg-[#8c592b] rounded-lg shadow-sm opacity-0 tooltip transition-all duration-300"
-          >
-            Disable Ban
-            <div class="tooltip-arrow" data-popper-arrow></div>
-          </div>
-        </td>
+            <div
+              id="remove-whitelist-{{ whitelist.id }}"
+              role="tooltip"
+              class="z-10 invisible inline-block px-3 py-2 text-sm font-medium text-black bg-[#8c592b] rounded-lg shadow-sm opacity-0 tooltip transition-all duration-300"
+            >
+              {% if ban.status == 1 %}
+                Unban
+              {% elif ban.status == 0%}
+                Ban
+              {% endif %}
+              <div class="tooltip-arrow" data-popper-arrow></div>
+            </div>
+          </td>
+          {% endif %}
       </tr>
       {% endfor %}
     </tbody>

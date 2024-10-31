@@ -14,6 +14,8 @@
 - ~~Add whitelist actions~~
 - ~~Add Server Edit action~~
 - ~~Add Discord Webhook Logs~~
+- Disable bans
+- Complete home page
 
 # SafeGuard Server
 - ~~Check if the key if it's being used~~

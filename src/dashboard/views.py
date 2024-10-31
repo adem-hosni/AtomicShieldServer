@@ -99,6 +99,50 @@ def render_bans(request: HttpRequest) -> HttpResponse:
         messages.error(request, "The selected server does not exists!")
     else:
         bans = Ban.objects.filter(game_server=target_server)
+        
+    if request.method == "POST":
+        if not target_server:
+            messages.error("The selected server does not exists!")
+            return redirect(request.path)
+        
+        ban_request = request.POST
+        if not check_request_body_key(ban_request, "type", str):
+            messages.error(request, "Invalid request")
+            return redirect(request.path)
+        
+        if not check_request_body_key(ban_request, "target-ban", str):
+            messages.error(request, "Specify the target ban")
+            return redirect(request.path)
+        
+        try:
+            target_ban = Ban.objects.get(game_server=target_server, id=int(ban_request["target-ban"]))
+        except Ban.DoesNotExist:
+            messages.error(request, "The ban does not exists!")
+            return redirect(request.path)
+        
+        if target_ban.is_expired:
+            messages.error(request, "You cannot modify expired ban!")
+            return redirect(request.path)
+        
+        match ban_request["type"]:
+            case "ban":
+                if not target_ban.active:
+                    target_ban.active = True
+                    target_ban.save()
+                    messages.success(request, "Player banned successfuly!")
+                else:
+                    messages.error(request, "Player already banned!")
+                    
+            case "unban":
+                if target_ban.active:
+                    target_ban.active = False
+                    target_ban.save()
+                    messages.success(request, "Player unbanned successfuly!")
+                else:
+                    messages.error(request, "Player already unbanned!")
+            case _:
+                messages.error(request, "Unrecognized operation type for the ban!")
+        
 
     return render(
         request,

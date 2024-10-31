@@ -122,6 +122,10 @@ class Ban(models.Model):
     game_server = models.ForeignKey("dashboard.GameServer", on_delete=models.CASCADE, null=True)
     active = models.BooleanField(default=True)
     reason = models.CharField(null=True, max_length=96)
+    
+    @property
+    def is_expired(self) -> bool:
+        return datetime.now() - self.duration > datetime.now()
 
     class Meta:
         db_table = "bans"

@@ -83,10 +83,14 @@
         {% if ban.status != 2 %}
           <td class="px-6 py-4 flex">
             <button
-              onclick="document.getElementById('target-delete-ban').value = '{{ ban.id }}'; document.getElementById('target-delete-ban-modal-name').textContent = '{{ ban.name }}';"
-              data-modal-target="delete-ban-modal"
-              data-modal-toggle="delete-ban-modal"
-              data-tooltip-target="remove-ban-{{ ban.id }}"
+              onclick="document.getElementById('target-ban').value = '{{ ban.id }}'; 
+              document.getElementById('target-ban-modal-name').textContent = '{{ ban.username }}';
+              document.getElementById('target-ban-op').textContent = {{ ban.status }} == 1 ? 'Unban' : 'Ban';
+              document.getElementById('op-type').value = {{ ban.status }} == 1 ? 'unban' : 'ban';"
+
+              data-modal-target="change-ban-state"
+              data-modal-toggle="change-ban-state"
+              data-tooltip-target="bantooltip--{{ ban.id }}"
               data-tooltip-style="dark"
               class="font-medium text-blue-600 dark:text-blue-500 hover:underline"
             >
@@ -96,7 +100,7 @@
             </button>
 
             <div
-              id="remove-ban-{{ ban.id }}"
+              id="bantooltip--{{ ban.id }}"
               role="tooltip"
               class="z-10 invisible inline-block px-3 py-2 text-sm font-medium text-black bg-[#8c592b] rounded-lg shadow-sm opacity-0 tooltip transition-all duration-300"
             >
@@ -125,5 +129,80 @@
     </div>
   </div>
   {% endif %}
+</div>
+
+<div
+  id="change-ban-state"
+  tabindex="-1"
+  aria-hidden="true"
+  class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full"
+>
+  <div class="relative p-4 w-full max-w-md max-h-full">
+    <!-- Modal content -->
+    <div class="relative bg-white rounded-lg shadow dark:bg-[#0d0d0d]">
+      <!-- Modal header -->
+      <div
+        class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600"
+      >
+        <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
+          Delete ban
+        </h3>
+        <button
+          type="button"
+          class="end-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-purple-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-[#8c592b] dark:hover:text-black"
+        >
+          <svg
+            class="w-3 h-3"
+            aria-hidden="true"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 14 14"
+          >
+            <path
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"
+            />
+          </svg>
+          <span class="sr-only">Close modal</span>
+        </button>
+      </div>
+      <!-- Modal body -->
+      <div class="p-4 md:p-5">
+        <p class="text-center text-lg text-gray-300">
+          Are you sure to <span id="target-ban-op"></span>
+          <span id="target-ban-modal-name" class="font-bold"></span
+          > ?
+        </p>
+        <form class="space-y-4" method="post">
+          {% csrf_token %}
+          <input id="op-type" type="hidden" name="type" value="delete" />
+          <input
+            type="hidden"
+            id="target-ban"
+            name="target-ban"
+            value=""
+          />
+          <button
+            type="submit"
+            value=""
+            onclick="this.disabled=true; this.form.submit();"
+            class="w-full text-black border-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 border-[#8c592b] bg-[#8c592b] hover:bg-[#b37339]"
+          >
+            Yes
+          </button>
+        </form>
+        <button
+          data-modal-hide="change-ban-state"
+          onclick="this.disabled=true; this.form.submit();"
+          class="w-full border-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 text-red-600 border-red-600 hover:bg-red-600 hover:text-black my-3"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock content %}

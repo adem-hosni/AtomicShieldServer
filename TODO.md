@@ -14,7 +14,7 @@
 - ~~Add whitelist actions~~
 - ~~Add Server Edit action~~
 - ~~Add Discord Webhook Logs~~
-- Add Disable bans functionality
+- ~~Add Disable bans functionality~~
 - Complete home page
 
 # SafeGuard Server

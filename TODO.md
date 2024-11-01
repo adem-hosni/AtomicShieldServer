@@ -43,6 +43,7 @@
 - ~~Malicious Tools checking~~
 - ~~Memory scan Pulse (with network sync)~~
 - ~~MTA:SA Anticheat components verification~~
+- Player warn
 - VM Verification
 - HWID Caching
 - Implement HTTP communication encryption

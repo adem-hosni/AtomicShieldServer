@@ -110,7 +110,7 @@ async def handle_network_join(
     logger.info(
         f"{consumer.address[0]}:{consumer.address[1]} joined SafeGuard Servers Network!"
     )
-    
+
     return await consumer.send(
         SafeServerPacketID.NETWORK_JOIN, {"success": True, "message": "SUCCESS"}
     )

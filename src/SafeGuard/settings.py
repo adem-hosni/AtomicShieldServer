@@ -258,3 +258,13 @@ ADMINS = [("Hyper", "hosniadem400@gmail.com")]
 # Mail Settings
 DEFAULT_FROM_EMAIL = "SafeGuard@localhost"
 EMAIL_SUBJECT_PREFIX = "[SafeGuard] "
+
+if not DEBUG:
+    SECURE_HSTS_PRELOAD = True
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+
+    CSRF_COOKIE_SECURE = True
+    CSRF_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_USE_SESSIONS = True
+    SESSION_COOKIE_SAMESITE = "Strict"

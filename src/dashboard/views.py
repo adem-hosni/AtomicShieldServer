@@ -569,11 +569,24 @@ def render_configurations(request: HttpRequest) -> HttpResponse:
         )
 
     if request.method == "POST":
-        for config_id, config_value in request.POST.items():
-            if config_id != "csrfmiddlewaretoken":
-                target_server.configurations.config[config_id] = config_value
-        target_server.configurations.save()
-        return redirect(request.path)
+        if check_request_body_key(request.POST, "type", str):
+            request_body = request.POST
+            match request_body["type"]:
+                case "save":
+                    for config_id, config_value in request.POST.items():
+                        if config_id != "csrfmiddlewaretoken":
+                            target_server.configurations.config[config_id] = (
+                                config_value
+                            )
+                    target_server.configurations.save()
+                    messages.success(request, "Configurations saved successfuly!")
+                    return redirect(request.path)
+                case "reset":
+                    target_server.configurations.config = {}
+                    target_server.configurations.save()
+                    messages.success(request, "Configurations reset successfuly!")
+        else:
+            messages.error(request, "Invalid request!")
 
     server_configs = target_server.configurations.config
     configurations = []

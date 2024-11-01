@@ -15,7 +15,7 @@
 - ~~Add Server Edit action~~
 - ~~Add Discord Webhook Logs~~
 - ~~Add Disable bans functionality~~
-- Add Reset Configurations button
+- ~~Add Reset Configurations button~~
 - Complete home page
 
 # SafeGuard Server

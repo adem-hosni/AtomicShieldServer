@@ -256,7 +256,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                 )
 
         self._detected_signatures = value
-        
+
     @property
     def is_flagged(self) -> bool:
         """
@@ -277,11 +277,11 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         if self.is_flagged:
             return self._flags[0]._message
         return ""
-        
+
     async def flag_as(self, flag_type: FlagType, message: str):
         self._flags.append(Flag(flag_type, message))
         await self.kick(message)
-        
+
     def is_flagged_as(self, flag_type: FlagType) -> bool:
         for flag in self._flags:
             if flag.type == flag_type:
@@ -303,7 +303,12 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             bool: True if the kick was successful, False otherwise.
         """
         if flag:
-            self._flags.append(Flag(FlagType.CUSTOM, reason if len(reason) else "UnNormal behaviour detected"))
+            self._flags.append(
+                Flag(
+                    FlagType.CUSTOM,
+                    reason if len(reason) else "UnNormal behaviour detected",
+                )
+            )
 
         if self._connected_server:
             await self._connected_server.send(
@@ -313,7 +318,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             return True
         return False
 
-    async def ban(self, reason: str, duration: timedelta, target_game_server):
+    async def ban(self, reason: str, duration: timedelta, target_game_server=None):
         await self.kick(reason, flag=True)
         ban = Ban(
             hwid=self._hwid,
@@ -322,9 +327,12 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             game_server=target_game_server,
         )
         await ban.asave()
-        
-        await discord.send_discord_embed(settings.DETECTIONS_WEBHOOK_URL,
-                                         "Banned Player", f"""
+
+        await discord.send_discord_embed(
+            settings.DETECTIONS_WEBHOOK_URL,
+            "Banned Player",
+            f"""
                                          {self._hwid.username} banned due to ```{reason}```
                                          **Ban Duration**: `{represent_timedelta_string(ban.duration)}`
-                                         """)
+                                         """,
+        )

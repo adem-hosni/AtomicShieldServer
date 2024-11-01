@@ -15,6 +15,7 @@ def agent_status(request: HttpRequest) -> HttpResponse:
         )
     )
 
+
 @csrf_exempt
 def server_status(request: HttpRequest) -> HttpResponse:
     return HttpResponse(

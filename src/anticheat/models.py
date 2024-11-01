@@ -1,6 +1,7 @@
 from shared.models import ServerTypes
 from datetime import datetime
 from django.db import models
+from django.core.validators import MaxValueValidator, MinValueValidator
 from typing import Union
 
 
@@ -134,3 +135,15 @@ class Ban(models.Model):
 
     def __str__(self) -> str:
         return f"{self.hwid.username} - {int(self.duration.total_seconds() / 3600)}h"
+    
+class Warning(models.Model):
+    hwid = models.ForeignKey(ClientHWID, on_delete=models.CASCADE)
+    warns = models.PositiveSmallIntegerField(default=0, validators=[MaxValueValidator(3), MinValueValidator(0)])
+    
+    class Meta:
+        db_table = "warnings"
+        verbose_name = "Warning"
+        verbose_name_plural = "Warnings"
+        
+    def __str__(self) -> str:
+        return f"{self.hwid.username} - {self.warns}"

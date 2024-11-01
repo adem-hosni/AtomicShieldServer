@@ -7,6 +7,7 @@ from .models import (
     MaliciousSignatures,
     ClientHWID,
     Ban,
+    Warning
 )
 
 
@@ -85,6 +86,13 @@ class BanAdminModel(ModelAdmin):
         return obj.is_expired if obj.is_expired else obj.active
 
 
+class WarningAdminModel(ModelAdmin):
+    list_display = ["username", "warns"]
+    
+    @admin.display(description="Username")
+    def username(self, obj: Warning):
+        return obj.hwid.username
+
 admin.site.register(
     AntiCheatConfigurationCategories, AntiCheatConfigurationsCategoriesAdmin
 )
@@ -93,3 +101,4 @@ admin.site.register(AntiCheatConfigurations, ModelAdmin)
 admin.site.register(MaliciousSignatures, MaliciousSignaturesAdmin)
 admin.site.register(ClientHWID, ClientHWIDAdmin)
 admin.site.register(Ban, BanAdminModel)
+admin.site.register(Warning, WarningAdminModel)

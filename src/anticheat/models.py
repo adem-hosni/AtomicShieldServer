@@ -120,10 +120,12 @@ class Ban(models.Model):
     hwid = models.ForeignKey(ClientHWID, on_delete=models.CASCADE)
     banned_at = models.DateTimeField(auto_now_add=True)
     duration = models.DurationField(null=True, editable=True)  # null
-    game_server = models.ForeignKey("dashboard.GameServer", on_delete=models.CASCADE, null=True)
+    game_server = models.ForeignKey(
+        "dashboard.GameServer", on_delete=models.CASCADE, null=True
+    )
     active = models.BooleanField(default=True)
     reason = models.CharField(null=True, max_length=96)
-    
+
     @property
     def is_expired(self) -> bool:
         return datetime.now() - self.duration > datetime.now()
@@ -135,15 +137,18 @@ class Ban(models.Model):
 
     def __str__(self) -> str:
         return f"{self.hwid.username} - {int(self.duration.total_seconds() / 3600)}h"
-    
+
+
 class Warning(models.Model):
     hwid = models.ForeignKey(ClientHWID, on_delete=models.CASCADE)
-    warns = models.PositiveSmallIntegerField(default=0, validators=[MaxValueValidator(3), MinValueValidator(0)])
-    
+    warns = models.PositiveSmallIntegerField(
+        default=0, validators=[MaxValueValidator(3), MinValueValidator(0)]
+    )
+
     class Meta:
         db_table = "warnings"
         verbose_name = "Warning"
         verbose_name_plural = "Warnings"
-        
+
     def __str__(self) -> str:
         return f"{self.hwid.username} - {self.warns}"

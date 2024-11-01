@@ -17,6 +17,7 @@
 - ~~Add Disable bans functionality~~
 - ~~Add Reset Configurations button~~
 - Complete home page
+- Add 404 Page Not Found Page
 
 # SafeGuard Server
 - ~~Check if the key if it's being used~~

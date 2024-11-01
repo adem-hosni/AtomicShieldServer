@@ -139,11 +139,17 @@ async def handle_game_anticheat_status(
 
             warn_count = await Warning.get_warns(consumer.hwid)
             if warn_count < 3:
-                logger.warning(f"MTA:SA AntiCheat component blocked for {consumer.address} (warns: {warn_count+1}/3)")
+                logger.warning(
+                    f"MTA:SA AntiCheat component blocked for {consumer.address} (warns: {warn_count+1}/3)"
+                )
                 await Warning.warn(consumer.hwid)
             else:
-                logger.warning(f"MTA:SA AntiCheat component blocked for {consumer.address}")
-                await consumer.ban("MTA:SA AntiCheat component blocked", timedelta(days=3))
+                logger.warning(
+                    f"MTA:SA AntiCheat component blocked for {consumer.address}"
+                )
+                await consumer.ban(
+                    "MTA:SA AntiCheat component blocked", timedelta(days=3)
+                )
 
             message_description = f"""Missing MTA:SA anticheat component for **{consumer.hwid.username}**."""
             await discord.send_discord_embed(

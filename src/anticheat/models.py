@@ -150,5 +150,25 @@ class Warning(models.Model):
         verbose_name = "Warning"
         verbose_name_plural = "Warnings"
 
+    @staticmethod
+    async def warn(hwid: ClientHWID):
+        try:
+            target_warn = await Warning.objects.aget(hwid=hwid)
+        except Warning.DoesNotExist:
+            new_warn = Warning(hwid=hwid, warns=1)
+            await new_warn.asave()
+        else:
+            target_warn.warns += 1
+            await target_warn.asave()
+            
+    @staticmethod
+    async def get_warns(hwid: ClientHWID) -> int:
+        try:
+            target_warn = await Warning.objects.aget(hwid=hwid)
+        except Warning.DoesNotExist:
+            return 0
+        else:
+            return target_warn.warns
+
     def __str__(self) -> str:
         return f"{self.hwid.username} - {self.warns}"

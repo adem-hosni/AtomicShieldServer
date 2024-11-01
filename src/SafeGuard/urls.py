@@ -14,17 +14,17 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
-from debug_toolbar.toolbar import DebugToolbar
 import debug_toolbar.urls
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('', include("home.urls")),
+    path("admin/", admin.site.urls),
+    path("", include("home.urls")),
     path("auth/", include("authentication.urls")),
     path("anticheat/", include("anticheat.urls")),
     path("dashboard/", include("dashboard.urls")),
@@ -34,5 +34,5 @@ urlpatterns = [
 if settings.DEBUG:
     urlpatterns.append(path("__reload__/", include("django_browser_reload.urls")))
     urlpatterns.append(path("__debug__/", include(debug_toolbar.urls)))
-    
+
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

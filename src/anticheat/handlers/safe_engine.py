@@ -1,4 +1,5 @@
 from asgiref.sync import sync_to_async
+from datetime import timedelta
 from ..consumers.safe_engine import SafeEngineConsumer
 from guards.multitheftauto import safeguard_manager
 from django.conf import settings
@@ -7,7 +8,7 @@ from shared.flags import FlagType
 from utils import check_request_body_key, discord
 from asgiref.sync import sync_to_async
 from django.db.models import Q
-from ..models import MaliciousSignatures, ClientHWID, ServerTypes
+from ..models import MaliciousSignatures, ClientHWID, ServerTypes, Ban, Warning
 from .. import config_ids
 from typing import Dict, List, Any
 import logging
@@ -135,7 +136,14 @@ async def handle_game_anticheat_status(
                 FlagType.MISSING_MTASA_AC_COMPONENT,
                 "MTA:SA AntiCheat Component Blocked",
             )
-            logger.warning(f"MTA:SA AntiCheat component blocked for {consumer.address}")
+
+            warn_count = await Warning.get_warns(consumer.hwid)
+            if warn_count < 3:
+                logger.warning(f"MTA:SA AntiCheat component blocked for {consumer.address} (warns: {warn_count+1}/3)")
+                await Warning.warn(consumer.hwid)
+            else:
+                logger.warning(f"MTA:SA AntiCheat component blocked for {consumer.address}")
+                await consumer.ban("MTA:SA AntiCheat component blocked", timedelta(days=3))
 
             message_description = f"""Missing MTA:SA anticheat component for **{consumer.hwid.username}**."""
             await discord.send_discord_embed(

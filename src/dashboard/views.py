@@ -235,7 +235,7 @@ def render_servers(request: HttpRequest) -> HttpResponse:
                         ):
                             messages.error(request, "Invalid Server Type")
                             messages.error(request, "Invalid Subscription")
-                            return HttpResponseRedirect("/dashboard/servers")
+                            return redirect(request.path)
                         server_type = int(server_type)
                         subscription_id = int(subscription_id)
 
@@ -243,34 +243,29 @@ def render_servers(request: HttpRequest) -> HttpResponse:
                     if isinstance(port, str):
                         if not port.isnumeric():
                             messages.error(request, "Invalid Server Type")
-                            return HttpResponseRedirect("/dashboard/servers")
+                            return redirect(request.path)
                         port = int(port)
 
                     # Check port range (1 -> 65535)
                     if not (port >= 1 and port <= 65535):
                         messages.error(request, "Invalid port range")
-                        return HttpResponseRedirect("/dashboard/servers")
+                        return redirect(request.path)
 
                     if not len(name):
                         messages.error(request, "Invalid server name")
-                        return HttpResponseRedirect("/dashboard/servers")
+                        return redirect(request.path)
 
                     if len(name) > 32:
                         messages.error(
                             request, "Server name must be less than 32 characters"
                         )
-                        return HttpResponseRedirect("/dashboard/servers")
+                        return redirect(request.path)
 
                     if server_type == 1:  # Server Type: MTA:SA
                         # Check if the ip is correct
                         if not utils.isvalid_ip(ip):
                             messages.error(request, "Invalid IPV4 IP")
-                            return HttpResponseRedirect("/dashboard/servers")
-
-                        # Check if the server address already used
-                        if GameServer.objects.filter(ip=ip, port=port).exists():
-                            messages.error(request, "Server Address Already been used!")
-                            return HttpResponseRedirect("/dashboard/servers")
+                            return redirect(request.path)
 
                         # Check the selected subscription health
                         try:
@@ -278,30 +273,36 @@ def render_servers(request: HttpRequest) -> HttpResponse:
                                 id=subscription_id
                             )
                         except ServerSubscription.DoesNotExist:
+                            messages.error(request, "Invalid subscription selected")
                             logger.warning(
                                 f"{request.user.username} trying to use a non existing subscription (used subscription id: {subscription_id})!"
                             )
-                            return HttpResponseRedirect("/dashboard/servers")
+                            return redirect(request.path)
                         if subscription.owner != request.user:
                             logger.warning(
                                 f"{request.user.username} trying to use {subscription.owner.username}'s subscription!"
                             )
                             messages.error(request, "Not your fucking subscription!")
-                            return HttpResponseRedirect("/dashboard/servers")
+                            return redirect(request.path)
 
                         if not subscription.is_valid_for_now():
                             logger.warning(
                                 f"{request.user.username} trying to use expired subscription (subscription id: {subscription_id})!"
                             )
                             messages.error(request, "Expired Subscription")
-                            return HttpResponseRedirect("/dashboard/servers")
+                            return redirect(request.path)
+
+                        # Check if the server address already used
+                        if GameServer.objects.filter(ip=ip, port=port).exists():
+                            messages.error(request, "Server Address Already been used!")
+                            return redirect(request.path)
 
                         # Check if the server name exists in the owned servers
                         if GameServer.objects.filter(
                             name=name, owner=request.user
                         ).exists():
                             messages.error(request, "Server name already used!")
-                            return HttpResponseRedirect("/dashboard/servers")
+                            return redirect(request.path)
 
                         # Generate a license key for the server
                         license_key = utils.generate_key(4)
@@ -333,7 +334,7 @@ def render_servers(request: HttpRequest) -> HttpResponse:
                         logger.info(
                             f"Added New Server {ip}:{port} from {request.user.username}, license key: ({license_key})"
                         )
-                        return HttpResponseRedirect("/dashboard/servers")
+                        return redirect(request.path)
             case "edit":
                 if not (
                     "target-server" in request_body.keys()

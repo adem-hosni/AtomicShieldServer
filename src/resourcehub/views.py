@@ -7,13 +7,14 @@ from safecore import eagle_core
 
 logger = logging.getLogger(__name__)
 
+
 @csrf_exempt
 def download_agent_peb(request: HttpRequest) -> HttpResponse:
     with open(
         f"../bin/{'debug' if settings.DEBUG else 'production'}/agent/agent_peb.dll",
         "rb",
     ) as file:
-        agent_peb_buffer = file.read()
+        agent_peb_buffer = eagle_core.encrypt_buffer(file.read())
 
     logger.info(f"{request.get_host()} downloaded eagle PEB Agent")
 

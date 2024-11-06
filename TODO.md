@@ -46,6 +46,7 @@
 - ~~Memory scan Pulse (with network sync)~~
 - ~~MTA:SA Anticheat components verification~~
 - ~~Player warn~~
+- Validate HWID
 - VM Verification
 - HWID Caching
 - Implement HTTP communication encryption

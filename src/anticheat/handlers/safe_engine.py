@@ -28,8 +28,20 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
         "motherboard_serial",
         "bios",
         "computer_name",
+        "pnp_device",
     ]:
+        if request[key] == "<unkown>":
+            await consumer.send(
+                SafeEnginePacketID.NETWORK_JOIN,
+                {"success": False, "message": "Unable to validate your machine!"},
+            )
+            return consumer.close()
+
         if not check_request_body_key(request, key, str):
+            await consumer.send(
+                SafeEnginePacketID.NETWORK_JOIN,
+                {"success": False, "message": "Unable to validate your machine's request!"},
+            )
             return consumer.close()
 
     try:
@@ -56,9 +68,36 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
             motherboard_serial=request["motherboard_serial"],
             bios_version=request["bios"],
             computer_name=request["computer_name"],
+            pnp_device=request["pnp_device"],
         )
         await hwid.asave()
         logger.info(f'"{hwid.username}" HWID registred!')
+    else:
+        original_components = list(hwid._meta.fields)
+        current_components = list(request.values())
+
+        updated_components = 0
+        for original_component, current_component in zip(
+            original_components, current_components
+        ):
+            if original_component != current_component:
+                updated_components += 1
+
+        if updated_components:
+            
+            hwid.bios_version = request["bios"]
+            hwid.computer_name = request["computer_name"]
+            hwid.cpuid = request["cpu"]
+            hwid.disks = request["disks"]
+            hwid.motherboard_serial = request["motherboard_serial"]
+            hwid.motherboard_serial = request["mta_serial"]
+            hwid.username = request["username"]
+            hwid.pnp_device = request["pnp_device"]
+            
+            await hwid.asave()
+            logger.info(
+                f"{request['username']}'s engine HWID updated {updated_components} components, Spoofed HWID?"
+            )
 
     logger.info(
         f"{request['username']}'s engine asking for network join (Computer Name: \"{hwid.computer_name}\", Bios Version: \"{hwid.bios_version}\", CPU ID: \"{hwid.cpuid}\", Motherboard Serial: \"{hwid.motherboard_serial}\")"

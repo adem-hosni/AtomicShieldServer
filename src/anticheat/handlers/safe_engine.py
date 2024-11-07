@@ -18,9 +18,6 @@ logger = logging.getLogger(__name__)
 
 
 async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, Any]):
-    if not check_request_body_key(request, "disks", list):
-        return consumer.close()
-
     for key in [
         "username",
         "mta_serial",

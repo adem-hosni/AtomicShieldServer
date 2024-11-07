@@ -75,27 +75,21 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
         original_components = list(hwid._meta.fields)
         current_components = list(request.values())
 
-        updated_components = 0
-        for original_component, current_component in zip(
-            original_components, current_components
-        ):
-            if original_component != current_component:
-                updated_components += 1
-
-        if updated_components:
+        hwid.bios_version = request["bios"]
+        hwid.computer_name = request["computer_name"]
+        hwid.cpuid = request["cpu"]
+        hwid.disks = request["disks"]
+        hwid.motherboard_serial = request["motherboard_serial"]
+        hwid.motherboard_serial = request["mta_serial"]
+        hwid.username = request["username"]
+        hwid.pnp_device = request["pnp_device"]
             
-            hwid.bios_version = request["bios"]
-            hwid.computer_name = request["computer_name"]
-            hwid.cpuid = request["cpu"]
-            hwid.disks = request["disks"]
-            hwid.motherboard_serial = request["motherboard_serial"]
-            hwid.motherboard_serial = request["mta_serial"]
-            hwid.username = request["username"]
-            hwid.pnp_device = request["pnp_device"]
-            
+        changes = await hwid.get_changes()
+        
+        if changes:
             await hwid.asave()
             logger.info(
-                f"{request['username']}'s engine HWID updated {updated_components} components, Spoofed HWID?"
+                f"{request['username']}'s engine HWID updated {changes} components, Spoofed HWID?"
             )
 
     logger.info(

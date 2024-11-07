@@ -113,6 +113,26 @@ class ClientHWID(models.Model):
         verbose_name = "Client HWID"
         verbose_name_plural = "Client HWIDS"
 
+    async def get_changes(self) -> int:
+        """Check if any fields have changed compared to the database.
+
+        Returns:
+        --------
+            int: How many columns were changed
+        """        
+        if not self.pk:
+            return True
+
+        original = await type(self).objects.aget(pk=self.pk)
+
+        changes = 0
+        fields_to_check = [field.name for field in original._meta.fields]
+        for field in fields_to_check:
+            if getattr(self, field) != getattr(original, field):
+                changes += 1
+
+        return changes
+
     def __str__(self) -> str:
         return f"{self.username} ({self.id})"
 
@@ -161,7 +181,7 @@ class Warning(models.Model):
         else:
             target_warn.warns += 1
             await target_warn.asave()
-            
+
     @staticmethod
     async def get_warns(hwid: ClientHWID) -> int:
         try:

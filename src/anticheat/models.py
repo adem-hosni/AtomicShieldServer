@@ -109,7 +109,7 @@ class ClientHWID(models.Model):
     pnp_device = models.CharField(max_length=512)
 
     class Meta:
-        db_table = "client_hwids"
+        db_table = "hwids"
         verbose_name = "Client HWID"
         verbose_name_plural = "Client HWIDS"
 

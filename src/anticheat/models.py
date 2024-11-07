@@ -106,6 +106,7 @@ class ClientHWID(models.Model):
     cpuid = models.CharField(max_length=64)
     motherboard_serial = models.CharField(max_length=64)
     bios_version = models.CharField(max_length=32)
+    pnp_device = models.CharField(max_length=64)
 
     class Meta:
         db_table = "client_hwids"

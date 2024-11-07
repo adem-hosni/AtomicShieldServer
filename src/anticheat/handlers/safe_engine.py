@@ -32,6 +32,7 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
                 SafeEnginePacketID.NETWORK_JOIN,
                 {"success": False, "message": "Unable to validate your machine!"},
             )
+            logger.warning(f"Unable to validate {consumer.address}, got null HWID component: {key}")
             return consumer.close()
 
         if not check_request_body_key(request, key, str):
@@ -39,6 +40,7 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
                 SafeEnginePacketID.NETWORK_JOIN,
                 {"success": False, "message": "Unable to validate your machine's request!"},
             )
+            logger.warning(f"Invalid request received from {consumer.address}, request body: {request}")
             return consumer.close()
 
     try:

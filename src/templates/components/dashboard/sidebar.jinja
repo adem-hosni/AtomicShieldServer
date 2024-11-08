@@ -1,5 +1,19 @@
 {% load static %}
 
+<script>
+  const CTAs = {{ cta_pins|safe }};
+  CTAs.forEach(cta => {
+      console.log(`dropdown-cta-${cta.id}`);
+      console.log(document.getElementById(`dropdown-cta-${cta.id}`));
+      if (localStorage.getItem(`hide-cta-${cta.id}`) == "1") {
+          document.getElementById(`dropdown-cta-${cta.id}`).hidden = true;
+      } else {
+        console.log("reset");
+          localStorage.setItem(`hide-cta-${cta.id}`, "0")
+      }
+  });
+</script>
+
 <button data-drawer-target="cta-button-sidebar" data-drawer-toggle="cta-button-sidebar" aria-controls="cta-button-sidebar" type="button" class="w-max inline-transition-all duration-300 flex items-center p-2 mt-2 ms-3 text-sm text-gray-500 rounded-lg sm:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-[#885c1d] dark:focus:ring-yellow-600">
   <span class="sr-only">Open sidebar</span>
   <svg class="w-6 h-6" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
@@ -91,7 +105,7 @@
     <div id="dropdown-cta-{{ pin.id }}" class="p-4 mt-6 rounded-lg bg-yellow-50 dark:bg-[#885c1d]" role="alert">
       <div class="transition-all duration-300 flex items-center mb-3">
         <span class="bg-orange-100 text-orange-800 text-sm font-semibold me-2 px-2.5 py-0.5 rounded dark:bg-orange-200 dark:text-orange-900">{{ pin.title }}</span>
-        <button type="button" class="ms-auto -mx-1.5 -my-1.5 bg-yellow-50 inline-transition-all duration-300 flex justify-center items-center w-6 h-6 text-[#885c1d] rounded-lg focus:ring-2 focus:ring-yellow-400 p-1 hover:bg-yellow-200 dark:bg-[#885c1d] dark:text-zinc-400 dark:hover:bg-yellow-800" data-dismiss-target="#dropdown-cta-{{ pin.id }}" aria-label="Close">
+        <button type="button" onclick="localStorage.setItem('hide-cta-{{ pin.id }}', '1');" class="ms-auto -mx-1.5 -my-1.5 bg-yellow-50 inline-transition-all duration-300 flex justify-center items-center w-6 h-6 text-[#885c1d] rounded-lg focus:ring-2 focus:ring-yellow-400 p-1 hover:bg-yellow-200 dark:bg-[#885c1d] dark:text-zinc-400 dark:hover:bg-yellow-800" data-dismiss-target="#dropdown-cta-{{ pin.id }}" aria-label="Close">
           <span class="sr-only">Close</span>
           <svg class="w-2.5 h-2.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />

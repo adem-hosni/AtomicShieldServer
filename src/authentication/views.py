@@ -52,7 +52,7 @@ def render_signup(request: HttpRequest) -> HttpResponse:
                     form.add_error("username", "Username already exists")
                 else:
                     user = User.objects.create_user(username=username, email=email, password=password)
-                    user = authenticate(user)
+                    user = authenticate(username=username, password=password)
                     if user:
                         login(request, user)
                         return redirect("/dashboard/main")

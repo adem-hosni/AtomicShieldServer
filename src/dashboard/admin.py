@@ -1,10 +1,15 @@
+from functools import update_wrapper
 from django.contrib import admin
-from .models import GameServer, Announcements, PatchNotes, ServerSubscription, Whitelist
+from django.http import HttpRequest, Http404
+from django.views.decorators.cache import never_cache
+from django.views.decorators.csrf import csrf_protect
+from django.conf import settings
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.admin import (
     UserAdmin as BaseUserAdmin,
     GroupAdmin as BaseGroupAdmin,
 )
+from .models import GameServer, Announcements, PatchNotes, ServerSubscription, Whitelist
 
 from unfold.admin import ModelAdmin
 from unfold.forms import AdminPasswordChangeForm, UserChangeForm, UserCreationForm
@@ -13,6 +18,28 @@ from unfold.forms import AdminPasswordChangeForm, UserChangeForm, UserCreationFo
 admin.site.unregister(User)
 admin.site.unregister(Group)
 
+
+def protected_admin_view(view, cacheable: bool = False):
+    """
+    Overwrite the default admin view to return 404 for the users that doesnt have permissions.
+    """
+    def inner(request: HttpRequest, *args, **kwargs):
+        if not request.META.get("HTTP_X_REAL_IP", request.META.get("REMOTE_ADDR")) in settings.ADMIN_IPS:
+            raise Http404()
+        return view(request, *args, **kwargs)
+
+    if not cacheable:
+        inner = never_cache(inner)
+
+    # We add csrf_protect here so this function can be used as a utility
+    # function for any view, without having to repeat 'csrf_protect'.
+    if not getattr(view, 'csrf_exempt', False):
+        inner = csrf_protect(inner)
+
+    return update_wrapper(inner, view)
+
+
+admin.site.admin_view = protected_admin_view
 
 @admin.register(User)
 class UserAdmin(BaseUserAdmin, ModelAdmin):

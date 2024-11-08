@@ -253,6 +253,7 @@ RECAPTCHA_PRIVATE_KEY = "6Ld5FS8qAAAAAGq5JUx7rsAAL2rFOPHeV9WAwYA4"
 RECAPTCHA_REQUIRED_SCORE = 0.9
 
 
+# Admin Settings
 ADMINS = [("Hyper", "hosniadem400@gmail.com")]
 
 # Mail Settings

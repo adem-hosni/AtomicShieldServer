@@ -1,3 +1,4 @@
+from logging import getLogger
 from functools import update_wrapper
 from django.contrib import admin
 from django.http import HttpRequest, Http404
@@ -19,12 +20,18 @@ admin.site.unregister(User)
 admin.site.unregister(Group)
 
 
+logger = getLogger(__name__)
+
+
 def protected_admin_view(view, cacheable: bool = False):
     """
     Overwrite the default admin view to return 404 for the users that doesnt have permissions.
     """
+
     def inner(request: HttpRequest, *args, **kwargs):
-        if not request.META.get("HTTP_X_REAL_IP", request.META.get("REMOTE_ADDR")) in settings.ADMIN_IPS:
+        request_ip = request.META.get("HTTP_X_REAL_IP", request.META.get("REMOTE_ADDR"))
+        if not request_ip in settings.ADMIN_IPS:
+            logger.warning(f"{request_ip} trying to view admin dashboard. Unauthorized access!")
             raise Http404()
         return view(request, *args, **kwargs)
 
@@ -33,13 +40,14 @@ def protected_admin_view(view, cacheable: bool = False):
 
     # We add csrf_protect here so this function can be used as a utility
     # function for any view, without having to repeat 'csrf_protect'.
-    if not getattr(view, 'csrf_exempt', False):
+    if not getattr(view, "csrf_exempt", False):
         inner = csrf_protect(inner)
 
     return update_wrapper(inner, view)
 
 
 admin.site.admin_view = protected_admin_view
+
 
 @admin.register(User)
 class UserAdmin(BaseUserAdmin, ModelAdmin):

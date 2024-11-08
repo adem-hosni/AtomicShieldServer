@@ -255,7 +255,7 @@ RECAPTCHA_REQUIRED_SCORE = 0.9
 
 # Admin Settings
 ADMINS = [("Hyper", "hosniadem400@gmail.com")]
-ADMIN_IPS = []
+ADMIN_IPS = ["127.0.0.1"]
 
 # Mail Settings
 DEFAULT_FROM_EMAIL = "SafeGuard@localhost"

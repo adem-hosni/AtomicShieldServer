@@ -10,6 +10,7 @@ def preprocess_sidebar_context(request: HttpRequest) -> Dict[str, Any]:
         if GameServer.objects.filter(owner=request.user).count() == 0:
             cta_pins.append(
                 {
+                    "id": 1,
                     "title": "Subscription",
                     "description": "No servers found on your account. Please subscribe your server to access those options",
                     "extra_url": {"text": "Subscribe Now", "url": "/dashboard/servers"},

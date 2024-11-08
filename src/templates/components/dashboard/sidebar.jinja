@@ -88,10 +88,10 @@
       </li>
     </ul>
     {% for pin in cta_pins %}
-    <div id="dropdown-cta-{{ pin.title }}" class="p-4 mt-6 rounded-lg bg-yellow-50 dark:bg-[#885c1d]" role="alert">
+    <div id="dropdown-cta-{{ pin.id }}" class="p-4 mt-6 rounded-lg bg-yellow-50 dark:bg-[#885c1d]" role="alert">
       <div class="transition-all duration-300 flex items-center mb-3">
         <span class="bg-orange-100 text-orange-800 text-sm font-semibold me-2 px-2.5 py-0.5 rounded dark:bg-orange-200 dark:text-orange-900">{{ pin.title }}</span>
-        <button type="button" class="ms-auto -mx-1.5 -my-1.5 bg-yellow-50 inline-transition-all duration-300 flex justify-center items-center w-6 h-6 text-[#885c1d] rounded-lg focus:ring-2 focus:ring-yellow-400 p-1 hover:bg-yellow-200 dark:bg-[#885c1d] dark:text-zinc-400 dark:hover:bg-yellow-800" data-dismiss-target="#dropdown-cta-{{ pin.title }}" aria-label="Close">
+        <button type="button" class="ms-auto -mx-1.5 -my-1.5 bg-yellow-50 inline-transition-all duration-300 flex justify-center items-center w-6 h-6 text-[#885c1d] rounded-lg focus:ring-2 focus:ring-yellow-400 p-1 hover:bg-yellow-200 dark:bg-[#885c1d] dark:text-zinc-400 dark:hover:bg-yellow-800" data-dismiss-target="#dropdown-cta-{{ pin.id }}" aria-label="Close">
           <span class="sr-only">Close</span>
           <svg class="w-2.5 h-2.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />

@@ -5,8 +5,8 @@
     <div class="text-center w-max border-2 rounded-lg px-16 py-4 mx-auto">
         <div class="py-4">
             <h1 class="font-extrabold text-5xl tracking-tight text-[rgba(255,255,255,0.7)] transition-all duration-300 hover:text-white">Sign Up</div>
-                {% if form.errors %}
-                    <div class="bg-red-600 rounded py-2">{{ form.errors }}</div>
+                {% if error %}
+                    <div class="bg-red-600 rounded py-2">{{ error }}</div>
                 {% endif %}
             
                 <form method="POST">

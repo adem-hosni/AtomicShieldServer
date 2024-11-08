@@ -22,11 +22,11 @@ async def handle_network_join(
     consumer: SafeServerConsumer, request: Dict[str, Any]
 ) -> None:
     """
-    Handles the network join request from an EagleServerConsumer.
+    Handles the network join request from an SafeServerConsumer.
 
     Args:
     -----
-        consumer (EagleServerConsumer): The consumer initiating the request.
+        consumer (SafeServerConsumer): The consumer initiating the request.
         request (Dict[str, Any]): The request data containing server key, IP, and port.
     """
 
@@ -120,11 +120,11 @@ async def handle_sync_anticheat_configs(
     consumer: SafeServerConsumer, request: Dict[str, Any]
 ):
     """
-    Handles requests for anti-cheat configurations from an EagleServerConsumer.
+    Handles requests for anti-cheat configurations from an SafeServerConsumer.
 
     Args:
     -----
-        consumer (EagleServerConsumer): The consumer initiating the request.
+        consumer (SafeServerConsumer): The consumer initiating the request.
         request (Dict[str, Any]): The request data for fetching anti-cheat configurations.
 
     Returns:

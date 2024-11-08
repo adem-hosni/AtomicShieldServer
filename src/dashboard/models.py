@@ -129,7 +129,7 @@ class Whitelist(models.Model):
 
 class Announcements(models.Model):
     author = models.CharField(
-        max_length=32, default="EagleAntiCheat Development Team", null=False
+        max_length=32, default="SafeGuard Development Team", null=False
     )
     title = models.CharField(max_length=50, null=True)
     announcement = models.TextField(max_length=4096)
@@ -148,7 +148,7 @@ class Announcements(models.Model):
 
 class PatchNotes(models.Model):
     author = models.CharField(
-        max_length=32, default="EagleAntiCheat Development Team", null=False
+        max_length=32, default="SafeGuard Development Team", null=False
     )
     title = models.CharField(max_length=32, null=False)
     patchnotes = models.TextField(blank=False)

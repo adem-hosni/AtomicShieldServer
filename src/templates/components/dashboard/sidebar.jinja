@@ -102,7 +102,7 @@
       </li>
     </ul>
     {% for pin in cta_pins %}
-    <div id="dropdown-cta-{{ pin.id }}" class="p-4 mt-6 rounded-lg bg-yellow-50 bg-[#885c1d]" role="alert">
+    <div id="dropdown-cta-{{ pin.id }}" class="p-4 mt-6 rounded-lg bg-yellow-50 dark:bg-[#885c1d] transition-all duration-300 hover:bg-[#a26e24]" role="alert">
       <div class="transition-all duration-300 flex items-center mb-3">
         <span class="bg-orange-100 text-orange-800 text-sm font-semibold me-2 px-2.5 py-0.5 rounded dark:bg-orange-200 dark:text-orange-900">{{ pin.title }}</span>
         <button type="button" onclick="localStorage.setItem('hide-cta-{{ pin.id }}', '1');" class="ms-auto -mx-1.5 -my-1.5 bg-yellow-50 inline-transition-all duration-300 flex justify-center items-center w-6 h-6 text-[#885c1d] rounded-lg focus:ring-2 focus:ring-yellow-400 p-1 hover:bg-yellow-200 dark:bg-[#885c1d] dark:text-zinc-400 dark:hover:bg-yellow-800" data-dismiss-target="#dropdown-cta-{{ pin.id }}" aria-label="Close">

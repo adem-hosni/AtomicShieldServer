@@ -1,8 +1,6 @@
 import os
 import logging
 import json
-from time import time
-from datetime import datetime
 from django.shortcuts import render, redirect
 from django.conf import settings
 from django.contrib import messages

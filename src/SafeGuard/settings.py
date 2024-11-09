@@ -181,7 +181,7 @@ LOGGING = {
             "rich_tracebacks": True,
             "show_time": True,
         },
-        "file": {
+        "alltypes": {
             "level": "INFO",
             "class": "logging.FileHandler",
             "filename": os.path.join(BASE_DIR, "../logs/console.log"),
@@ -189,13 +189,13 @@ LOGGING = {
         },
     },
     "root": {
-        "handlers": ["console", "file"],
+        "handlers": ["alltypes", "console"],
         "level": "INFO",
     },
     "loggers": {
         "django": {
-            "handlers": ["console", "console"],
-            "level": os.getenv("DJANGO_LOG_LEVEL", "INFO"),
+            "handlers": ["console"],
+            "level": "INFO",
             "propagate": False,
         },
     },

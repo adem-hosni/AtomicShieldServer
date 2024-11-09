@@ -106,7 +106,7 @@ async def handle_network_join(
     consumer.group_name = WebSocketGroupNames.SAFE_SERVERS.value
     consumer.game_server = server
     consumer.channel_layer.group_add(consumer.group_name, consumer.channel_name)
-    safeguard_manager.add_eagle_server(consumer)
+    safeguard_manager.add_safe_server(consumer)
     logger.info(
         f"{consumer.address[0]}:{consumer.address[1]} joined SafeGuard Servers Network!"
     )
@@ -238,7 +238,7 @@ async def handle_server_disconnect(consumer: SafeServerConsumer):
     logger.info(
         f"{consumer.address[0]}:{consumer.address[1]} disconnected from SafeGuard servers network."
     )
-    safeguard_manager.remove_eagle_server(consumer)
+    safeguard_manager.remove_safe_server(consumer)
 
 
 async def handle_load_anticheat_scripts(

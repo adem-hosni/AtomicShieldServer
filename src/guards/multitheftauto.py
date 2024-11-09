@@ -6,13 +6,13 @@ from typing import List, Union, Any
 
 class MultiTheftAutoGuardManager(object):
     """
-    MultiTheftAutoGuardManager is responsible for managing SafeGuard servers and scanners.
-    It provides functionalities to add, remove, and check the status of servers and scanners.
+    MultiTheftAutoGuardManager is responsible for managing SafeGuard servers and engines.
+    It provides functionalities to add, remove, and check the status of servers and engines.
     """
 
     def __init__(self) -> None:
         """
-        Initialize MultiTheftAutoGuardManager with empty lists to track Eagle servers and Eagle scanners.
+        Initialize MultiTheftAutoGuardManager with empty lists to track SafeGuard servers and SafeGuard engines.
         """
         self._safe_servers: List[SafeServerConsumer] = []
         self._safe_engines: List[SafeEngineConsumer] = []
@@ -21,9 +21,9 @@ class MultiTheftAutoGuardManager(object):
     def engines(self) -> List[SafeEngineConsumer]:
         return self._safe_engines
 
-    def add_eagle_server(self, server: Union[SafeServerConsumer, Any]) -> bool:
+    def add_safe_server(self, server: Union[SafeServerConsumer, Any]) -> bool:
         """
-        Add an Eagle server to the manager if it belongs to the correct WebSocket group.
+        Add a SafeGuard server to the manager if it belongs to the correct WebSocket group.
 
         Args:
             server (Union[SafeServerConsumer, Any]): The server instance to be added.
@@ -51,9 +51,9 @@ class MultiTheftAutoGuardManager(object):
                 return True
         return False
 
-    def add_eagle_scanner(self, scanner: SafeEngineConsumer) -> bool:
+    def add_safe_scanner(self, scanner: SafeEngineConsumer) -> bool:
         """
-        Add an Eagle scanner to the manager if it belongs to the correct WebSocket group.
+        Add a SafeGuard engine to the manager if it belongs to the correct WebSocket group.
 
         Args:
             scanner (SafeEngineConsumer): The scanner instance to be added.
@@ -66,9 +66,9 @@ class MultiTheftAutoGuardManager(object):
         self._safe_engines.append(scanner)
         return True
 
-    def remove_eagle_server(self, server: SafeServerConsumer) -> bool:
+    def remove_safe_server(self, server: SafeServerConsumer) -> bool:
         """
-        Remove an Eagle server from the manager.
+        Remove a SafeGuard server from the manager.
 
         Args:
             server (SafeServerConsumer): The server instance to be removed.
@@ -85,9 +85,9 @@ class MultiTheftAutoGuardManager(object):
                 del self._safe_servers[self._safe_servers.index(iter_server)]
                 return True
 
-    def remove_eagle_scanner(self, scanner: SafeEngineConsumer) -> bool:
+    def remove_safe_scanner(self, scanner: SafeEngineConsumer) -> bool:
         """
-        Remove an Eagle scanner from the manager and trigger a disconnect action.
+        Remove a SafeGuard scanner from the manager and trigger a disconnect action.
 
         Args:
             scanner (SafeEngineConsumer): The scanner instance to be removed.
@@ -103,9 +103,9 @@ class MultiTheftAutoGuardManager(object):
                 # Remove the scanner from the list
                 del self._safe_engines[self._safe_engines.index(iter_scanner)]
 
-    def is_scanner_connected_to_eagle(self, scanner_ip: str) -> bool:
+    def is_engine_connected(self, scanner_ip: str) -> bool:
         """
-        Check if a scanner is connected to an Eagle server based on the scanner's IP address.
+        Check if a scanner is connected to a SafeGuard server based on the scanner's IP address.
 
         Args:
             scanner_ip (str): The IP address of the scanner to check.
@@ -117,7 +117,7 @@ class MultiTheftAutoGuardManager(object):
 
     def get_scanner_by_ip(self, scanner_ip: str) -> Union[SafeEngineConsumer, None]:
         """
-        Retrieve an Eagle scanner by its IP address.
+        Retrieve a SafeGuard scanner by its IP address.
 
         Args:
             scanner_ip (str): The IP address of the scanner to retrieve.

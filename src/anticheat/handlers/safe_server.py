@@ -170,7 +170,9 @@ async def handle_request_player_join(
     player_scanner = safeguard_manager.get_scanner_by_ip(request["ip"])
     response["join"] = not player_scanner is None
     if not response["join"]:
-        response["message"] = "PLEASE OPEN SafeGuard ANTICHEAT AGENT"
+        response["message"] = (
+            "Protected MTA:SA Server with SafeGuard: Open SafeGuard AntiCheat agent to join this server.\nDownload Link: https://safeguard-anticheat.com"
+        )
         logger.info('Connection refused: "SafeGuard Agent Not Connected"')
     else:
         if player_scanner.is_flagged:

@@ -187,6 +187,36 @@ LOGGING = {
             "filename": os.path.join(BASE_DIR, "../logs/console.log"),
             "formatter": "verbose",
         },
+        'debug_file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, '../logs/debug.log'),
+            'formatter': 'verbose',
+        },
+        'info_file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, '../logs/info.log'),
+            'formatter': 'verbose',
+        },
+        'warning_file': {
+            'level': 'WARNING',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, '../logs/warning.log'),
+            'formatter': 'verbose',
+        },
+        'error_file': {
+            'level': 'ERROR',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, '../logs/error.log'),
+            'formatter': 'verbose',
+        },
+        'critical_file': {
+            'level': 'CRITICAL',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, '../logs/critical.log'),
+            'formatter': 'verbose',
+        },
     },
     "root": {
         "handlers": ["alltypes", "console"],

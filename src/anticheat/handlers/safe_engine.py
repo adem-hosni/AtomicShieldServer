@@ -190,7 +190,7 @@ async def handle_game_anticheat_status(
                     "MTA:SA AntiCheat component blocked", timedelta(days=3)
                 )
 
-            message_description = f"""Missing MTA:SA anticheat component for **{consumer.hwid.username}**."""
+            message_description = f"""SafeGuard AntiCheat detected Missing MTA:SA anticheat component for **{consumer.hwid.username}**."""
             await discord.send_discord_embed(
                 settings.DETECTIONS_WEBHOOK_URL,
                 "AntiCheat Alert",

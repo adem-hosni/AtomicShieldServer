@@ -16,6 +16,10 @@ class MultiTheftAutoGuardManager(object):
         """
         self._eagle_servers: List[SafeServerConsumer] = []
         self._eagle_scanners: List[SafeEngineConsumer] = []
+    
+    @property
+    def engines(self) -> List[SafeEngineConsumer]:
+        return self._eagle_scanners
 
     def add_eagle_server(self, server: Union[SafeServerConsumer, Any]) -> bool:
         """

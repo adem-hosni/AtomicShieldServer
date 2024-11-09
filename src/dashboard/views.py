@@ -81,10 +81,16 @@ def render_maindashboard(request: HttpRequest) -> HttpResponse:
                 }
             )
         announcements.reverse()
+
     return render(
         request,
         "pages/dashboard/main.jinja",
-        {"username": request.user.username, "announcements": announcements},
+        {
+            "username": request.user.username,
+            "announcements": announcements,
+            "online_scanners": len(safeguard_manager.engines) * 2,
+            "banned_players": Ban.objects.count() * 2,
+        },
     )
 
 

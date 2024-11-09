@@ -14,12 +14,12 @@ class MultiTheftAutoGuardManager(object):
         """
         Initialize MultiTheftAutoGuardManager with empty lists to track Eagle servers and Eagle scanners.
         """
-        self._eagle_servers: List[SafeServerConsumer] = []
-        self._eagle_scanners: List[SafeEngineConsumer] = []
+        self._safe_servers: List[SafeServerConsumer] = []
+        self._safe_engines: List[SafeEngineConsumer] = []
     
     @property
     def engines(self) -> List[SafeEngineConsumer]:
-        return self._eagle_scanners
+        return self._safe_engines
 
     def add_eagle_server(self, server: Union[SafeServerConsumer, Any]) -> bool:
         """
@@ -33,7 +33,7 @@ class MultiTheftAutoGuardManager(object):
         """
         if server.group_name != WebSocketGroupNames.SAFE_SERVERS.value:
             return False
-        self._eagle_servers.append(server)
+        self._safe_servers.append(server)
         return True
     
     def is_server_running(self, server_ip: str) -> bool:
@@ -46,7 +46,7 @@ class MultiTheftAutoGuardManager(object):
         Returns:
             bool: True if running else False
         """
-        for server in self._eagle_servers:
+        for server in self._safe_servers:
             if server.address[0] == server_ip:
                 return True
         return False
@@ -63,7 +63,7 @@ class MultiTheftAutoGuardManager(object):
         """
         if scanner.group_name != WebSocketGroupNames.SAFE_ENGINES.value:
             return False
-        self._eagle_scanners.append(scanner)
+        self._safe_engines.append(scanner)
         return True
 
     def remove_eagle_server(self, server: SafeServerConsumer) -> bool:
@@ -76,13 +76,13 @@ class MultiTheftAutoGuardManager(object):
         Returns:
             bool: True if the server was successfully removed, False otherwise.
         """
-        if server not in self._eagle_servers:
+        if server not in self._safe_servers:
             return False
 
-        for iter_server in self._eagle_servers:
+        for iter_server in self._safe_servers:
             if iter_server == server:
                 # Remove the server from the list
-                del self._eagle_servers[self._eagle_servers.index(iter_server)]
+                del self._safe_servers[self._safe_servers.index(iter_server)]
                 return True
 
     def remove_eagle_scanner(self, scanner: SafeEngineConsumer) -> bool:
@@ -95,13 +95,13 @@ class MultiTheftAutoGuardManager(object):
         Returns:
             bool: True if the scanner was successfully removed, False otherwise.
         """
-        if scanner not in self._eagle_scanners:
+        if scanner not in self._safe_engines:
             return False
 
-        for iter_scanner in self._eagle_scanners:
+        for iter_scanner in self._safe_engines:
             if iter_scanner == scanner:
                 # Remove the scanner from the list
-                del self._eagle_scanners[self._eagle_scanners.index(iter_scanner)]
+                del self._safe_engines[self._safe_engines.index(iter_scanner)]
 
     def is_scanner_connected_to_eagle(self, scanner_ip: str) -> bool:
         """
@@ -125,7 +125,7 @@ class MultiTheftAutoGuardManager(object):
         Returns:
             Union[SafeEngineConsumer, None]: The scanner instance if found, otherwise None.
         """
-        for iter_scanner in self._eagle_scanners:
+        for iter_scanner in self._safe_engines:
             if iter_scanner.address[0] == scanner_ip:
                 return iter_scanner
         return None  # Not Found

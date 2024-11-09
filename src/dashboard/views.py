@@ -581,7 +581,7 @@ def render_configurations(request: HttpRequest) -> HttpResponse:
             match request_body["type"]:
                 case "save":
                     for config_id, config_value in request.POST.items():
-                        if config_id != "csrfmiddlewaretoken":
+                        if config_id != "csrfmiddlewaretoken" and config_id != "type":
                             target_server.configurations.config[config_id] = (
                                 config_value
                             )

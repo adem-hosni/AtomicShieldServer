@@ -32,15 +32,22 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
                 SafeEnginePacketID.NETWORK_JOIN,
                 {"success": False, "message": "Unable to validate your machine!"},
             )
-            logger.warning(f"Unable to validate {consumer.address}, got null HWID component: {key}")
+            logger.warning(
+                f"Unable to validate {consumer.address}, got null HWID component: {key}"
+            )
             return consumer.close()
 
         if not check_request_body_key(request, key, str):
             await consumer.send(
                 SafeEnginePacketID.NETWORK_JOIN,
-                {"success": False, "message": "Unable to validate your machine's request!"},
+                {
+                    "success": False,
+                    "message": "Unable to validate your machine's request!",
+                },
             )
-            logger.warning(f"Invalid request received from {consumer.address}, request body: {request}")
+            logger.warning(
+                f"Invalid request received from {consumer.address}, request body: {request}"
+            )
             return consumer.close()
 
     try:
@@ -83,9 +90,9 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
         hwid.motherboard_serial = request["mta_serial"]
         hwid.username = request["username"]
         hwid.pnp_device = request["pnp_device"]
-            
+
         changes = await hwid.get_changes()
-        
+
         if changes:
             await hwid.asave()
             logger.info(
@@ -188,25 +195,29 @@ async def handle_game_anticheat_status(
                 settings.DETECTIONS_WEBHOOK_URL,
                 "AntiCheat Alert",
                 description=message_description,
-                footer="SafeGuard",
+                footer="SafeGuard For your servers safety",
             )
 
             if consumer.connected_server:
                 detections_webhook_url = (
-                    consumer.connected_server.game_server.get_config_by_id(
+                    await consumer.connected_server.game_server.get_config_by_id(
                         config_ids.PLAYER_DETECTION_WEBHOOK_URL
                     )
                 )
+
                 if len(detections_webhook_url):
                     await discord.send_discord_embed(
                         detections_webhook_url,
                         "AntiCheat Alert",
                         description=message_description,
-                        footer="SafeGuard",
+                        footer="SafeGuard For your servers safety",
                     )
 
 
 async def handle_scanner_disconnect(consumer: SafeEngineConsumer):
     logger.info(f"{consumer.hwid.username}'s scanner disconnected from network.")
     safeguard_manager.remove_eagle_scanner(consumer)
-    await consumer.kick("Anticheat Agent Closed! Please re-open the agent.", True)
+    await consumer.kick(
+        "SafeGuard AntiCheat Agent Not Running. To join this server, please ensure the SafeGuard AntiCheat Agent is open and active.",
+        True,
+    )

@@ -27,7 +27,6 @@ from anticheat.models import (
 )
 from .forms import (
     AddServerForm,
-    QuickSetupForm,
     WhitelistForm,
 )
 import utils

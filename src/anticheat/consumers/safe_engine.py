@@ -332,7 +332,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             settings.DETECTIONS_WEBHOOK_URL,
             "Banned Player",
             f"""
-                                         {self._hwid.username} banned due to ```{reason}```
-                                         **Ban Duration**: `{represent_timedelta_string(ban.duration)}`
-                                         """,
+            {self._hwid.username} banned due to ```{reason}```
+            **Ban Duration**: `{represent_timedelta_string(ban.duration)}`
+            """,
         )

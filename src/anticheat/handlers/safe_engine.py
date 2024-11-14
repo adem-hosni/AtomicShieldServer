@@ -87,7 +87,7 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
         hwid.cpuid = request["cpu"]
         hwid.disks = request["disks"]
         hwid.motherboard_serial = request["motherboard_serial"]
-        hwid.motherboard_serial = request["mta_serial"]
+        hwid.mta_serial = request["mta_serial"]
         hwid.username = request["username"]
         hwid.pnp_device = request["pnp_device"]
 

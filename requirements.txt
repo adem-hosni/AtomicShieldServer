@@ -38,6 +38,7 @@ typing_extensions==4.12.2
 tzdata==2024.1
 urllib3==2.2.2
 zope.interface==6.4.post2
-debug-toolbar
+django-debug-toolbar
 unfold
 django_recaptcha
+django_browser_reload

@@ -25,7 +25,7 @@ from .urlhandler import handler404
 import debug_toolbar.urls
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
+    path("secret-staff/", admin.site.urls),
     path("", include("home.urls")),
     path("auth/", include("authentication.urls")),
     path("anticheat/", include("anticheat.urls")),

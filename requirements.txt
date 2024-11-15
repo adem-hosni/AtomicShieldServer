@@ -13,4 +13,5 @@ django_recaptcha
 django_browser_reload
 mysqlclient
 nextcord
+gunicorn
 pycryptodome

@@ -32,7 +32,7 @@ if DEBUG:
 else:
     BIN_DIR = os.path.join(BASE_DIR.parent, "bin", "release")
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition

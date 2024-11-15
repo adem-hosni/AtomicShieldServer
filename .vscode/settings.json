@@ -18,8 +18,11 @@
         "css": "css"
     },
     "editor.quickSuggestions": {
-    "strings": true
+        "strings": true
     },
-    "search.useIgnoreFiles": false
-
+    "search.useIgnoreFiles": false,
+    "editor.smoothScrolling": true,
+    "[javascript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    }
 }

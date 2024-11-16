@@ -30,7 +30,7 @@ DEBUG = True
 if DEBUG:
     BIN_DIR = os.path.join(BASE_DIR.parent, "bin", "debug")
 else:
-    BIN_DIR = os.path.join(BASE_DIR.parent, "bin", "release")
+    BIN_DIR = os.path.join(BASE_DIR.parent, "bin", "production")
 
 ALLOWED_HOSTS = ["*"]
 

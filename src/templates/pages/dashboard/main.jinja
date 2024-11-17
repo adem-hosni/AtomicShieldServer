@@ -100,10 +100,10 @@
             <h1 class="text-black bg-[#8c592b] rounded-full ml-auto w-4 h-4 text-center"></h1>
             {% endif %}
         </div>
-        <p class=" text-sm text-gray-400">{{ announcement.announcement }}</p>
-        <pre class="line-clamp-1 text-xs font-semibold text-[#8c592b]">
+        <p class="text-sm text-gray-400 p-1">{{ announcement.announcement }}</p>
+        <p class="line-clamp-1 text-xs font-semibold text-[#8c592b]">
             {{ announcement.author }}. <span class="text-xs text-gray-400"> - {{ announcement.date }}</span>
-        </pre>
+        </p>
       </div>
     </div>
     {% endfor %}

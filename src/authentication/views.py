@@ -20,12 +20,12 @@ def render_signin(request: HttpRequest) -> HttpResponse:
             username_or_email = form.cleaned_data["username_or_email"]
             password = form.cleaned_data["password"]
 
-            queryed_user = User.objects.filter(
+            queried_user = User.objects.filter(
                 Q(email=username_or_email) | Q(username=username_or_email)
             ).first()
-            if queryed_user:
+            if queried_user:
                 user = authenticate(
-                    request, username=queryed_user.username, password=password
+                    request, username=queried_user.username, password=password
                 )
                 if user:
                     login(request, user)

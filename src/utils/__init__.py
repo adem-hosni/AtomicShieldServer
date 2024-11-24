@@ -36,7 +36,7 @@ def generate_key(parts: Optional[int] = 4) -> str:
     license_key = ""
 
     # Generate 3 random parts of the key
-    for _ in range(parts + 1):
+    for _ in range(parts):
         shuffle(allowed_chars)
         license_key += "".join(allowed_chars)[:5] + "-"
 

@@ -1,1 +1,1 @@
-from .safecore import SafeCore, eagle_core
+from .safecore import SafeCore, safe_core

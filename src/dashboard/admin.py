@@ -1,3 +1,4 @@
+import json
 from logging import getLogger
 from functools import update_wrapper
 from django.contrib import admin
@@ -30,7 +31,9 @@ def protected_admin_view(view, cacheable: bool = False):
 
     def inner(request: HttpRequest, *args, **kwargs):
         request_ip = request.META.get("HTTP_X_REAL_IP", request.META.get("REMOTE_ADDR"))
-        if not request_ip in settings.ADMIN_IPS:
+        with open(f"{settings.BASE_DIR}\\..\\config\\admins.json", "r") as file:
+            admins = json.load(file)
+        if not request_ip in admins:
             logger.warning(f"{request_ip} trying to view admin dashboard. Unauthorized access!")
             raise Http404()
         return view(request, *args, **kwargs)

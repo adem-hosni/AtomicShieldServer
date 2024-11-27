@@ -79,9 +79,6 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
         await hwid.asave()
         logger.info(f'"{hwid.username}" HWID registred!')
     else:
-        original_components = list(hwid._meta.fields)
-        current_components = list(request.values())
-
         hwid.bios_version = request["bios"]
         hwid.computer_name = request["computer_name"]
         hwid.cpuid = request["cpu"]

@@ -8,7 +8,7 @@ from django.urls import reverse
 from django.db.models import Q
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, FileResponse
 from django.contrib.auth.decorators import login_required
-from guards.multitheftauto import safeguard_manager
+from guards.multitheftauto import mta_guard
 from utils import check_request_body_key, represent_timedelta_string
 from .models import (
     Announcements,
@@ -85,7 +85,7 @@ def render_maindashboard(request: HttpRequest) -> HttpResponse:
         {
             "username": request.user.username,
             "announcements": announcements,
-            "online_scanners": len(safeguard_manager.engines) * 2,
+            "online_scanners": len(mta_guard.engines) * 2,
             "banned_players": Ban.objects.count() * 2,
         },
     )
@@ -404,7 +404,7 @@ def render_servers(request: HttpRequest) -> HttpResponse:
                     "port": server.port,
                     "name": server.name,
                     "type": server.type,
-                    "status": safeguard_manager.is_server_running(server.ip),
+                    "status": mta_guard.is_server_running(server.ip),
                     "subscription_status": server.subscriptions.last(),
                 }
                 for server in servers.reverse()

@@ -5,7 +5,7 @@ from typing import Dict, Any
 from utils import check_request_body_key, represent_timedelta_string
 from dashboard.models import GameServer, Whitelist
 from shared.ws import SafeServerPacketID, WebSocketGroupNames
-from guards.multitheftauto import safeguard_manager
+from guards.multitheftauto import mta_guard
 from typing import Dict
 from django.conf import settings
 from django.db.models import Q
@@ -80,7 +80,7 @@ async def handle_network_join(
         return await consumer.close()
 
     # Check if the server is running
-    if safeguard_manager.is_server_running(server.ip):
+    if mta_guard.is_server_running(server.ip):
         await consumer.send(
             SafeServerPacketID.NETWORK_JOIN,
             {
@@ -106,7 +106,7 @@ async def handle_network_join(
     consumer.group_name = WebSocketGroupNames.SAFE_SERVERS.value
     consumer.game_server = server
     consumer.channel_layer.group_add(consumer.group_name, consumer.channel_name)
-    safeguard_manager.add_safe_server(consumer)
+    mta_guard.add_safe_server(consumer)
     logger.info(
         f"{consumer.address[0]}:{consumer.address[1]} joined SafeGuard Servers Network!"
     )
@@ -167,7 +167,7 @@ async def handle_request_player_join(
     response = {"join": False, "message": "None"}
 
     # Check if the SafeGuard agent is connected
-    player_scanner = safeguard_manager.get_scanner_by_ip(request["ip"])
+    player_scanner = mta_guard.get_scanner_by_ip(request["ip"])
     response["join"] = not player_scanner is None
     if not response["join"]:
         response["message"] = (
@@ -238,7 +238,7 @@ async def handle_server_disconnect(consumer: SafeServerConsumer):
     logger.info(
         f"{consumer.address[0]}:{consumer.address[1]} disconnected from SafeGuard servers network."
     )
-    safeguard_manager.remove_safe_server(consumer)
+    mta_guard.remove_safe_server(consumer)
 
 
 async def handle_load_anticheat_scripts(
@@ -281,7 +281,7 @@ async def handle_player_quit(consumer: SafeServerConsumer, request: Dict[str, An
     if not check_request_body_key(request, "reason", str):
         return
 
-    player_engine = safeguard_manager.get_scanner_by_ip(request["ip"])
+    player_engine = mta_guard.get_scanner_by_ip(request["ip"])
     if not player_engine:
         logger.warning(
             f"Unauthorized player engine disconnected due to {request['reason']}! (ip: {request['ip']}, name: {request['name']})"

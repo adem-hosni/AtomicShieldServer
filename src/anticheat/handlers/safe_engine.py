@@ -1,7 +1,7 @@
 from asgiref.sync import sync_to_async
 from datetime import timedelta
 from ..consumers.safe_engine import SafeEngineConsumer
-from guards.multitheftauto import safeguard_manager
+from guards.multitheftauto import mta_guard
 from django.conf import settings
 from shared.ws import WebSocketGroupNames, SafeEnginePacketID
 from shared.flags import FlagType
@@ -106,7 +106,7 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
     consumer.group_name = WebSocketGroupNames.SAFE_ENGINES.value
     consumer.channel_layer.group_add(consumer.group_name, consumer.channel_name)
     consumer.hwid = hwid
-    safeguard_manager.add_safe_scanner(consumer)
+    mta_guard.add_safe_scanner(consumer)
     logger.info(
         f"{consumer.address[0]}:{consumer.address[1]}'s engine joined network successfuly!"
     )
@@ -216,7 +216,7 @@ async def handle_game_anticheat_status(
 
 async def handle_scanner_disconnect(consumer: SafeEngineConsumer):
     logger.info(f"{consumer.hwid.username}'s scanner disconnected from network.")
-    safeguard_manager.remove_safe_scanner(consumer)
+    mta_guard.remove_safe_scanner(consumer)
     await consumer.kick(
         "SafeGuard AntiCheat Agent Not Running. To join this server, please ensure the SafeGuard AntiCheat Agent is open and active.",
         True,

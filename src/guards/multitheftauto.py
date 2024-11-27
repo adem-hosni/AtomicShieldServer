@@ -132,4 +132,4 @@ class MultiTheftAutoGuardManager(object):
 
 
 # Instantiate the MultiTheftAutoGuardManager
-safeguard_manager = MultiTheftAutoGuardManager()
+mta_guard = MultiTheftAutoGuardManager()

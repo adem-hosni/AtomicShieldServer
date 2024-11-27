@@ -77,7 +77,9 @@
           <tr class="transition-all duration:300 bg-white border-b dark:bg-[#161616] dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#212121]">
             <td class="px-6 py-4">
                 {% if subscription.type == 1 %}
-                  <span class="border font-medium border-orange-500 rounded p-1 text-orange-500 transition-all duration-300 hover:bg-orange-500 hover:text-black select-none">MTA:SA</span>
+                  <div class="border w-16 text-center font-medium border-[#E87C00] rounded p-1 text-[#E87C00] transition-all duration-300 hover:bg-[#E87C00] hover:text-black select-none">MTA:SA</div>
+                  {% elif subscription.type == 2 %}
+                  <div class="border w-16 text-center font-medium border-[#4B6EA9] rounded p-1 text-[#4B6EA9] transition-all duration-300 hover:bg-[#4B6EA9] hover:text-black select-none">FiveM</div>
                 {% endif %}
               </td>
             <td class="px-6 py-4">{{ subscription.name }}</td>

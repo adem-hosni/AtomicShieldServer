@@ -229,23 +229,23 @@ def render_servers(request: HttpRequest) -> HttpResponse:
                     subscription_id = add_form.cleaned_data["subscription"]
 
                     # Check if the server_type and the subscription_id are of type string
-                    if isinstance(server_type, str) and isinstance(
-                        subscription_id, str
-                    ):
-                        if (
-                            not server_type.isnumeric()
-                            and not subscription_id.isnumeric()
-                        ):
-                            messages.error(request, "Invalid Server Type")
+                    if isinstance(server_type, str) or isinstance(subscription_id, str):
+                        if not server_type.isnumeric():
+                            print("ahhh")
+                            messages.error(request, "Invalid server type")
+                            return redirect(request.path)
+
+                        if not subscription_id.isnumeric():
                             messages.error(request, "Invalid Subscription")
                             return redirect(request.path)
+
                         server_type = int(server_type)
                         subscription_id = int(subscription_id)
 
                     # Check if the port is of type string
                     if isinstance(port, str):
                         if not port.isnumeric():
-                            messages.error(request, "Invalid Server Type")
+                            messages.error(request, "Invalid server port")
                             return redirect(request.path)
                         port = int(port)
 
@@ -264,80 +264,90 @@ def render_servers(request: HttpRequest) -> HttpResponse:
                         )
                         return redirect(request.path)
 
-                    if server_type == 1:  # Server Type: MTA:SA
-                        # Check if the ip is correct
-                        if not utils.isvalid_ip(ip):
-                            messages.error(request, "Invalid IPV4 IP")
-                            return redirect(request.path)
+                    # Check if the ip is correct
+                    if not utils.isvalid_ip(ip):
+                        messages.error(request, "Invalid IPV4 IP")
+                        return redirect(request.path)
 
-                        # Check the selected subscription health
-                        try:
-                            subscription = ServerSubscription.objects.get(
-                                id=subscription_id
-                            )
-                        except ServerSubscription.DoesNotExist:
-                            messages.error(request, "Invalid subscription selected")
-                            logger.warning(
-                                f"{request.user.username} trying to use a non existing subscription (used subscription id: {subscription_id})!"
-                            )
-                            return redirect(request.path)
-                        if subscription.owner != request.user:
-                            logger.warning(
-                                f"{request.user.username} trying to use {subscription.owner.username}'s subscription!"
-                            )
-                            messages.error(request, "Not your fucking subscription!")
-                            return redirect(request.path)
-
-                        if not subscription.is_valid_for_now():
-                            logger.warning(
-                                f"{request.user.username} trying to use expired subscription (subscription id: {subscription_id})!"
-                            )
-                            messages.error(request, "Expired Subscription")
-                            return redirect(request.path)
-
-                        # Check if the server address already used
-                        if GameServer.objects.filter(ip=ip, port=port).exists():
-                            messages.error(request, "Server Address Already been used!")
-                            return redirect(request.path)
-
-                        # Check if the server name exists in the owned servers
-                        if GameServer.objects.filter(
-                            name=name, owner=request.user
-                        ).exists():
-                            messages.error(request, "Server name already used!")
-                            return redirect(request.path)
-
-                        # Generate a license key for the server
-                        license_key = utils.generate_key(4)
-
-                        # Check if key already exists, regenerate it
-                        if GameServer.objects.filter(key=license_key).exists():
-                            license_key = utils.generate_key(4)
-
-                        # Create the server configs
-                        configurations = AntiCheatConfigurations()
-                        for config in AntiCheatConfigTemplates.objects.filter(
-                            server_type=ServerTypes.MTASA
-                        ):
-                            configurations.config[config.id] = config.default_value
-                        configurations.save()
-
-                        new_server = GameServer.objects.create(
-                            ip=ip,
-                            port=port,
-                            name=name,
-                            owner=request.user,
-                            key=license_key,
-                            configurations=configurations,
-                            type=ServerTypes.MTASA,
-                            status=ServerStatus.online,
+                    # Check the selected subscription health
+                    try:
+                        subscription = ServerSubscription.objects.get(
+                            id=subscription_id
                         )
-                        new_server.subscriptions.add(subscription)
-                        request.session["selected_server"] = new_server.id
-                        logger.info(
-                            f"Added New Server {ip}:{port} from {request.user.username}, license key: ({license_key})"
+                    except ServerSubscription.DoesNotExist:
+                        messages.error(request, "Invalid subscription selected")
+                        logger.warning(
+                            f"{request.user.username} trying to use a non existing subscription (used subscription id: {subscription_id})!"
                         )
                         return redirect(request.path)
+
+                    # Check the subscription's owner
+                    if subscription.owner != request.user:
+                        logger.warning(
+                            f"{request.user.username} trying to use {subscription.owner.username}'s subscription!"
+                        )
+                        messages.error(request, "Not your fucking subscription!")
+                        return redirect(request.path)
+
+                    if not subscription.is_valid_for_now():
+                        logger.warning(
+                            f"{request.user.username} trying to use expired subscription (subscription id: {subscription_id})!"
+                        )
+                        messages.error(request, "Expired Subscription")
+                        return redirect(request.path)
+
+                    # Check if the server address already used
+                    if GameServer.objects.filter(
+                        ip=ip, port=port, type=server_type
+                    ).exists():
+                        messages.error(request, "Server Address Already been used!")
+                        return redirect(request.path)
+
+                    # Check if the server name exists in the owned servers
+                    if GameServer.objects.filter(
+                        name=name, owner=request.user, type=server_type
+                    ).exists():
+                        messages.error(request, "Server name already used!")
+                        return redirect(request.path)
+
+                    if (
+                        server_type != ServerTypes.MTASA.value
+                        and server_type != ServerTypes.FIVEM.value
+                    ):
+                        messages.error(request, "Invalid server type!")
+                        return redirect(request.path)
+
+                    # Generate a license key for the server
+                    license_key = utils.generate_key(4)
+
+                    # Check if key already exists, regenerate it
+                    if GameServer.objects.filter(key=license_key).exists():
+                        license_key = utils.generate_key(4)
+
+                    # Create the server configs
+                    configurations = AntiCheatConfigurations()
+                    for config in AntiCheatConfigTemplates.objects.filter(
+                        server_type=server_type
+                    ):
+                        configurations.config[config.id] = config.default_value
+                    configurations.save()
+
+                    new_server = GameServer.objects.create(
+                        ip=ip,
+                        port=port,
+                        name=name,
+                        owner=request.user,
+                        key=license_key,
+                        configurations=configurations,
+                        type=server_type,
+                        status=ServerStatus.online,
+                    )
+                    new_server.subscriptions.add(subscription)
+                    request.session["selected_server"] = new_server.id
+                    logger.info(
+                        f"Added New {ServerTypes(server_type)} Server {ip}:{port} from {request.user.username}, license key: ({license_key})"
+                    )
+                    return redirect(request.path)
             case "edit":
                 if not (
                     "target-server" in request_body.keys()

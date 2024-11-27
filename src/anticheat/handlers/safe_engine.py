@@ -8,7 +8,7 @@ from shared.flags import FlagType
 from utils import check_request_body_key, discord
 from asgiref.sync import sync_to_async
 from django.db.models import Q
-from ..models import MaliciousSignatures, ClientHWID, ServerTypes, Ban, Warning
+from ..models import MaliciousSignatures, ClientHWID, ServerTypes, Warning
 from .. import config_ids
 from typing import Dict, List, Any
 import logging

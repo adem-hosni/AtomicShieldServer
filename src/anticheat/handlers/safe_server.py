@@ -5,6 +5,7 @@ from typing import Dict, Any
 from utils import check_request_body_key, represent_timedelta_string
 from dashboard.models import GameServer, Whitelist
 from shared.ws import SafeServerPacketID, WebSocketGroupNames
+from shared.models import ServerTypes
 from guards.multitheftauto import mta_guard
 from typing import Dict
 from django.conf import settings
@@ -34,11 +35,23 @@ async def handle_network_join(
     if not check_request_body_key(request, "server_key", str):
         return await consumer.close()
 
-    if not check_request_body_key(request, "ip", str):
-        return await consumer.close()
-
     if not check_request_body_key(request, "port", int):
         return await consumer.close()
+
+    if not check_request_body_key(request, "server_type", int):
+        return await consumer.close()
+
+    if not request["server_type"] in ServerTypes.values:
+        request_type = request["type"]
+        logger.warning(f"{consumer.address} trying to join network with invalid server type! ({request_type})")
+        await consumer.send(
+            SafeServerPacketID.NETWORK_JOIN,
+            {
+                "success": False,
+                "message": "Invalid server type!",
+            },
+        )
+        return await consumer.close()        
 
     # Attempt to retrieve the target server using the server key from the request
     try:
@@ -56,7 +69,7 @@ async def handle_network_join(
         return await consumer.close()
 
     # Validate the IP address of the server
-    if server.ip != request["ip"]:
+    if server.ip != consumer.address[0]:
         logger.warning(f"Server IP address mismatch ({server.ip} != {request['ip']})")
         await consumer.send(
             SafeServerPacketID.NETWORK_JOIN,
@@ -106,6 +119,7 @@ async def handle_network_join(
     consumer.group_name = WebSocketGroupNames.SAFE_SERVERS.value
     consumer.game_server = server
     consumer.channel_layer.group_add(consumer.group_name, consumer.channel_name)
+    consumer.type = ServerTypes(request["server_type"])
     mta_guard.add_safe_server(consumer)
     logger.info(
         f"{consumer.address[0]}:{consumer.address[1]} joined SafeGuard Servers Network!"

@@ -252,4 +252,3 @@ class SafeServerConsumer(AsyncWebsocketConsumer):
         await self.send(SafeServerPacketID.REQUEST_STATUS)
 
         response_event = await self.channel_layer.receive(self.channel_name)
-        print(response_event)

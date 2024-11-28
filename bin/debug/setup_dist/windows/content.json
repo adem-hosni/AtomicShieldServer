@@ -1,5 +1,6 @@
 [
+    "core.dll",
+    "net.dll",
     "deathmatch.dll",
-    "mtaserver.conf",
-    "zlib1.dll"
+    "mtaserver.conf"
 ]

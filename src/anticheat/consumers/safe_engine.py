@@ -4,6 +4,7 @@ from .safe_server import SafeServerConsumer
 from django.conf import settings
 from ..models import ClientHWID, MaliciousSignatures, Ban
 from utils import discord, represent_timedelta_string
+from shared.models import ServerTypes
 from shared.ws import SafeEnginePacketID, SafeServerPacketID, WebSocketGroupNames
 from shared.flags import Flag, FlagType
 import json
@@ -40,6 +41,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         self._detected_signatures: List[MaliciousSignatures] = []
         self._flagged: bool = False
         self._flags: List[Flag] = []
+        self._type: ServerTypes = None
 
     async def connect(self):
         """
@@ -187,6 +189,19 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             await handle_scanner_disconnect(self)
 
         return await super().disconnect(code)
+
+    @property
+    def type(self) -> ServerTypes:
+        return self._type
+
+    @type.setter
+    def type(self, new_type: ServerTypes):
+        try:
+            self._type = ServerTypes(new_type)
+        except ValueError as err:
+            raise TypeError(
+                f"Can't convert type '{type(new_type)}' to 'ServerType'"
+            ) from err
 
     @property
     def hwid(self):

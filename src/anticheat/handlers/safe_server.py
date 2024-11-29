@@ -6,7 +6,7 @@ from utils import check_request_body_key, represent_timedelta_string
 from dashboard.models import GameServer, Whitelist
 from shared.ws import SafeServerPacketID, WebSocketGroupNames
 from shared.models import ServerTypes
-from guards.multitheftauto import mta_guard
+from guards import mta_guard, fivem_guard
 from typing import Dict
 from django.conf import settings
 from django.db.models import Q
@@ -43,7 +43,9 @@ async def handle_network_join(
 
     if not request["server_type"] in ServerTypes.values:
         request_type = request["type"]
-        logger.warning(f"{consumer.address} trying to join network with invalid server type! ({request_type})")
+        logger.warning(
+            f"{consumer.address} trying to join network with invalid server type! ({request_type})"
+        )
         await consumer.send(
             SafeServerPacketID.NETWORK_JOIN,
             {
@@ -51,7 +53,7 @@ async def handle_network_join(
                 "message": "Invalid server type!",
             },
         )
-        return await consumer.close()        
+        return await consumer.close()
 
     # Attempt to retrieve the target server using the server key from the request
     try:
@@ -92,8 +94,10 @@ async def handle_network_join(
         )
         return await consumer.close()
 
+    guard = mta_guard if request["server_type"] == ServerTypes.MTASA else fivem_guard
+
     # Check if the server is running
-    if mta_guard.is_server_running(server.ip):
+    if guard.is_server_running(server.ip):
         await consumer.send(
             SafeServerPacketID.NETWORK_JOIN,
             {
@@ -120,7 +124,7 @@ async def handle_network_join(
     consumer.game_server = server
     consumer.channel_layer.group_add(consumer.group_name, consumer.channel_name)
     consumer.type = ServerTypes(request["server_type"])
-    mta_guard.add_safe_server(consumer)
+    guard.add_safe_server(consumer)
     logger.info(
         f"{consumer.address[0]}:{consumer.address[1]} joined SafeGuard Servers Network!"
     )

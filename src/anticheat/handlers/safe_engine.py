@@ -56,6 +56,8 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
                 Q(motherboard_serial=request["motherboard_serial"])
                 | Q(bios_version=request["bios"])
                 | Q(cpuid=request["cpu"])
+                | Q(pnp_device=request["pnp_device"])
+                | Q(disks__overlap=request["disks"])
             )
         )
         if len(clients_queryset) > 0:

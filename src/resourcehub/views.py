@@ -2,7 +2,7 @@ import logging
 from django.conf import settings
 from django.http import HttpRequest, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
-from safecore import eagle_core
+from safecore import safe_core
 
 
 logger = logging.getLogger(__name__)
@@ -14,7 +14,7 @@ def download_agent_peb(request: HttpRequest) -> HttpResponse:
         f"../bin/{'debug' if settings.DEBUG else 'production'}/agent/agent_peb.dll",
         "rb",
     ) as file:
-        agent_peb_buffer = eagle_core.encrypt_buffer(file.read())
+        agent_peb_buffer = (file.read())
 
     logger.info(f"{request.get_host()} downloaded eagle PEB Agent")
 

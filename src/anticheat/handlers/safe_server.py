@@ -5,7 +5,7 @@ from typing import Dict, Any
 from utils import check_request_body_key, represent_timedelta_string
 from dashboard.models import GameServer, Whitelist
 from shared.ws import SafeServerPacketID, WebSocketGroupNames
-from shared.models import ServerTypes
+from shared.models import ServerType
 from guards import mta_guard, fivem_guard
 from typing import Dict
 from django.conf import settings
@@ -41,7 +41,7 @@ async def handle_network_join(
     if not check_request_body_key(request, "server_type", int):
         return await consumer.close()
 
-    if not request["server_type"] in ServerTypes.values:
+    if not request["server_type"] in ServerType.values:
         request_type = request["type"]
         logger.warning(
             f"{consumer.address} trying to join network with invalid server type! ({request_type})"
@@ -94,7 +94,7 @@ async def handle_network_join(
         )
         return await consumer.close()
 
-    guard = mta_guard if request["server_type"] == ServerTypes.MTASA else fivem_guard
+    guard = mta_guard if request["server_type"] == ServerType.MTASA else fivem_guard
 
     # Check if the server is running
     if guard.is_server_running(server.ip):
@@ -123,7 +123,7 @@ async def handle_network_join(
     consumer.group_name = WebSocketGroupNames.SAFE_SERVERS.value
     consumer.game_server = server
     consumer.channel_layer.group_add(consumer.group_name, consumer.channel_name)
-    consumer.type = ServerTypes(request["server_type"])
+    consumer.type = ServerType(request["server_type"])
     guard.add_safe_server(consumer)
     logger.info(
         f"{consumer.address[0]}:{consumer.address[1]} joined SafeGuard Servers Network!"

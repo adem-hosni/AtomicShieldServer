@@ -15,7 +15,7 @@ from .models import (
     PatchNotes,
     GameServer,
     Whitelist,
-    ServerTypes,
+    ServerType,
     ServerStatus,
     ServerSubscription,
 )
@@ -311,8 +311,8 @@ def render_servers(request: HttpRequest) -> HttpResponse:
                         return redirect(request.path)
 
                     if (
-                        server_type != ServerTypes.MTASA.value
-                        and server_type != ServerTypes.FIVEM.value
+                        server_type != ServerType.MTASA.value
+                        and server_type != ServerType.FIVEM.value
                     ):
                         messages.error(request, "Invalid server type!")
                         return redirect(request.path)
@@ -345,7 +345,7 @@ def render_servers(request: HttpRequest) -> HttpResponse:
                     new_server.subscriptions.add(subscription)
                     request.session["selected_server"] = new_server.id
                     logger.info(
-                        f"Added New {ServerTypes(server_type)} Server {ip}:{port} from {request.user.username}, license key: ({license_key})"
+                        f"Added New {ServerType(server_type)} Server {ip}:{port} from {request.user.username}, license key: ({license_key})"
                     )
                     return redirect(request.path)
             case "edit":

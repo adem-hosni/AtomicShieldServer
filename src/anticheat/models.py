@@ -1,4 +1,4 @@
-from shared.models import ServerTypes
+from shared.models import ServerType
 from datetime import datetime
 from django.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator
@@ -15,7 +15,7 @@ class AntiCheatConfigurationCategories(models.Model):
     name = models.CharField(max_length=32)
     description = models.TextField()
     server_type = models.IntegerField(
-        choices=ServerTypes, null=False, default=ServerTypes.MTASA
+        choices=ServerType, null=False, default=ServerType.MTASA
     )
 
     class Meta:
@@ -32,7 +32,7 @@ class AntiCheatConfigTemplates(models.Model):
     description = models.TextField(null=True, default=None, blank=True)
     pseudo_name = models.CharField(max_length=32, unique=True)
     server_type = models.IntegerField(
-        choices=ServerTypes, null=False, default=ServerTypes.MTASA
+        choices=ServerType, null=False, default=ServerType.MTASA
     )
     config_type = models.IntegerField(
         choices=AntiCheatConfigDataTypes,
@@ -83,7 +83,7 @@ class MaliciousSignatures(models.Model):
     name = models.CharField(max_length=64, unique=True)
     signatures = models.JSONField(blank=False, default=list)
     type = models.IntegerField(
-        choices=ServerTypes, default=ServerTypes.MTASA, blank=False
+        choices=ServerType, default=ServerType.MTASA, blank=False
     )
     priority = models.IntegerField(null=True, default=None)
     ban_message = models.CharField(null=True, blank=True, max_length=64)

@@ -4,7 +4,7 @@ from datetime import datetime
 from django.contrib.auth.models import User
 from asgiref.sync import sync_to_async
 from anticheat.models import AntiCheatConfigurations, AntiCheatConfigTemplates
-from shared.models import ServerTypes
+from shared.models import ServerType
 from typing import Dict, Any, Union
 
 
@@ -23,7 +23,7 @@ class ServerSubscription(models.Model):
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
     started_at = models.DateTimeField(null=True)
     expires_at = models.DurationField(null=False)  # Started At + Expires At
-    type = models.IntegerField(choices=ServerTypes, null=True)
+    type = models.IntegerField(choices=ServerType, null=True)
     status = models.IntegerField(
         choices=SubscriptionStatus, default=SubscriptionStatus.INACTIVE
     )
@@ -59,7 +59,7 @@ class GameServer(models.Model):
     configurations = models.ForeignKey(
         AntiCheatConfigurations, on_delete=models.CASCADE, null=False, blank=False
     )
-    type = models.IntegerField(choices=ServerTypes.choices, null=True)
+    type = models.IntegerField(choices=ServerType.choices, null=True)
     status = models.IntegerField(
         choices=ServerStatus.choices, null=False, default=ServerStatus.unsubscribed
     )
@@ -93,7 +93,7 @@ class GameServer(models.Model):
             server_configs = {}
 
         queryset = await sync_to_async(list)(
-            AntiCheatConfigTemplates.objects.filter(server_type=ServerTypes.MTASA)
+            AntiCheatConfigTemplates.objects.filter(server_type=ServerType.MTASA)
         )
 
         config_templates = {config.id: config.default_value for config in queryset}

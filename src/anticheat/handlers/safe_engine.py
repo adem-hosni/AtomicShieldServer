@@ -8,7 +8,7 @@ from shared.flags import FlagType
 from utils import check_request_body_key, discord
 from asgiref.sync import sync_to_async
 from django.db.models import Q
-from ..models import MaliciousSignatures, ClientHWID, ServerTypes, Warning
+from ..models import MaliciousSignatures, ClientHWID, ServerType, Warning
 from .. import config_ids
 from typing import Dict, List, Any
 import logging
@@ -117,7 +117,7 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
 
 async def handle_signatures_sync(consumer: SafeEngineConsumer, request: Dict[str, Any]):
     signatures = await sync_to_async(list)(
-        MaliciousSignatures.objects.filter(type=ServerTypes.MTASA).order_by("priority")
+        MaliciousSignatures.objects.filter(type=ServerType.MTASA).order_by("priority")
     )
     await consumer.send(
         SafeEnginePacketID.SYNC_SIGNATURES,

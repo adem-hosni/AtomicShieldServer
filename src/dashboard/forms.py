@@ -1,6 +1,6 @@
 from django import forms
 from .models import ServerSubscription
-from shared.models import ServerTypes
+from shared.models import ServerType
 
 supported_dists = [
     (1, "Windows"),
@@ -103,7 +103,7 @@ class AddServerForm(forms.Form):
         required=True,
         label="Server Type",
         help_text="Set SafeGuard Server Type",
-        choices=ServerTypes.choices,
+        choices=ServerType.choices,
         widget=forms.Select(
             attrs={
                 "class": "cursor-pointer text-center rounded-lg text-gray-300 font-medium w-full h-full bg-[#0d0d0d] border py-2",

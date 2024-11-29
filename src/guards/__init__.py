@@ -1,1 +1,1 @@
-from .multitheftauto import MultiTheftAutoGuardManager
+from .multitheftauto import mta_guard

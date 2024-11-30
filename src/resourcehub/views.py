@@ -9,13 +9,26 @@ logger = logging.getLogger(__name__)
 
 
 @csrf_exempt
-def download_agent_peb(request: HttpRequest) -> HttpResponse:
+def download_mta_engine(request: HttpRequest) -> HttpResponse:
     with open(
-        f"../bin/{'debug' if settings.DEBUG else 'production'}/agent/agent_peb.dll",
+        f"{settings.BIN_DIR}\\resources\\engines\\multitheftauto.dll",
         "rb",
     ) as file:
-        agent_peb_buffer = (file.read())
+        engine_buffer = file.read()
 
-    logger.info(f"{request.get_host()} downloaded eagle PEB Agent")
+    logger.info(f"{request.get_host()} downloaded MTA:SA engine")
 
-    return HttpResponse(agent_peb_buffer, content_type="application/octet-stream")
+    return HttpResponse(engine_buffer, content_type="application/octet-stream")
+
+
+@csrf_exempt
+def download_fivem_engine(request: HttpRequest) -> HttpResponse:
+    with open(
+        f"{settings.BIN_DIR}/resources/engines/fivem.dll",
+        "rb",
+    ) as file:
+        engine_buffer = file.read()
+
+    logger.info(f"{request.get_host()} downloaded FiveM's engine")
+
+    return HttpResponse(engine_buffer, content_type="application/octet-stream")

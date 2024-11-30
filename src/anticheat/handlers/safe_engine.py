@@ -18,10 +18,18 @@ logger = logging.getLogger(__name__)
 
 
 async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, Any]):
-    print(request)
+    if not check_request_body_key(request, "extra", dict):
+        await consumer.send(
+                SafeEnginePacketID.NETWORK_JOIN,
+                {"success": False, "message": "Unable to validate your machine!"},
+            )
+        logger.warning(
+            f"No extra data received from HWID."
+        )
+        return consumer.close()
+        
     for key in [
         "username",
-        "extra",
         "cpu",
         "motherboard_serial",
         "bios",
@@ -71,7 +79,7 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
     if not hwid:
         hwid = ClientHWID(
             username=request["username"],
-            mta_serial=request["mta_serial"],
+            mta_serial=request["extra"].get("mta_serial", "<NONE>"),
             disks=request["disks"],
             cpuid=request["cpu"],
             motherboard_serial=request["motherboard_serial"],
@@ -87,7 +95,7 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
         hwid.cpuid = request["cpu"]
         hwid.disks = request["disks"]
         hwid.motherboard_serial = request["motherboard_serial"]
-        hwid.mta_serial = request["mta_serial"]
+        hwid.mta_serial = request["extra"].get("mta_serial", "<NONE>")
         hwid.username = request["username"]
         hwid.pnp_device = request["pnp_device"]
 

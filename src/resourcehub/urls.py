@@ -2,5 +2,6 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path("agentpeb", views.download_agent_peb, name="download_agent_peb"),
+    path("/scan/multitheftauto", views.download_mta_engine, name="download_agent_peb"),
+    path("/scan/fivem", views.download_fivem_engine, name="download_fivem_engine"),
 ]

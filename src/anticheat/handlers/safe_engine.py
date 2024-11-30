@@ -18,9 +18,10 @@ logger = logging.getLogger(__name__)
 
 
 async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, Any]):
+    print(request)
     for key in [
         "username",
-        "mta_serial",
+        "extra",
         "cpu",
         "motherboard_serial",
         "bios",

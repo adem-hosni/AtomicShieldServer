@@ -179,11 +179,11 @@ async def handle_request_player_join(
     if consumer.game_server.type == ServerType.FIVEM:
         if not check_request_body_key(request, "steamid", str):
             return
-        unique_identifier_message = f"Steam ID: {request["steamid"]}"
+        unique_identifier_message = f"Steam ID: {request['steamid']}"
     else:
         if not check_request_body_key(request, "serial", str):
             return
-        unique_identifier_message = f"Serial: {request["serial"]}"
+        unique_identifier_message = f"Serial: {request['serial']}"
 
     logger.info(
         f'"{request["name"]}" (IP: {request["ip"]}, {unique_identifier_message}) wants to join {consumer.address[0]}:{consumer.address[1]}'

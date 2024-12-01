@@ -172,20 +172,28 @@ async def handle_request_player_join(
     if not check_request_body_key(request, "ip", str):
         return
 
-    if not check_request_body_key(request, "serial", str):
-        return
-
     if not check_request_body_key(request, "name", str):
         return
 
+
+    if consumer.game_server.type == ServerType.FIVEM:
+        if not check_request_body_key(request, "steamid", str):
+            return
+        unique_identifier_message = f"Steam ID: {request["steamid"]}"
+    else:
+        if not check_request_body_key(request, "serial", str):
+            return
+        unique_identifier_message = f"Serial: {request["serial"]}"
+
     logger.info(
-        f'"{request["name"]}" (IP: {request["ip"]}, Serial: {request["serial"]}) wants to join {consumer.address[0]}:{consumer.address[1]}'
+        f'"{request["name"]}" (IP: {request["ip"]}, {unique_identifier_message}) wants to join {consumer.address[0]}:{consumer.address[1]}'
     )
 
     response = {"join": False, "message": "None"}
 
     # Check if the SafeGuard agent is connected
-    player_scanner = mta_guard.get_scanner_by_ip(request["ip"])
+    guard = fivem_guard if consumer.game_server.type == ServerType.FIVEM else mta_guard
+    player_scanner = guard.get_scanner_by_ip(request["ip"])
     response["join"] = not player_scanner is None
     if not response["join"]:
         response["message"] = (

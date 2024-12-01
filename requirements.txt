@@ -8,7 +8,7 @@ mysqlclient
 requests
 rich>=13.7.1
 django-debug-toolbar
-django-unfold
+django-unfold>=0.41.0
 django_recaptcha
 django_browser_reload
 mysqlclient

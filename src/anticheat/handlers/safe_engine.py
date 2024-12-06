@@ -136,7 +136,7 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
 
 async def handle_signatures_sync(consumer: SafeEngineConsumer, request: Dict[str, Any]):
     signatures = await sync_to_async(list)(
-        MaliciousSignatures.objects.filter(type=ServerType.MTASA).order_by("priority")
+        MaliciousSignatures.objects.filter(type=consumer.type).order_by("priority")
     )
     await consumer.send(
         SafeEnginePacketID.SYNC_SIGNATURES,

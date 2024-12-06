@@ -36,7 +36,7 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
         "computer_name",
         "pnp_device",
     ]:
-        if request[key] == "<unkown>":
+        if request[key] == "<unkown>" or not len(request[key]):
             await consumer.send(
                 SafeEnginePacketID.NETWORK_JOIN,
                 {"success": False, "message": "Unable to validate your machine!"},

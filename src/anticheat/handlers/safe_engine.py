@@ -20,14 +20,12 @@ logger = logging.getLogger(__name__)
 async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, Any]):
     if not check_request_body_key(request, "extra", dict):
         await consumer.send(
-                SafeEnginePacketID.NETWORK_JOIN,
-                {"success": False, "message": "Unable to validate your machine!"},
-            )
-        logger.warning(
-            f"No extra data received from HWID."
+            SafeEnginePacketID.NETWORK_JOIN,
+            {"success": False, "message": "Unable to validate your machine!"},
         )
+        logger.warning(f"No extra data received from HWID.")
         return consumer.close()
-        
+
     for key in [
         "username",
         "cpu",
@@ -58,6 +56,18 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
                 f"Unable to validate {consumer.address}, got null HWID component: {key}"
             )
             return consumer.close()
+
+    if not check_request_body_key(request, "engine_type", int):
+        logger.warning(f"Received unexpected engine type from {consumer.address}!")
+        return consumer.close()
+
+    if not request["engine_type"] in ServerType.values:
+        logger.warning(
+            f"Invalid engine type received from {consumer.address}, request body: {request}"
+        )
+        return consumer.close()
+
+    consumer.type = request["engine_type"]
 
     try:
         clients_queryset = await sync_to_async(list)(

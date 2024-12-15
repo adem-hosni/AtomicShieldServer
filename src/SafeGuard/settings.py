@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "allauth.socialaccount.providers.discord",
     "django_recaptcha",
     "home",
     "authentication",

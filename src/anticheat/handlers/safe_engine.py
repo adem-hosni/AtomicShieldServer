@@ -18,12 +18,41 @@ logger = logging.getLogger(__name__)
 
 
 async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, Any]):
-    if not check_request_body_key(request, "extra", dict):
+    # Check if the hwid is received
+    if not check_request_body_key(request, "hwid", dict):
         await consumer.send(
             SafeEnginePacketID.NETWORK_JOIN,
             {"success": False, "message": "Unable to validate your machine!"},
         )
-        logger.warning(f"No extra data received from HWID.")
+        logger.warning(f"Missing player HWID on {consumer.address}")
+        return consumer.close()
+
+    if not check_request_body_key(request, "cache", dict):
+        await consumer.send(
+            SafeEnginePacketID.NETWORK_JOIN,
+            {"success": False, "message": "Unable to validate your machine!"},
+        )
+        logger.warning(f"Missing player HWID on {consumer.address}")
+        return consumer.close()
+
+    request_hwid = request["hwid"]
+    request_hwid_cache = request["cache"]
+    if not len(request_hwid) or not len(request_hwid_cache):
+        await consumer.send(
+            SafeEnginePacketID.NETWORK_JOIN,
+            {"success": False, "message": "Unable to validate your machine!"},
+        )
+        logger.warning(
+            f"got Empty {'HWID,' if not len(request_hwid) else ''}{'HWID Cache' if not len(request_hwid_cache) else ''} on {consumer.address}"
+        )
+        return consumer.close()
+
+    if not check_request_body_key(request_hwid, "extra", dict):
+        await consumer.send(
+            SafeEnginePacketID.NETWORK_JOIN,
+            {"success": False, "message": "Unable to validate your machine!"},
+        )
+        logger.warning(f"No extra data received from HWID")
         return consumer.close()
 
     for key in [
@@ -34,7 +63,7 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
         "computer_name",
         "pnp_device",
     ]:
-        if not check_request_body_key(request, key, str):
+        if not check_request_body_key(request_hwid, key, str):
             await consumer.send(
                 SafeEnginePacketID.NETWORK_JOIN,
                 {
@@ -43,11 +72,11 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
                 },
             )
             logger.warning(
-                f"Invalid request received from {consumer.address}, request body: {request}"
+                f"Invalid request received from {consumer.address}, request body: {request_hwid}"
             )
             return consumer.close()
 
-        if request[key] == "<unkown>" or not len(request[key]):
+        if request_hwid[key] == "<unkown>" or not len(request_hwid[key]):
             await consumer.send(
                 SafeEnginePacketID.NETWORK_JOIN,
                 {"success": False, "message": "Unable to validate your machine!"},
@@ -69,14 +98,15 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
 
     consumer.type = request["engine_type"]
 
+    # Try to get the hwid by one component at least
     try:
         clients_queryset = await sync_to_async(list)(
             ClientHWID.objects.filter(
-                Q(motherboard_serial=request["motherboard_serial"])
-                | Q(bios_version=request["bios"])
-                | Q(cpuid=request["cpu"])
-                | Q(pnp_device=request["pnp_device"])
-                | Q(disks__overlap=request["disks"])
+                Q(motherboard_serial=request_hwid["motherboard_serial"])
+                | Q(bios_version=request_hwid["bios"])
+                | Q(cpuid=request_hwid["cpu"])
+                | Q(pnp_device=request_hwid["pnp_device"])
+                | Q(disks__overlap=request_hwid["disks"])
             )
         )
         if len(clients_queryset) > 0:
@@ -86,39 +116,43 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
     except ClientHWID.DoesNotExist:
         hwid = None
 
+    # TODO: HWID not found? Check if the hwid cache already exists
+    if not hwid:
+        ...
+
     if not hwid:
         hwid = ClientHWID(
-            username=request["username"],
-            mta_serial=request["extra"].get("mta_serial", "<NONE>"),
-            disks=request["disks"],
-            cpuid=request["cpu"],
-            motherboard_serial=request["motherboard_serial"],
-            bios_version=request["bios"],
-            computer_name=request["computer_name"],
-            pnp_device=request["pnp_device"],
+            username=request_hwid["username"],
+            mta_serial=request_hwid["extra"].get("mta_serial", "<NONE>"),
+            disks=request_hwid["disks"],
+            cpuid=request_hwid["cpu"],
+            motherboard_serial=request_hwid["motherboard_serial"],
+            bios_version=request_hwid["bios"],
+            computer_name=request_hwid["computer_name"],
+            pnp_device=request_hwid["pnp_device"],
         )
         await hwid.asave()
         logger.info(f'"{hwid.username}" HWID registred!')
     else:
-        hwid.bios_version = request["bios"]
-        hwid.computer_name = request["computer_name"]
-        hwid.cpuid = request["cpu"]
-        hwid.disks = request["disks"]
-        hwid.motherboard_serial = request["motherboard_serial"]
-        hwid.mta_serial = request["extra"].get("mta_serial", "<NONE>")
-        hwid.username = request["username"]
-        hwid.pnp_device = request["pnp_device"]
+        hwid.bios_version = request_hwid["bios"]
+        hwid.computer_name = request_hwid["computer_name"]
+        hwid.cpuid = request_hwid["cpu"]
+        hwid.disks = request_hwid["disks"]
+        hwid.motherboard_serial = request_hwid["motherboard_serial"]
+        hwid.mta_serial = request_hwid["extra"].get("mta_serial", "<NONE>")
+        hwid.username = request_hwid["username"]
+        hwid.pnp_device = request_hwid["pnp_device"]
 
         changes = await hwid.get_changes()
 
         if changes:
             await hwid.asave()
             logger.info(
-                f"{request['username']}'s engine HWID updated {changes} components, Spoofed HWID?"
+                f"{request_hwid['username']}'s engine HWID updated {changes} components, Spoofed HWID?"
             )
 
     logger.info(
-        f"{request['username']}'s engine asking for network join (Computer Name: \"{hwid.computer_name}\", Bios Version: \"{hwid.bios_version}\", CPU ID: \"{hwid.cpuid}\", Motherboard Serial: \"{hwid.motherboard_serial}\")"
+        f"{request_hwid['username']}'s engine asking for network join (Computer Name: \"{hwid.computer_name}\", Bios Version: \"{hwid.bios_version}\", CPU ID: \"{hwid.cpuid}\", Motherboard Serial: \"{hwid.motherboard_serial}\")"
     )
 
     consumer.group_name = WebSocketGroupNames.SAFE_ENGINES.value

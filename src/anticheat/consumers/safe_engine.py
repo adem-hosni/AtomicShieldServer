@@ -139,19 +139,19 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             # Attempt to parse the incoming message as JSON
             request_body: Dict[str, Any] = json.loads(text_data)
         except json.decoder.JSONDecodeError:
-            logger.warn(f"Failed to parse request. (request body: {request_body})")
+            logger.warning(f"Failed to parse request. (request body: {request_body})")
             return self.close()
 
         # Check if the request body contains a 'type' key
         if not "type" in request_body.keys():
-            logger.warn(f"Failed to get request type. (given request: {request_body})")
+            logger.warning(f"Failed to get request type. (given request: {request_body})")
             return self.close()
 
         try:
             # Convert the 'type' field to a PacketID
             request_body["type"] = SafeEnginePacketID(request_body["type"])
         except ValueError:
-            logger.warn(f"Undefined request type (given: {request_body['type']})")
+            logger.warning(f"Undefined request type (given: {request_body['type']})")
             return self.close()
 
         from ..handlers.safe_engine import (

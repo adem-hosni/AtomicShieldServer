@@ -46,7 +46,7 @@
 - ~~MTA:SA Anticheat components verification~~
 - ~~Player warn~~
 - ~~Validate HWID~~
-- HWID Caching
+- ~~HWID Caching~~
 - Implement HTTP communication encryption
 
 # Engine Integrity Checks

@@ -60,4 +60,4 @@
 - Unauthorized Thread Detection:
   - Determine whether the thread base wasn't in any module range
   - Check the thread state whether is ThreadBreakOnTermination or HideFromDebugger for thread debugging.
-  
+  - Hook LdrInitializeThunk to check for the thread module presence (Anti Module Cloaking)

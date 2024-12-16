@@ -52,6 +52,7 @@
 # Engine Integrity Checks
 - Malicious Windows driver names verification
 - Check for Fivem plugins in plugins folder
+- Verify the driver test signing mode is off
 - Hook LdrLoadDLL and LdrUnloadDLL
 - Check for unauthorized modules and unsigned modules
 - DLL cloaking checks:

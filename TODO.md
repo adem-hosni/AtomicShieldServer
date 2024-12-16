@@ -57,4 +57,7 @@
 - DLL cloaking checks:
   - Search for unregistred IAT
   - Search for packed sections by the packer's name
+- Unauthorized Thread Detection:
   - Determine whether the thread base wasn't in any module range
+  - Check the thread state whether is ThreadBreakOnTermination or HideFromDebugger for thread debugging.
+  

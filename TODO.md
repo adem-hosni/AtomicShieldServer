@@ -46,7 +46,5 @@
 - ~~MTA:SA Anticheat components verification~~
 - ~~Player warn~~
 - ~~Validate HWID~~
-- VM Verification
 - HWID Caching
 - Implement HTTP communication encryption
-- Add Discord Rich Presence

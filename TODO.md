@@ -48,3 +48,13 @@
 - ~~Validate HWID~~
 - HWID Caching
 - Implement HTTP communication encryption
+
+# Engine Integrity Checks
+- Malicious Windows driver names verification
+- Check for Fivem plugins in plugins folder
+- Hook LdrLoadDLL and LdrUnloadDLL
+- Check for unauthorized modules and unsigned modules
+- DLL cloaking checks:
+  - Search for unregistred IAT
+  - Search for packed sections by the packer's name
+  - Determine whether the thread base wasn't in any module range

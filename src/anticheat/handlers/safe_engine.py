@@ -1,9 +1,11 @@
+import re
+import os
 from asgiref.sync import sync_to_async
 from datetime import timedelta
 from ..consumers.safe_engine import SafeEngineConsumer
 from guards.multitheftauto import mta_guard
 from django.conf import settings
-from shared.ws import WebSocketGroupNames, SafeEnginePacketID
+from shared.ws import WebSocketGroupNames, SafeEnginePacketID, SafeUploadType
 from shared.flags import FlagType
 from utils import check_request_body_key, discord
 from asgiref.sync import sync_to_async
@@ -273,3 +275,46 @@ async def handle_scanner_disconnect(consumer: SafeEngineConsumer):
         "SafeGuard AntiCheat Agent Not Running. To join this server, please ensure the SafeGuard AntiCheat Agent is open and active.",
         True,
     )
+    
+async def handle_request_upload(consumer: SafeEngineConsumer, request: Dict[str, Any]):
+    # Check if the requested data exists
+    if not check_request_body_key(request, "upload_type", int):
+        logger.warning(f"Upload type didn't received from {consumer.address}")
+        return consumer.close()
+
+    if not request["upload_type"] in SafeUploadType.values:
+        logger.warning(f"Requested an unknown upload type {request['upload_type']} from {consumer.address}")
+        return consumer.close()
+        
+    if not check_request_body_key(request, "hash", str):
+        logger.warning(f"Upload hash didn't received from {consumer.address}")
+        return consumer.close()
+
+    if not check_request_body_key(request, "upload_name", str):
+        logger.warning(f"Upload name didn't received from {consumer.address}")
+        return consumer.close()
+        
+    if not re.match(r'^[a-fA-F0-9]{32}$', request["hash"]):
+        logger.warning(f"Invalid hash received from {consumer.address} {request['hash']}")
+        return
+    
+    upload_dir = os.path.join(settings.UPLOAD_DIR, request["upload_name"].lower())
+    
+    # Create a folder upload type if not exists
+    os.makedirs(upload_dir, exist_ok=True)
+    
+    response = {
+        "upload": True
+    }
+
+    # Check if the file is already uploaded from it's hash
+    for upload in os.listdir(upload_dir):
+        upload_hash_with_ext = upload.split("-")[1]
+        upload_hash = upload_hash_with_ext.split(".", 1)[0]
+        if upload_hash == request["hash"]:
+            response["upload"] = True
+            logger.warnning(f"Upload already exists of {request['upload_name']} from {consumer.address}: {consumer.hwid.username}")
+            break
+
+    logger.warnning(f"Requested upload {request['upload_name']} from {consumer.address}: {consumer.hwid.username}, upload hash: {request['hash']}")
+    return consumer.send(SafeEnginePacketID.REQUEST_UPLOAD, response)

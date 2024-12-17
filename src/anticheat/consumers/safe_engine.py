@@ -159,6 +159,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             handle_signatures_sync,
             handle_malicious_signature_detected,
             handle_game_anticheat_status,
+            handle_request_upload,
         )
 
         match request_body["type"]:
@@ -170,6 +171,8 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                 await handle_malicious_signature_detected(self, request_body)
             case SafeEnginePacketID.GAME_ANTICHEAT_COMPONENT_STATUS:
                 await handle_game_anticheat_status(self, request_body)
+            case SafeEnginePacketID.REQUEST_UPLOAD:
+                await handle_request_upload(self, request_body)
 
     async def disconnect(self, code):
         """

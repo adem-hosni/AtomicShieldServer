@@ -1,4 +1,5 @@
 from enum import Enum
+from django.db import models
 
 
 class SafeServerPacketID(Enum):
@@ -18,8 +19,14 @@ class SafeEnginePacketID(Enum):
     MALICIOUS_SIGNATURE_DETECTION = 3
     GAME_ANTICHEAT_COMPONENT_STATUS = 4
     SCANNER_DISCONNECT = 5
+    REQUEST_UPLOAD = 6
 
 
 class WebSocketGroupNames(Enum):
     SAFE_SERVERS = "SAFE_SERVERS"
     SAFE_ENGINES = "SAFE_ENGINES"
+
+
+class SafeUploadType(models.IntegerChoices):
+    FIVEM_PLUGIN = 1, "Fivem Plugin"
+    CHEAT_DLL = 2, "Cheat"

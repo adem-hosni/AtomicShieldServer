@@ -18,17 +18,14 @@
 - ~~Add 404 Page Not Found Page~~
 - Complete home page
 
-# SafeGuard Server
+# Fivem Server
 - ~~Check if the key if it's being used~~
 - ~~Check if the player is banned~~
-- ~~Check if the joining player is whitelisted~~
 - ~~Implement server subscription duration (SafeGuard master server side)~~
-- ~~Check SafeGuard Agent disconnect~~
-- ~~Check if the player disconnected from MTA:SA server~~
+- ~~Check SafeGuard Scanner disconnect~~
+- ~~Check if the player disconnected from Fivem server~~
 - ~~Check SafeGuard server status~~
-- Inject Anticheat scripts components to the client
 - Implement HTTP communication encryption
-- Implement SafeGuard Server watermark on server name
 
 # SafeGuard Agent
 - ~~Implement UI (with ImGui)~~

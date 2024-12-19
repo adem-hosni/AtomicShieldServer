@@ -5,7 +5,7 @@ from datetime import timedelta
 from ..consumers.safe_engine import SafeEngineConsumer
 from guards.multitheftauto import mta_guard
 from django.conf import settings
-from shared.ws import WebSocketGroupNames, SafeEnginePacketID, SafeUploadType
+from shared.ws import WebSocketGroupNames, SafeEnginePacketID, SafeUploadType, DetectionType
 from shared.flags import FlagType
 from utils import check_request_body_key, discord
 from asgiref.sync import sync_to_async
@@ -318,3 +318,26 @@ async def handle_request_upload(consumer: SafeEngineConsumer, request: Dict[str,
 
     logger.warnning(f"Requested upload {request['upload_name']} from {consumer.address}: {consumer.hwid.username}, upload hash: {request['hash']}")
     return consumer.send(SafeEnginePacketID.REQUEST_UPLOAD, response)
+
+
+async def handle_cheat_detection(consumer: SafeEngineConsumer, request: Dict[str, Any]):
+    # Check all the request key's health
+    if not check_request_body_key(request, "detection_type", int):
+        logger.warning(f"CHEATER REPORT, Missing detection type specified in the packet from {consumer.address}")
+        return await consumer.close()
+    
+    if not request["detection_type"] in DetectionType.values:
+        logger.warning(f"Got an invalid detection type {request['detection_type']} from {consumer.address}")
+        return await consumer.close()
+    request["detection_type"] = DetectionType(request["detection_type"])
+    
+    if not check_request_body_key(request, "memory_report", dict):
+        logger.warning(f"CHEATER REPORT, Missing memory report in the packet from {consumer.address}")
+        return await consumer.close()
+    
+    for key in ["allocated_base", "allocated_protect", "region_size", "base_address"]:
+        if not check_request_body_key(request["memory_report"], key, int):
+            return await consumer.close()
+    
+    await consumer.ban(f"CHEATING, {request['detection_type'].name}", timedelta(seconds=10))
+    logger.info(f"CHEATER REPORT! {consumer.hwid.computer_name} treated as cheaters with {request['detection_type'].name}")

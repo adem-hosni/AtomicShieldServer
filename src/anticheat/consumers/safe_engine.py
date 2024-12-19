@@ -176,6 +176,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             handle_malicious_signature_detected,
             handle_game_anticheat_status,
             handle_request_upload,
+            handle_cheat_detection,
         )
 
         match request_body["type"]:
@@ -189,6 +190,8 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                 await handle_game_anticheat_status(self, request_body)
             case SafeEnginePacketID.REQUEST_UPLOAD:
                 await handle_request_upload(self, request_body)
+            case SafeEnginePacketID.CHEAT_DETECTION:
+                await handle_cheat_detection(self, request_body)
         
         
 
@@ -364,11 +367,14 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         )
         await ban.asave()
 
-        await discord.send_discord_embed(
-            settings.DETECTIONS_WEBHOOK_URL,
-            "Banned Player",
-            f"""
-            {self._hwid.username} banned due to ```{reason}```
-            **Ban Duration**: `{represent_timedelta_string(ban.duration)}`
-            """,
-        )
+        try:
+            await discord.send_discord_embed(
+                settings.DETECTIONS_WEBHOOK_URL,
+                "Banned Player",
+                f"""
+                {self._hwid.username} banned due to ```{reason}```
+                **Ban Duration**: `{represent_timedelta_string(ban.duration)}`
+                """,
+            )
+        except Exception:
+            ...

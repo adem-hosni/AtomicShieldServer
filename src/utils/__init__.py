@@ -59,7 +59,7 @@ def check_request_body_key(
         bool: True if the key exists and it's type comptatible else False
     """
     if not target_key in request_body.keys():
-        logger.warning(f"{target_key} Not Found in request. (given request: {request_body})")
+        logger.warning(f"'{target_key}' Not Found in request. (given request: {request_body})")
         return False
 
     if not isinstance(request_body[target_key], key_type):

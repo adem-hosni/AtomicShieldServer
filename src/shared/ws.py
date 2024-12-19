@@ -35,3 +35,5 @@ class SafeUploadType(models.IntegerChoices):
 
 class DetectionType(models.IntegerChoices):
     UNAUTHORIZED_THREAD = 1, "Unauthorized Thread"
+    UNRECOGNIZED_IAT = 2, "Unrecognized IAT"
+    

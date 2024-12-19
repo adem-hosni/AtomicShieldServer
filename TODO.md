@@ -44,6 +44,7 @@
 - ~~Player warn~~
 - ~~Validate HWID~~
 - ~~HWID Caching~~
+- ~~Check server's response integrity~~
 - Implement HTTP communication encryption
 
 # Engine Integrity Checks

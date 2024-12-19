@@ -20,6 +20,7 @@ class SafeEnginePacketID(Enum):
     GAME_ANTICHEAT_COMPONENT_STATUS = 4
     SCANNER_DISCONNECT = 5
     REQUEST_UPLOAD = 6
+    CHEAT_DETECTION = 7
 
 
 class WebSocketGroupNames(Enum):
@@ -30,3 +31,7 @@ class WebSocketGroupNames(Enum):
 class SafeUploadType(models.IntegerChoices):
     FIVEM_PLUGIN = 1, "Fivem Plugin"
     CHEAT_DLL = 2, "Cheat"
+
+
+class DetectionType(models.IntegerChoices):
+    UNAUTHORIZED_THREAD = 1, "Unauthorized Thread"

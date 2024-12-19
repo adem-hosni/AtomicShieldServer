@@ -88,7 +88,9 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         if isinstance(data, bytes):
             data = data.decode()
 
+        # Add some required data to the response for security purposes
         data["type"] = packet_id.value
+        data["ut"] = int(time())  # Compress the timestamp from float to int
 
         data = json.dumps(data)
 

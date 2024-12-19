@@ -1,4 +1,5 @@
 from time import time
+from asyncio import sleep
 from datetime import timedelta
 from channels.generic.websocket import AsyncWebsocketConsumer
 from .safe_server import SafeServerConsumer
@@ -154,8 +155,9 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         
         # Check the request's unix timestamp for integrity
         unix_timestamp = int(request_body["ut"])
-        if (time() - unix_timestamp) > 20:
+        if (time() - unix_timestamp) >= 20:
             # Request was tampered
+            logger.warning(f"Tampered request received from {self.address}, request: {request_body}")
             return await self.close()
 
 
@@ -185,6 +187,8 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                 await handle_game_anticheat_status(self, request_body)
             case SafeEnginePacketID.REQUEST_UPLOAD:
                 await handle_request_upload(self, request_body)
+        
+        
 
     async def disconnect(self, code):
         """

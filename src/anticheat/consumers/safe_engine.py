@@ -148,12 +148,8 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
 
         # Verify that the request body contains a 'type' key and 'ut' key
         if not check_request_body_key(request_body, "type", int):
-            logger.warning(
-                f"Failed to get request type. (given request: {request_body})"
-            )
             return await self.close()
         if not check_request_body_key(request_body, "ut", int):
-            logger.warning(f"No unix timestamp received in the request. (given request: {request_body})")
             return await self.close()
         
         # Check the request's unix timestamp for integrity

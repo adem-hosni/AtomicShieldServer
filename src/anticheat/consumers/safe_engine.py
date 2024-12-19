@@ -146,12 +146,22 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             logger.warning(f"Failed to parse request. (request body: {request_body})")
             return await self.close()
 
-        # Check if the request body contains a 'type' key
+        # Verify that the request body contains a 'type' key and 'ut' key
         if not check_request_body_key(request_body, "type", int):
             logger.warning(
                 f"Failed to get request type. (given request: {request_body})"
             )
             return await self.close()
+        if not check_request_body_key(request_body, "ut", int):
+            logger.warning(f"No unix timestamp received in the request. (given request: {request_body})")
+            return await self.close()
+        
+        # Check the request's unix timestamp for integrity
+        unix_timestamp = int(request_body["ut"])
+        if (time() - unix_timestamp) > 20:
+            # Request was tampered
+            return await self.close()
+
 
         try:
             # Convert the 'type' field to a PacketID

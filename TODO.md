@@ -48,9 +48,10 @@
 - Implement HTTP communication encryption
 
 # Engine Integrity Checks
-- Malicious Windows driver names verification
-- Check for Fivem plugins in plugins folder
-- Verify the driver test signing mode is off
+- ~~Malicious Windows driver names verification~~
+- ~~Check for Fivem plugins in plugins folder~~
+- ~~Verify the driver test signing mode is off~~
+- ~~Verify Secure Boot is Enabled~~
 - Hook LdrLoadDLL and LdrUnloadDLL
 - Check for unauthorized modules and unsigned modules
 - DLL cloaking checks:

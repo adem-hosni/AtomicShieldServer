@@ -84,6 +84,8 @@ def represent_timedelta_string(time: timedelta) -> str:
         result += f"{hours}h "
     if minutes > 0:
         result += f"{minutes}mn "
+    if total_seconds > 0:
+        result += f"{total_seconds}s "
 
     return result[:-1]
 

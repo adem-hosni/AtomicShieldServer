@@ -54,6 +54,8 @@
 - ~~Verify Secure Boot is Enabled~~
 - ~~Check for unsigned modules~~
 - Hook LdrLoadDLL and LdrUnloadDLL
+- Check process in-memory strings
+- Check process handles
 - DLL cloaking checks:
   - ~~Search for unregistred IAT~~
   - Search for packed sections by the packer's name

@@ -52,8 +52,8 @@
 - ~~Check for Fivem plugins in plugins folder~~
 - ~~Verify the driver test signing mode is off~~
 - ~~Verify Secure Boot is Enabled~~
+- ~~Check for unsigned modules~~
 - Hook LdrLoadDLL and LdrUnloadDLL
-- Check for unauthorized modules and unsigned modules
 - DLL cloaking checks:
   - ~~Search for unregistred IAT~~
   - Search for packed sections by the packer's name

@@ -53,10 +53,10 @@
 - ~~Verify the driver test signing mode is off~~
 - ~~Verify Secure Boot is Enabled~~
 - ~~Check for unsigned modules~~
+- ~~Protect anticheat threads~~
 - Hook LdrLoadDLL and LdrUnloadDLL
 - Check process in-memory strings
 - Check process handles
-- Protect anticheat threads
 - DLL cloaking checks:
   - ~~Search for unregistred IAT~~
   - Search for packed sections by the packer's name

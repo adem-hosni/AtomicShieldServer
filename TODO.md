@@ -57,9 +57,6 @@
 - Hook LdrLoadDLL and LdrUnloadDLL
 - Check process in-memory strings
 - Check process handles
-- DLL cloaking checks:
-  - ~~Search for unregistred IAT~~
-  - Search for packed sections by the packer's name
-- Unauthorized Thread Detection:
-  - ~~Determine whether the thread base wasn't in any module range~~
-  - Hook LdrInitializeThunk to check for the thread module presence (Anti Module Cloaking)
+- ~~Search for unregistred IAT~~
+- ~~Determine whether the thread base wasn't in any module range~~
+- Hook LdrInitializeThunk to check for the thread module presence (Anti Module Cloaking)

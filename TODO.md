@@ -54,9 +54,9 @@
 - ~~Verify Secure Boot is Enabled~~
 - ~~Check for unsigned modules~~
 - ~~Protect anticheat threads~~
+- ~~Search for unregistred IAT~~
+- ~~Determine whether the thread base wasn't in any module range~~
 - Hook LdrLoadDLL and LdrUnloadDLL
 - Check process in-memory strings
 - Check process handles
-- ~~Search for unregistred IAT~~
-- ~~Determine whether the thread base wasn't in any module range~~
 - Hook LdrInitializeThunk to check for the thread module presence (Anti Module Cloaking)

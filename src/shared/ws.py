@@ -37,5 +37,9 @@ class DetectionType(models.IntegerChoices):
     UNAUTHORIZED_THREAD = 1, "Unauthorized Thread"
     UNRECOGNIZED_IAT = 2, "Unrecognized IAT"
     DLL_FOUND = 3, "Direct X DLL Found"
-    TEST_MODE_ACTIVE = 4, "Test Mode Active"
+    SECURE_BOOT_DISABLED = 4, "Secure Boot Disabled"
+    DEBUG_MODE_ENABLED =5, "Debug Mode Enabled"
+    TEST_SIGNING_ENABLED = 6 , "Test Signing Enabled"
+    INJECTED_DLL = 7 , "Inject Dll"
+
     

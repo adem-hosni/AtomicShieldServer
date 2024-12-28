@@ -41,5 +41,5 @@ class DetectionType(models.IntegerChoices):
     DEBUG_MODE_ENABLED =5, "Debug Mode Enabled"
     TEST_SIGNING_ENABLED = 6 , "Test Signing Enabled"
     INJECTED_DLL = 7 , "Inject Dll"
-
-    
+    CHEAT_SIGNATURE_FOUND = 8, "Cheat Signature Found"
+    MALICIOUS_PROCESS_HANDLE_OPEN = 9, "Malicious Process opened FiveM handle"

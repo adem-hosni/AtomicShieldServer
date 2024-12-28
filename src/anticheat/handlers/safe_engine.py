@@ -331,13 +331,9 @@ async def handle_cheat_detection(consumer: SafeEngineConsumer, request: Dict[str
         return await consumer.close()
     request["detection_type"] = DetectionType(request["detection_type"])
     
-    if not check_request_body_key(request, "memory_report", dict):
-        logger.warning(f"CHEATER REPORT, Missing memory report in the packet from {consumer.address}")
+    if not check_request_body_key(request, "report", dict):
+        logger.warning(f"CHEATER REPORT, Missing detection report in the packet from {consumer.address}")
         return await consumer.close()
-    
-    for key in ["allocated_base", "allocated_protect", "region_size", "base_address"]:
-        if not check_request_body_key(request["memory_report"], key, int):
-            return await consumer.close()
     
     await consumer.ban(f"CHEATING, {request['detection_type'].name}", timedelta(seconds=10))
     logger.info(f"CHEATER REPORT! {consumer.hwid.computer_name} treated as cheaters with {request['detection_type'].name}")

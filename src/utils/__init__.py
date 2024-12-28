@@ -114,3 +114,15 @@ def isvalid_ip(ip: str) -> bool:
         r"^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
     )
     return ipv4_pattern.match(ip)
+
+def caesar_encrypt(plaintext, shift):
+    encrypted_text = ""
+    for char in plaintext:
+        if char.isalpha():  # Check if the character is a letter
+            shift_base = 65 if char.isupper() else 97  # Determine ASCII base for uppercase or lowercase
+            encrypted_char = chr(((ord(char) - shift_base + shift) % 26) + shift_base)
+            encrypted_text += encrypted_char
+        else:
+            encrypted_text += char  # Non-alphabetic characters remain unchanged
+    return encrypted_text
+

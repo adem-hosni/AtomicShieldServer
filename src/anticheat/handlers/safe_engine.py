@@ -1,6 +1,7 @@
 import re
 import os
 from asgiref.sync import sync_to_async
+from utils import caesar_encrypt
 from datetime import timedelta
 from ..consumers.safe_engine import SafeEngineConsumer
 from guards.multitheftauto import mta_guard
@@ -174,12 +175,15 @@ async def handle_signatures_sync(consumer: SafeEngineConsumer, request: Dict[str
     signatures = await sync_to_async(list)(
         MaliciousSignatures.objects.filter(type=consumer.type).order_by("priority")
     )
+    
+    encrypted_signatures = {}
+    for signature in signatures:
+        encrypted_signatures[signature.name] = [caesar_encrypt(sig, 3) for sig in signature.signatures]
+    
     await consumer.send(
         SafeEnginePacketID.SYNC_SIGNATURES,
         {
-            "signatures": {
-                signature.name: signature.signatures for signature in signatures
-            },
+            "signatures": encrypted_signatures,
         },
     )
     logger.info(

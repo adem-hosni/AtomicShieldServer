@@ -57,6 +57,6 @@
 - ~~Search for unregistred IAT~~
 - ~~Determine whether the thread base wasn't in any module range~~
 - ~~Check process in-memory strings~~
+- ~~Check process handles~~
 - Hook LdrLoadDLL and LdrUnloadDLL
-- Check process handles
 - Hook LdrInitializeThunk to check for the thread module presence (Anti Module Cloaking)

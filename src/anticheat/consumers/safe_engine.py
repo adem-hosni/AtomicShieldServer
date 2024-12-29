@@ -154,14 +154,15 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             return await self.close()
         if not check_request_body_key(request_body, "ut", int):
             return await self.close()
-        
+
         # Check the request's unix timestamp for integrity
         unix_timestamp = int(request_body["ut"])
         if (time() - unix_timestamp) >= 20:
             # Request was tampered
-            logger.warning(f"Tampered request received from {self.address}, request: {request_body}")
+            logger.warning(
+                f"Tampered request received from {self.address}, request: {request_body}"
+            )
             return await self.close()
-
 
         try:
             # Convert the 'type' field to a PacketID
@@ -192,8 +193,6 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                 await handle_request_upload(self, request_body)
             case SafeEnginePacketID.CHEAT_DETECTION:
                 await handle_cheat_detection(self, request_body)
-        
-        
 
     async def disconnect(self, code):
         """
@@ -357,7 +356,13 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             return True
         return False
 
-    async def ban(self, reason: str, duration: timedelta, target_game_server=None):
+    async def ban(
+        self,
+        reason: str,
+        duration: timedelta,
+        target_game_server=None,
+        report: Dict[str, Any] = {},
+    ):
         await self.kick(reason, flag=True)
         ban = Ban(
             hwid=self._hwid,
@@ -375,6 +380,10 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                 {self._hwid.username} banned due to ```{reason}```
                 **Ban Duration**: `{represent_timedelta_string(ban.duration)}`
                 """,
+                fields=[
+                    (f"{key}:", f"```{value}```", False)
+                    for key, value in report.items()
+                ],
             )
         except Exception:
             ...

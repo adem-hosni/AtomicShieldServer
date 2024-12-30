@@ -16,6 +16,7 @@
 - ~~Add Disable bans functionality~~
 - ~~Add Reset Configurations button~~
 - ~~Add 404 Page Not Found Page~~
+- SSL Verification
 - Complete home page
 
 # Fivem Server
@@ -28,12 +29,13 @@
 - Implement HTTP communication encryption
 
 # SafeGuard Agent
-- ~~Implement UI (with ImGui)~~
-- ~~Malicious Tools checking~~
-- ~~Hide PEB Agent~~
-- ~~Check if the server is online~~
-- SSL Verification
-- VM Verification
+- Rebase imgui design code
+- Implement startup option
+- Inject engine dll into fivem's process
+- Check if the client is already connected
+- Check server's status
+- Check agent version
+- Add some security checks
 - Implement HTTP communication encryption
 
 # SafeGuard Engine

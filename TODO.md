@@ -50,13 +50,12 @@
 - Implement HTTP communication encryption
 
 # Engine Integrity Checks
-- ~~Malicious Windows driver names verification~~
+- Malicious Windows driver names verification
 - ~~Check for Fivem plugins in plugins folder~~
 - ~~Verify the driver test signing mode is off~~
 - ~~Verify Secure Boot is Enabled~~
 - ~~Check for unsigned modules~~
 - ~~Protect anticheat threads~~
-- ~~Search for unregistred IAT~~
 - ~~Determine whether the thread base wasn't in any module range~~
 - ~~Check process in-memory strings~~
 - ~~Check process handles~~

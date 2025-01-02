@@ -16,6 +16,7 @@
 - ~~Add Disable bans functionality~~
 - ~~Add Reset Configurations button~~
 - ~~Add 404 Page Not Found Page~~
+- Show online players
 - SSL Verification
 - Complete home page
 

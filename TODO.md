@@ -29,7 +29,7 @@
 - Implement HTTP communication encryption
 
 # SafeGuard Agent
-- Rebase imgui design code
+- ~~Rebase imgui design code~~
 - Implement startup option
 - Inject engine dll into fivem's process
 - Check if the client is already connected

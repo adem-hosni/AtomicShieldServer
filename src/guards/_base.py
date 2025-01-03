@@ -16,7 +16,7 @@ class _GuardManagerBase(object):
         """
         self._safe_servers: List[SafeServerConsumer] = []
         self._safe_engines: List[SafeEngineConsumer] = []
-    
+
     @property
     def engines(self) -> List[SafeEngineConsumer]:
         return self._safe_engines
@@ -35,7 +35,7 @@ class _GuardManagerBase(object):
             return False
         self._safe_servers.append(server)
         return True
-    
+
     def is_server_running(self, server_ip: str) -> bool:
         """
         Check if the Server is running

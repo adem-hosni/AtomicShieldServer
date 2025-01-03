@@ -365,9 +365,9 @@ async def handle_cheat_detection(consumer: SafeEngineConsumer, request: Dict[str
             f"CHEATER REPORT, Missing detection screenshot in the packet from {consumer.address}"
         )
         return await consumer.close()
-    
+
     screenshot_buffer = base64.b64decode(request["ss"])
-    
+
     await consumer.ban(
         f"CHEATING, {request['detection_type'].name}",
         timedelta(seconds=10),

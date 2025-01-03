@@ -125,7 +125,7 @@ class _GuardManagerBase(object):
         Returns:
             Union[SafeEngineConsumer, None]: The scanner instance if found, otherwise None.
         """
-        for iter_scanner in self._safe_engines:
-            if iter_scanner.address[0] == scanner_ip:
-                return iter_scanner
+        for iter_engine in self._safe_engines:
+            if iter_engine.address[0] == scanner_ip:
+                return iter_engine
         return None  # Not Found

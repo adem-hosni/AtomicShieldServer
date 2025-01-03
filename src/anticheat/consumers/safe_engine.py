@@ -362,6 +362,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         duration: timedelta,
         target_game_server=None,
         report: Dict[str, Any] = {},
+        image_buffer: bytes = None
     ):
         await self.kick(reason, flag=True)
         ban = Ban(
@@ -384,6 +385,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                     (f"{key}:", f"```{value}```", False)
                     for key, value in report.items()
                 ],
+                image_buffer=image_buffer,
             )
-        except Exception:
-            ...
+        except Exception as err:
+            logger.error(f"An error occured while trying to send discord detection report: {err}")

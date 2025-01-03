@@ -2,6 +2,7 @@ import re
 import os
 from asgiref.sync import sync_to_async
 from utils import caesar_encrypt
+import base64
 from datetime import timedelta
 from ..consumers.safe_engine import SafeEngineConsumer
 from guards.multitheftauto import mta_guard
@@ -359,11 +360,20 @@ async def handle_cheat_detection(consumer: SafeEngineConsumer, request: Dict[str
         )
         return await consumer.close()
 
+    if not check_request_body_key(request, "ss", str):
+        logger.warning(
+            f"CHEATER REPORT, Missing detection screenshot in the packet from {consumer.address}"
+        )
+        return await consumer.close()
+    
+    screenshot_buffer = base64.b64decode(request["ss"])
+    
     await consumer.ban(
         f"CHEATING, {request['detection_type'].name}",
         timedelta(seconds=10),
         report=request["report"],
+        image_buffer=screenshot_buffer,
     )
     logger.info(
-        f"CHEATER REPORT! {consumer.hwid.computer_name} treated as cheaters with {request['detection_type'].name}"
+        f"CHEATER REPORT! {consumer.hwid.computer_name} treated as cheater with {request['detection_type'].name}"
     )

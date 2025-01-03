@@ -1,4 +1,5 @@
 import nextcord
+from io import BytesIO
 from django.conf import settings
 from aiohttp import ClientSession
 from typing import List, Tuple, Optional
@@ -10,7 +11,7 @@ async def send_discord_embed(
     description: str,
     fields: Optional[List[Tuple[str, str]]] = [],
     footer: Optional[str] = None,
-    image: Optional[str] = None,
+    image_buffer: Optional[bytes] = None,
     color: Optional[nextcord.Color] = nextcord.Color.dark_gold(),
     bot_name: Optional[str] = f"{settings.ANTICHEAT_NAME} AntiCheat",
 ):
@@ -20,11 +21,13 @@ async def send_discord_embed(
 
     if footer:
         embed.set_footer(text=footer)
-    if image:
-        embed.set_image(url=image)
+    
+    if image_buffer:
+        embed.set_image(url="attachment://image.jpg")
 
     async with ClientSession() as session:
         webhook = nextcord.Webhook.from_url(webhook_url, session=session)
         await webhook.send(
-            embed=embed, username=bot_name, avatar_url=settings.BOT_AVATAR_URL
+            embed=embed, username=bot_name, avatar_url=settings.BOT_AVATAR_URL,
+            file=nextcord.File(BytesIO(image_buffer), "image.jpg")
         )

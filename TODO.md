@@ -31,10 +31,10 @@
 
 # SafeGuard Agent
 - ~~Rebase imgui design code~~
+- ~~Check if the client is already connected~~
+- ~~Check server's status~~
 - Implement startup option
 - Inject engine dll into fivem's process
-- Check if the client is already connected
-- Check server's status
 - Check agent version
 - Add some security checks
 - Implement HTTP communication encryption

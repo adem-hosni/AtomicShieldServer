@@ -6,13 +6,13 @@ from typing import List, Union, Any
 
 class _GuardManagerBase(object):
     """
-    _GuardManagerBase is responsible for managing SafeGuard servers and engines.
+    _GuardManagerBase is responsible for managing AtomicShield servers and engines.
     It provides functionalities to add, remove, and check the status of servers and engines.
     """
 
     def __init__(self) -> None:
         """
-        Initialize _GuardManagerBase with empty lists to track SafeGuard servers and SafeGuard engines.
+        Initialize _GuardManagerBase with empty lists to track AtomicShield servers and AtomicShield engines.
         """
         self._safe_servers: List[SafeServerConsumer] = []
         self._safe_engines: List[SafeEngineConsumer] = []
@@ -23,7 +23,7 @@ class _GuardManagerBase(object):
 
     def add_safe_server(self, server: Union[SafeServerConsumer, Any]) -> bool:
         """
-        Add a SafeGuard server to the manager if it belongs to the correct WebSocket group.
+        Add a AtomicShield server to the manager if it belongs to the correct WebSocket group.
 
         Args:
             server (Union[SafeServerConsumer, Any]): The server instance to be added.
@@ -53,7 +53,7 @@ class _GuardManagerBase(object):
 
     def add_safe_scanner(self, scanner: SafeEngineConsumer) -> bool:
         """
-        Add a SafeGuard engine to the manager if it belongs to the correct WebSocket group.
+        Add a AtomicShield engine to the manager if it belongs to the correct WebSocket group.
 
         Args:
             scanner (SafeEngineConsumer): The scanner instance to be added.
@@ -68,7 +68,7 @@ class _GuardManagerBase(object):
 
     def remove_safe_server(self, server: SafeServerConsumer) -> bool:
         """
-        Remove a SafeGuard server from the manager.
+        Remove a AtomicShield server from the manager.
 
         Args:
             server (SafeServerConsumer): The server instance to be removed.
@@ -87,7 +87,7 @@ class _GuardManagerBase(object):
 
     def remove_safe_scanner(self, scanner: SafeEngineConsumer) -> bool:
         """
-        Remove a SafeGuard scanner from the manager and trigger a disconnect action.
+        Remove a AtomicShield scanner from the manager and trigger a disconnect action.
 
         Args:
             scanner (SafeEngineConsumer): The scanner instance to be removed.
@@ -105,7 +105,7 @@ class _GuardManagerBase(object):
 
     def is_engine_connected(self, scanner_ip: str) -> bool:
         """
-        Check if a scanner is connected to a SafeGuard server based on the scanner's IP address.
+        Check if a scanner is connected to a AtomicShield server based on the scanner's IP address.
 
         Args:
             scanner_ip (str): The IP address of the scanner to check.
@@ -117,7 +117,7 @@ class _GuardManagerBase(object):
 
     def get_scanner_by_ip(self, scanner_ip: str) -> Union[SafeEngineConsumer, None]:
         """
-        Retrieve a SafeGuard scanner by its IP address.
+        Retrieve a AtomicShield scanner by its IP address.
 
         Args:
             scanner_ip (str): The IP address of the scanner to retrieve.

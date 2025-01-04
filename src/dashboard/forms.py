@@ -102,7 +102,7 @@ class AddServerForm(forms.Form):
     server_type = forms.ChoiceField(
         required=True,
         label="Server Type",
-        help_text="Set SafeGuard Server Type",
+        help_text="Set AtomicShield Server Type",
         choices=ServerType.choices,
         widget=forms.Select(
             attrs={
@@ -115,7 +115,7 @@ class AddServerForm(forms.Form):
     subscription = forms.ChoiceField(
         required=True,
         label="Subscription",
-        help_text="Set your SafeGuard subscription",
+        help_text="Set your AtomicShield subscription",
         choices=[],
         widget=forms.Select(
             attrs={

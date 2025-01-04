@@ -13,11 +13,11 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='announcements',
             name='author',
-            field=models.CharField(default='SafeGuard Development Team', max_length=32),
+            field=models.CharField(default='AtomicShield Development Team', max_length=32),
         ),
         migrations.AlterField(
             model_name='patchnotes',
             name='author',
-            field=models.CharField(default='SafeGuard Development Team', max_length=32),
+            field=models.CharField(default='AtomicShield Development Team', max_length=32),
         ),
     ]

@@ -193,3 +193,4 @@ class Warning(models.Model):
 
     def __str__(self) -> str:
         return f"{self.hwid.username} - {self.warns}"
+

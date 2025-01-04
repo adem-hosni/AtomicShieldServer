@@ -23,13 +23,13 @@
 # Fivem Server
 - ~~Check if the key if it's being used~~
 - ~~Check if the player is banned~~
-- ~~Implement server subscription duration (SafeGuard master server side)~~
-- ~~Check SafeGuard Scanner disconnect~~
+- ~~Implement server subscription duration (AtomicShield master server side)~~
+- ~~Check AtomicShield Scanner disconnect~~
 - ~~Check if the player disconnected from Fivem server~~
-- ~~Check SafeGuard server status~~
+- ~~Check AtomicShield server status~~
 - Implement HTTP communication encryption
 
-# SafeGuard Agent
+# AtomicShield Agent
 - ~~Rebase imgui design code~~
 - ~~Check if the client is already connected~~
 - ~~Check server's status~~
@@ -39,7 +39,7 @@
 - Add some security checks
 - Implement HTTP communication encryption
 
-# SafeGuard Engine
+# AtomicShield Engine
 - ~~HWID Checks~~
 - ~~Malicious Tools checking~~
 - ~~Memory scan Pulse (with network sync)~~

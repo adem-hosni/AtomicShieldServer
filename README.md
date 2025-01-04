@@ -1,4 +1,4 @@
-# SafeGuard AntiCheat Master Server
+# AtomicShield AntiCheat Master Server
 
 ## Helpful markdowns
 - [PLAN](./PLAN.md)

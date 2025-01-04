@@ -256,12 +256,12 @@ async def handle_game_anticheat_status(
                     "MTA:SA AntiCheat component blocked", timedelta(days=3)
                 )
 
-            message_description = f"""SafeGuard AntiCheat detected Missing MTA:SA anticheat component for **{consumer.hwid.username}**."""
+            message_description = f"""AtomicShield AntiCheat detected Missing MTA:SA anticheat component for **{consumer.hwid.username}**."""
             await discord.send_discord_embed(
                 settings.DETECTIONS_WEBHOOK_URL,
                 "AntiCheat Alert",
                 description=message_description,
-                footer="SafeGuard For your servers safety",
+                footer="AtomicShield For your servers safety",
             )
 
             if consumer.connected_server:
@@ -276,7 +276,7 @@ async def handle_game_anticheat_status(
                         detections_webhook_url,
                         "AntiCheat Alert",
                         description=message_description,
-                        footer="SafeGuard For your servers safety",
+                        footer="AtomicShield For your servers safety",
                     )
 
 
@@ -284,7 +284,7 @@ async def handle_scanner_disconnect(consumer: SafeEngineConsumer):
     logger.info(f"{consumer.hwid.username}'s scanner disconnected from network.")
     fivem_guard.remove_safe_scanner(consumer)
     await consumer.kick(
-        "SafeGuard AntiCheat Agent Not Running. To join this server, please ensure the SafeGuard AntiCheat Agent is open and active.",
+        "AtomicShield AntiCheat Agent Not Running. To join this server, please ensure the AtomicShield AntiCheat Agent is open and active.",
         True,
     )
 

@@ -126,7 +126,7 @@ async def handle_network_join(
     consumer.type = ServerType(request["server_type"])
     guard.add_safe_server(consumer)
     logger.info(
-        f"{consumer.address[0]}:{consumer.address[1]} joined SafeGuard Servers Network!"
+        f"{consumer.address[0]}:{consumer.address[1]} joined AtomicShield Servers Network!"
     )
 
     return await consumer.send(
@@ -191,15 +191,15 @@ async def handle_request_player_join(
 
     response = {"join": False, "message": "None"}
 
-    # Check if the SafeGuard agent is connected
+    # Check if the AtomicShield agent is connected
     guard = fivem_guard if consumer.game_server.type == ServerType.FIVEM else mta_guard
     player_scanner = guard.get_scanner_by_ip(request["ip"])
     response["join"] = not player_scanner is None
     if not response["join"]:
         response["message"] = (
-            "Protected Server with SafeGuard: Open SafeGuard AntiCheat agent to join this server.\nDownload Link: https://safeguard-anticheat.com"
+            "Protected Server with AtomicShield: Open AtomicShield AntiCheat agent to join this server.\nDownload Link: https://atomic-shield.com"
         )
-        logger.info('Connection refused: "SafeGuard Agent Not Connected"')
+        logger.info('Connection refused: "AtomicShield Agent Not Connected"')
     else:
         if player_scanner.is_flagged:
             logger.info(
@@ -262,7 +262,7 @@ async def handle_request_player_join(
 
 async def handle_server_disconnect(consumer: SafeServerConsumer):
     logger.info(
-        f"{consumer.address[0]}:{consumer.address[1]} disconnected from SafeGuard servers network."
+        f"{consumer.address[0]}:{consumer.address[1]} disconnected from AtomicShield servers network."
     )
     mta_guard.remove_safe_server(consumer)
 
@@ -322,7 +322,7 @@ async def handle_player_quit(consumer: SafeServerConsumer, request: Dict[str, An
 
     player_engine.connected_server = None
     logger.info(
-        f"\"{request['name']}\" engine disconnected from SafeGuard MTA:SA server due to \"{request['reason']}\"."
+        f"\"{request['name']}\" engine disconnected from AtomicShield MTA:SA server due to \"{request['reason']}\"."
     )
 
     return await consumer.send(

@@ -1,5 +1,5 @@
 """
-ASGI config for SafeGuard project.
+ASGI config for AtomicShield project.
 
 It exposes the ASGI callable as a module-level variable named ``application``.
 
@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/5.0/howto/deployment/asgi/
 
 import os
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "SafeGuard.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "AtomicShield.settings")
 
 from django.core.asgi import get_asgi_application
 from channels.routing import ProtocolTypeRouter, URLRouter

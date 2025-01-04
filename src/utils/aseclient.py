@@ -1,5 +1,5 @@
 """
-ASE Query Parser for MTA:SA by SafeGuard
+ASE Query Parser for MTA:SA by AtomicShield
 
 Code Example:
 ```

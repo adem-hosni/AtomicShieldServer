@@ -54,7 +54,7 @@ INSTALLED_APPS = [
     "authentication",
     "dashboard",
     "anticheat",
-    "resourcehub",
+    "resources",
 ]
 
 

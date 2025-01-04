@@ -30,7 +30,7 @@ urlpatterns = [
     path("auth/", include("authentication.urls")),
     path("anticheat/", include("anticheat.urls")),
     path("dashboard/", include("dashboard.urls")),
-    path("resources/", include("resourcehub.urls")),
+    path("resources/", include("resources.urls")),
 ]
 
 if settings.DEBUG:

@@ -5,7 +5,7 @@ from Crypto.Util.Padding import pad, unpad
 from typing import List, Union
 
 
-class SafeCore:
+class AtomicCore:
     def __init__(self) -> None:
         self._aes_keys: List[bytes] = []
         self._aes_ivs: List[bytes] = []
@@ -59,11 +59,13 @@ class SafeCore:
             )
 
         encryption_key_index = buffer[0] - 31
+        print(encryption_key_index)
         key = self._aes_keys[encryption_key_index]
         iv = self._aes_ivs[encryption_key_index]
 
         encrypted_buffer = buffer[1:]
 
+        print(len(encrypted_buffer))
         cipher = AES.new(key, AES.MODE_CBC, iv)
         padded_plaintext = cipher.decrypt(encrypted_buffer)
         plaintext = unpad(padded_plaintext, AES.block_size)
@@ -71,10 +73,7 @@ class SafeCore:
         return plaintext.decode()
 
 
-safe_core = SafeCore()
+atomic_core = AtomicCore()
 
-# eagle_core.load_ivs([f"../bin/debug/aes_keys/i{i}.bin" for i in range(1, 9)])
-# eagle_core.load_keys([f"../bin/debug/aes_keys/k{i}.bin" for i in range(1, 9)])
-
-safe_core.load_ivs(["../bin/debug/aes_keys/i1.bin"])
-safe_core.load_keys(["../bin/debug/aes_keys/k1.bin"])
+atomic_core.load_ivs([f"../bin/debug/aes_keys/i{i}.bin" for i in range(1, 9)])
+atomic_core.load_keys([f"../bin/debug/aes_keys/k{i}.bin" for i in range(1, 9)])

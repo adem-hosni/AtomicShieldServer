@@ -11,6 +11,7 @@ django-debug-toolbar
 django-unfold>=0.41.0
 django_recaptcha
 django_browser_reload
+Pillow>=11.1.0
 mysqlclient
 nextcord
 gunicorn

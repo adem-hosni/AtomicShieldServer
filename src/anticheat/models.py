@@ -194,3 +194,9 @@ class Warning(models.Model):
     def __str__(self) -> str:
         return f"{self.hwid.username} - {self.warns}"
 
+
+class DetectionReport(models.Model):
+    hwid = models.ForeignKey(ClientHWID, on_delete=models.CASCADE)
+    detected_at = models.DateTimeField(auto_now_add=True)
+    report = models.JSONField(blank=False, default=dict)
+    screenshot = models.ImageField(upload_to="media/detections/proofs")

@@ -33,9 +33,9 @@
 - ~~Rebase imgui design code~~
 - ~~Check if the client is already connected~~
 - ~~Check server's status~~
+- ~~Check agent version~~
 - Implement startup option
 - Inject engine dll into fivem's process
-- Check agent version
 - Add some security checks
 - Implement HTTP communication encryption
 

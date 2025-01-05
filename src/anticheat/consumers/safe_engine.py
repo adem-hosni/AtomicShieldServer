@@ -1,5 +1,4 @@
 import os
-import base64
 from time import time
 from datetime import timedelta, datetime
 from channels.generic.websocket import AsyncWebsocketConsumer
@@ -8,7 +7,12 @@ from django.conf import settings
 from ..models import ClientHWID, MaliciousSignatures, Ban, DetectionReport
 from utils import discord, represent_timedelta_string, check_request_body_key
 from shared.models import ServerType
-from shared.enums import SafeEnginePacketID, SafeServerPacketID, WebSocketGroupNames
+from shared.enums import (
+    SafeEnginePacketID,
+    SafeServerPacketID,
+    WebSocketGroupNames,
+    DetectionType,
+)
 from shared.flags import Flag, FlagType
 import json
 from typing import Union, Dict, List, Optional, Any
@@ -362,6 +366,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         reason: str,
         duration: timedelta,
         target_game_server=None,
+        detection_type: DetectionType = None,
         report: Dict[str, Any] = {},
         image_buffer: bytes = None,
     ):
@@ -383,7 +388,10 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
 
         if len(report) or image_buffer:
             detection_report = DetectionReport(
-                hwid=self._hwid, report=report, screenshot=image_path
+                hwid=self._hwid,
+                report=report,
+                screenshot=image_path,
+                detection_type=detection_type,
             )
             await detection_report.asave()
             ban.report = detection_report

@@ -373,6 +373,7 @@ async def handle_cheat_detection(consumer: SafeEngineConsumer, request: Dict[str
         timedelta(seconds=10),
         report=request["report"],
         image_buffer=screenshot_buffer,
+        detection_type=request['detection_type']
     )
     logger.info(
         f"CHEATER REPORT! {consumer.hwid.computer_name} treated as cheater with {request['detection_type'].name}"

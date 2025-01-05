@@ -95,7 +95,7 @@ class WarningAdminModel(ModelAdmin):
         return obj.hwid.username
 
 class DetectionReportAdminModel(ModelAdmin):
-    list_display = ["id", "username", "detected_at"]
+    list_display = ["id", "username", "detected_at", "screenshot"]
 
     @admin.display(description="Username")
     def username(self, obj: DetectionReport):

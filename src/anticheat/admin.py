@@ -8,6 +8,7 @@ from .models import (
     ClientHWID,
     Ban,
     Warning,
+    DetectionReport,
 )
 
 
@@ -93,6 +94,13 @@ class WarningAdminModel(ModelAdmin):
     def username(self, obj: Warning):
         return obj.hwid.username
 
+class DetectionReportAdminModel(ModelAdmin):
+    list_display = ["id", "username", "detected_at"]
+
+    @admin.display(description="Username")
+    def username(self, obj: DetectionReport):
+        return obj.hwid.username
+
 
 admin.site.register(
     AntiCheatConfigurationCategories, AntiCheatConfigurationsCategoriesAdmin
@@ -103,3 +111,4 @@ admin.site.register(MaliciousSignatures, MaliciousSignaturesAdmin)
 admin.site.register(ClientHWID, ClientHWIDAdmin)
 admin.site.register(Ban, BanAdminModel)
 admin.site.register(Warning, WarningAdminModel)
+admin.site.register(DetectionReport, DetectionReportAdminModel)

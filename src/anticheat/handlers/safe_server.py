@@ -4,7 +4,7 @@ from asgiref.sync import sync_to_async
 from typing import Dict, Any
 from utils import check_request_body_key, represent_timedelta_string
 from dashboard.models import GameServer, Whitelist
-from shared.ws import SafeServerPacketID, WebSocketGroupNames
+from shared.enums import SafeServerPacketID, WebSocketGroupNames
 from shared.models import ServerType
 from guards import mta_guard, fivem_guard
 from typing import Dict

@@ -1,6 +1,6 @@
 import json
 import logging
-from shared.ws import SafeServerPacketID, WebSocketGroupNames
+from shared.enums import SafeServerPacketID, WebSocketGroupNames
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.contrib.auth.models import User
 from dashboard.models import GameServer

@@ -7,7 +7,7 @@ from django.conf import settings
 from ..models import ClientHWID, MaliciousSignatures, Ban
 from utils import discord, represent_timedelta_string, check_request_body_key
 from shared.models import ServerType
-from shared.ws import SafeEnginePacketID, SafeServerPacketID, WebSocketGroupNames
+from shared.enums import SafeEnginePacketID, SafeServerPacketID, WebSocketGroupNames
 from shared.flags import Flag, FlagType
 import json
 from typing import Union, Dict, List, Optional, Any

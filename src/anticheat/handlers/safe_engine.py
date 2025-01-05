@@ -7,7 +7,7 @@ from datetime import timedelta
 from ..consumers.safe_engine import SafeEngineConsumer
 from guards import fivem_guard
 from django.conf import settings
-from shared.ws import (
+from shared.enums import (
     WebSocketGroupNames,
     SafeEnginePacketID,
     SafeUploadType,

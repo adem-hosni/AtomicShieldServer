@@ -1,6 +1,6 @@
 from anticheat.consumers.safe_server import SafeServerConsumer
 from anticheat.consumers.safe_engine import SafeEngineConsumer
-from shared.ws import WebSocketGroupNames
+from shared.enums import WebSocketGroupNames
 from typing import List, Union, Any
 
 

@@ -374,7 +374,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             image_path = os.path.join(
                 settings.MEDIA_ROOT,
                 "detections",
-                "proofs"
+                "proofs",
                 f"{self._hwid.username}_{self._hwid.id}-{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.png",
             )
             with open(image_path, "wb") as file:

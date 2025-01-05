@@ -18,15 +18,16 @@
 - ~~Add 404 Page Not Found Page~~
 - Show online players
 - SSL Verification
+- Show detection screenshot
 - Complete home page
 
 # Fivem Server
 - ~~Check if the key if it's being used~~
 - ~~Check if the player is banned~~
 - ~~Implement server subscription duration (AtomicShield master server side)~~
-- ~~Check AtomicShield Scanner disconnect~~
-- ~~Check if the player disconnected from Fivem server~~
-- ~~Check AtomicShield server status~~
+- Check for engine disconnect
+- Check if the player disconnected from Fivem server
+- Check AtomicShield server status
 - Implement HTTP communication encryption
 
 # AtomicShield Agent
@@ -43,7 +44,6 @@
 - ~~HWID Checks~~
 - ~~Malicious Tools checking~~
 - ~~Memory scan Pulse (with network sync)~~
-- ~~MTA:SA Anticheat components verification~~
 - ~~Player warn~~
 - ~~Validate HWID~~
 - ~~HWID Caching~~

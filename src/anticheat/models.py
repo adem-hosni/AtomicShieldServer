@@ -119,7 +119,7 @@ class ClientHWID(models.Model):
         Returns:
         --------
             int: How many columns were changed
-        """        
+        """
         if not self.pk:
             return True
 
@@ -137,6 +137,21 @@ class ClientHWID(models.Model):
         return f"{self.username} ({self.id})"
 
 
+class DetectionReport(models.Model):
+    hwid = models.ForeignKey(ClientHWID, on_delete=models.CASCADE)
+    detected_at = models.DateTimeField(auto_now_add=True)
+    report = models.JSONField(blank=False, default=dict)
+    screenshot = models.ImageField(upload_to="media/detections/proofs")
+
+    class Meta:
+        db_table = "detection_reports"
+        verbose_name = "Detection Report"
+        verbose_name_plural = "Detection Reports"
+
+    def __str__(self) -> str:
+        return f"{self.hwid.username}'s Report"
+
+
 class Ban(models.Model):
     hwid = models.ForeignKey(ClientHWID, on_delete=models.CASCADE)
     banned_at = models.DateTimeField(auto_now_add=True)
@@ -146,6 +161,7 @@ class Ban(models.Model):
     )
     active = models.BooleanField(default=True)
     reason = models.CharField(null=True, max_length=96)
+    report = models.ForeignKey(DetectionReport, on_delete=models.CASCADE, null=True)
 
     @property
     def is_expired(self) -> bool:
@@ -193,10 +209,3 @@ class Warning(models.Model):
 
     def __str__(self) -> str:
         return f"{self.hwid.username} - {self.warns}"
-
-
-class DetectionReport(models.Model):
-    hwid = models.ForeignKey(ClientHWID, on_delete=models.CASCADE)
-    detected_at = models.DateTimeField(auto_now_add=True)
-    report = models.JSONField(blank=False, default=dict)
-    screenshot = models.ImageField(upload_to="media/detections/proofs")

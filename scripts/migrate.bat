@@ -3,3 +3,5 @@ cd /d "%~dp0..\src"
 
 python manage.py makemigrations
 python manage.py migrate
+
+pause

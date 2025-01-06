@@ -1,5 +1,6 @@
 from shared.models import ServerType
 from datetime import datetime
+from shared.enums import DetectionType
 from django.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator
 from typing import Union
@@ -139,9 +140,13 @@ class ClientHWID(models.Model):
 
 class DetectionReport(models.Model):
     hwid = models.ForeignKey(ClientHWID, on_delete=models.CASCADE)
+    detection_type = models.IntegerField(
+        choices=DetectionType,
+        null=False,
+    )
     detected_at = models.DateTimeField(auto_now_add=True)
     report = models.JSONField(blank=False, default=dict)
-    screenshot = models.ImageField(upload_to="media/detections/proofs")
+    screenshot = models.ImageField(upload_to="detections/proofs")
 
     class Meta:
         db_table = "detection_reports"

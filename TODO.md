@@ -35,7 +35,7 @@
 - ~~Check if the client is already connected~~
 - ~~Check server's status~~
 - ~~Check agent version~~
-- Implement startup option
+- ~~Implement startup option~~
 - ~~Implement HTTP communication encryption~~
 - Inject engine dll into fivem's process
 - Add some security checks

@@ -13,7 +13,7 @@ def download_fivem_engine(request: HttpRequest) -> HttpResponse:
         f"{settings.BIN_DIR}/resources/engines/fivem.dll",
         "rb",
     ) as file:
-        engine_buffer = atomic_core.encrypt_buffer(file.read())
+        engine_buffer = atomic_core.encode(file.read())
 
     logger.info(f"{request.get_host()} downloaded FiveM's engine")
 

@@ -1,3 +1,5 @@
+import json
+import base64
 from random import randint
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
@@ -19,6 +21,23 @@ class AtomicCore:
         for iv_path in ivs_paths:
             with open(iv_path, "rb") as file:
                 self._aes_ivs.append(file.read())
+
+    def encode(self, buffer: Union[str, bytes, dict]) -> str:
+        if isinstance(buffer, str):
+            buffer = buffer.encode()
+        
+        if isinstance(buffer, dict):
+            buffer = json.dumps(buffer).encode()
+            
+        encrypted_buffer = self.encrypt_buffer(buffer)
+        return base64.b64encode(encrypted_buffer)
+    
+    def decode(self, buffer: Union[str, bytes]) -> str:
+        if isinstance(buffer, bytes):
+            buffer = buffer.decode()
+        
+        decoded_buffer = base64.b64decode(buffer)
+        return self.decrypt_buffer(decoded_buffer).decode()
 
     def encrypt_buffer(self, buffer: Union[str, bytes]):
         if not len(self._aes_keys):
@@ -46,7 +65,7 @@ class AtomicCore:
         encryption_key_byte = chr(encryption_key_index + 31).encode()
         return encryption_key_byte + ciphertext
 
-    def decrypt_buffer(self, buffer: Union[str, bytes]) -> str:
+    def decrypt_buffer(self, buffer: Union[str, bytes]) -> bytes:
         if not len(self._aes_keys):
             raise Exception("Unable to encrypt the buffer without aes keys or ivs.")
 
@@ -59,18 +78,19 @@ class AtomicCore:
             )
 
         encryption_key_index = buffer[0] - 31
-        print(encryption_key_index)
         key = self._aes_keys[encryption_key_index]
         iv = self._aes_ivs[encryption_key_index]
 
         encrypted_buffer = buffer[1:]
 
-        print(len(encrypted_buffer))
         cipher = AES.new(key, AES.MODE_CBC, iv)
+        
+        buffer_size = len(encrypted_buffer)
+        if (buffer_size % 16) != 0:
+            encrypted_buffer = encrypted_buffer[:buffer_size - (buffer_size % 16)]
+            
         padded_plaintext = cipher.decrypt(encrypted_buffer)
-        plaintext = unpad(padded_plaintext, AES.block_size)
-
-        return plaintext.decode()
+        return unpad(padded_plaintext, AES.block_size)
 
 
 atomic_core = AtomicCore()

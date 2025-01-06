@@ -36,9 +36,9 @@
 - ~~Check server's status~~
 - ~~Check agent version~~
 - Implement startup option
+- ~~Implement HTTP communication encryption~~
 - Inject engine dll into fivem's process
 - Add some security checks
-- Implement HTTP communication encryption
 
 # AtomicShield Engine
 - ~~HWID Checks~~

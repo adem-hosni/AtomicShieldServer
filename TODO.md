@@ -48,6 +48,7 @@
 - ~~Validate HWID~~
 - ~~HWID Caching~~
 - ~~Check server's response integrity~~
+- Fix imgui transparency issue
 - Implement HTTP communication encryption
 
 # Engine Integrity Checks

@@ -19,6 +19,7 @@
 - Show online player
 - Validate received HWID caches
 - SSL Verification
+- Take player screenshot
 - Show detection screenshot
 - Complete home page
 

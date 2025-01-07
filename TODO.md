@@ -16,8 +16,10 @@
 - ~~Add Disable bans functionality~~
 - ~~Add Reset Configurations button~~
 - ~~Add 404 Page Not Found Page~~
-- Show online players
+- Show online player
+- Validate received HWID caches
 - SSL Verification
+- Take player screenshot
 - Show detection screenshot
 - Complete home page
 
@@ -48,6 +50,7 @@
 - ~~Validate HWID~~
 - ~~HWID Caching~~
 - ~~Check server's response integrity~~
+- Fix imgui transparency issue
 - Implement HTTP communication encryption
 
 # Engine Integrity Checks

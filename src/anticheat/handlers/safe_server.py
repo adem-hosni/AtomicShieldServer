@@ -6,7 +6,7 @@ from utils import check_request_body_key, represent_timedelta_string
 from dashboard.models import GameServer, Whitelist
 from shared.enums import SafeServerPacketID, WebSocketGroupNames
 from shared.models import ServerType
-from guards import mta_guard, fivem_guard
+from guards import fivem_guard
 from typing import Dict
 from django.conf import settings
 from django.db.models import Q
@@ -94,10 +94,8 @@ async def handle_network_join(
         )
         return await consumer.close()
 
-    guard = mta_guard if request["server_type"] == ServerType.MTASA else fivem_guard
-
     # Check if the server is running
-    if guard.is_server_running(server.ip):
+    if fivem_guard.is_server_running(server.ip):
         await consumer.send(
             SafeServerPacketID.NETWORK_JOIN,
             {
@@ -124,7 +122,7 @@ async def handle_network_join(
     consumer.game_server = server
     consumer.channel_layer.group_add(consumer.group_name, consumer.channel_name)
     consumer.type = ServerType(request["server_type"])
-    guard.add_safe_server(consumer)
+    fivem_guard.add_safe_server(consumer)
     logger.info(
         f"{consumer.address[0]}:{consumer.address[1]} joined AtomicShield Servers Network!"
     )
@@ -175,25 +173,19 @@ async def handle_request_player_join(
     if not check_request_body_key(request, "name", str):
         return
 
-
-    if consumer.game_server.type == ServerType.FIVEM:
-        if not check_request_body_key(request, "steamid", str):
-            return
-        unique_identifier_message = f"Steam ID: {request['steamid']}"
-    else:
-        if not check_request_body_key(request, "serial", str):
-            return
-        unique_identifier_message = f"Serial: {request['serial']}"
+    # if not check_request_body_key(request, "steamid", str):
+    #     return
+    
+    unique_identifier_message = f"Steam ID: {request['steamid']}"
 
     logger.info(
         f'"{request["name"]}" (IP: {request["ip"]}, {unique_identifier_message}) wants to join {consumer.address[0]}:{consumer.address[1]}'
     )
 
-    response = {"join": False, "message": "None"}
+    response = {"join": False, "message": ""}
 
     # Check if the AtomicShield agent is connected
-    guard = fivem_guard if consumer.game_server.type == ServerType.FIVEM else mta_guard
-    player_scanner = guard.get_scanner_by_ip(request["ip"])
+    player_scanner = fivem_guard.get_scanner_by_ip(request["ip"])
     response["join"] = not player_scanner is None
     if not response["join"]:
         response["message"] = (
@@ -215,29 +207,6 @@ async def handle_request_player_join(
             response["join"] = False
             response["message"] = player_scanner.detected_signatures[0].ban_message
 
-        # Check if the server uses whitelist system
-        if await consumer.game_server.get_config_by_id(1):  # whitelist id: 1
-            try:
-                whitelists = await sync_to_async(Whitelist.objects.filter)(
-                    Q(game_server=consumer.game_server)
-                    & (Q(ip=request["ip"]) | Q(serial=request["serial"]))
-                )
-                whitelisted = await whitelists.aexists()
-            except Whitelist.DoesNotExist:
-                whitelisted = False
-
-            if not whitelisted:
-                logger.info('Connection refused: "Client is not whitelisted"')
-                kick_message = (
-                    await consumer.game_server.get_config_by_id(
-                        config_ids.CLIENT_WHITELIST_KICK_MESSAGE
-                    )
-                    or "You are not whitelisted on this server. Please apply for access to join. Contact an admin for more details."
-                )
-
-                response["join"] = False
-                response["message"] = kick_message
-
         # Check if the player is banned
         bans = await sync_to_async(list)(
             Ban.objects.filter(hwid=player_scanner.hwid).order_by("banned_at")
@@ -253,8 +222,8 @@ async def handle_request_player_join(
 
     if response["join"]:
         player_scanner.connected_server = consumer
-        logger.info(f"{request['ip']}'s MTA:SA server connection accepted successfuly!")
-
+        logger.info(f"{request['ip']}'s Fivem server connection accepted successfuly!")
+    
     return await consumer.send(
         SafeServerPacketID.REQUEST_PLAYER_JOIN, {"ip": request["ip"], **response}
     )
@@ -264,7 +233,7 @@ async def handle_server_disconnect(consumer: SafeServerConsumer):
     logger.info(
         f"{consumer.address[0]}:{consumer.address[1]} disconnected from AtomicShield servers network."
     )
-    mta_guard.remove_safe_server(consumer)
+    fivem_guard.remove_safe_server(consumer)
 
 
 async def handle_load_anticheat_scripts(
@@ -307,7 +276,7 @@ async def handle_player_quit(consumer: SafeServerConsumer, request: Dict[str, An
     if not check_request_body_key(request, "reason", str):
         return
 
-    player_engine = mta_guard.get_scanner_by_ip(request["ip"])
+    player_engine = fivem_guard.get_scanner_by_ip(request["ip"])
     if not player_engine:
         logger.warning(
             f"Unauthorized player engine disconnected due to {request['reason']}! (ip: {request['ip']}, name: {request['name']})"

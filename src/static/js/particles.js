@@ -5,7 +5,7 @@ if (!embedimSnow) {
   }
   const size = 4;
   var embCSS =
-    ".embedim-snow{position: absolute;width:  " + size + "px;height: " + size + "px;background: #8C592B;border-radius: 50%;margin-top:-10px}";
+    ".embedim-snow{position: absolute;width:  " + size + "px;height: " + size + "px;background: #01e4f4;border-radius: 50%;margin-top:-10px}";
   var embHTML = "";
   for (i = 1; i < 160; i++) {
     embHTML += '<i class="embedim-snow"></i>';

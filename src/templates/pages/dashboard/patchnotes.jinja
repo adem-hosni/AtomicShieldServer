@@ -49,12 +49,12 @@
           <div class="flex">
             <p class="text-white font-medium">{{ patchnote.title }}</p>
             {% if not patchnote.seen %}
-            <h1 class="text-black bg-[#8c592b] rounded-full ml-auto w-4 h-4 text-center"></h1>
+            <h1 class="text-black bg-[#01e4f4] rounded-full ml-auto w-4 h-4 text-center"></h1>
             {% endif %}
           </div>
           <p class="text-sm text-gray-400">{{ patchnote.patchnotes|linebreaksbr }}</p>
 
-          <p class="line-clamp-1 text-xs font-semibold text-[#8c592b]">
+          <p class="line-clamp-1 text-xs font-semibold text-[#01e4f4]">
               {{ patchnote.author }}. <span class="text-xs text-gray-400"> - {{ patchnote.date }}</span>
           </p>
         </div>

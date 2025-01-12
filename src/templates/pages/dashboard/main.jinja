@@ -16,8 +16,8 @@
     >
       👋 Welcome Back
       <span
-        style="filter: drop-shadow(0px 0px 10px #8c592b)"
-        class="text-[#8c592b]"
+        style="filter: drop-shadow(0px 0px 10px #01e4f4)"
+        class="text-[#01e4f4]"
         >{{ username }}</span
       >
     </h1>
@@ -97,11 +97,11 @@
         <div class="flex">
           <p class="text-white font-medium">{{ announcement.title }}</p>
           {% if not announcement.seen %}
-            <h1 class="text-black bg-[#8c592b] rounded-full ml-auto w-4 h-4 text-center"></h1>
+            <h1 class="text-black bg-[#01e4f4] rounded-full ml-auto w-4 h-4 text-center"></h1>
             {% endif %}
         </div>
         <p class="text-sm text-gray-400 p-1">{{ announcement.announcement }}</p>
-        <p class="line-clamp-1 text-xs font-semibold text-[#8c592b]">
+        <p class="line-clamp-1 text-xs font-semibold text-[#01e4f4]">
             {{ announcement.author }}. <span class="text-xs text-gray-400"> - {{ announcement.date }}</span>
         </p>
       </div>

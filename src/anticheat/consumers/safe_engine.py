@@ -34,7 +34,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
 
     def __init__(self, *args, **kwargs):
         """
-        Initializes the EagleScanner instance.
+        Initializes the AtomicSHield instance.
 
         Args:
         -----

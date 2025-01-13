@@ -44,3 +44,4 @@ class DetectionType(models.IntegerChoices):
     CHEAT_SIGNATURE_FOUND = 8, "Cheat Signature Found"
     MALICIOUS_PROCESS_HANDLE_OPEN = 9, "Malicious Process opened FiveM handle"
     MALICIOUS_DRIVER = 10, "Malicious Driver Found"
+    THREAD_SHELLCODE = 11, "Thread Shell Code"

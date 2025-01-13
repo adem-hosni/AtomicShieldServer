@@ -1,11 +1,11 @@
 {% extends 'bases/dashboard.jinja' %} {% load static %} {% block content %}
-  <div class="p-4 rounded-lg transition-all duration-300 bg-purple-200 dark:bg-[#08101777]">
+  <div class="p-4 rounded-lg transition-all duration-300 bg-purple-200 dark:bg-[#081017]">
     {% include 'components/dashboard/breadcrumb.jinja' with current_page='Servers' %}
   </div>
   
   <script src="{% static 'vendor/iziToast/js/iziToast.js' %}"></script>
 
-  <div class="w-full bg-[#08101777] p-6 rounded-xl mt-4" style="overflow-y: auto">
+  <div class="w-full bg-[#081017] p-6 rounded-xl mt-4" style="overflow-y: auto">
     <div class="flex items-center mb-4 md:mb-0 gap-3">
       <div>
         <div class="w-12 h-12 flex group items-center transition-all justify-center rounded-xl text-white group-hover:text-white bg-[#0e3638] text-white transition-all duration-300">
@@ -29,7 +29,7 @@
 
   <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
     <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
-      <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-[#08101777] dark:text-gray-400">
+      <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-[#081017] dark:text-gray-400">
         <tr>
           <th scope="col" class="px-6 py-3">Key</th>
           <th scope="col" class="pl-1 py-3">Name</th>
@@ -43,7 +43,7 @@
       </thead>
       <tbody>
         {% for server in servers %}
-          <tr class="transition-all duration:300 border-b bg-[#061819] dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#172929]">
+          <tr class="transition-all duration:300 border-b bg-[#0E1B23] border-gray-700 hover:bg-[#142733]">
             <th scope="row" class="px-4 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-gray-400 dark:hover:text-white cursor-pointer" onclick="navigator.clipboard.writeText('{{ server.key }}').then(() => iziToast.success({title: 'SUCCESS', message: 'Successfuly key copied to clipboard!'}))">
               <span class="blur-sm hover:blur-0 transition duration-300">{{ server.key }}</span>
             </th>
@@ -110,7 +110,7 @@
   <div id="add-server-modal" tabindex="-1" aria-hidden="true" class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
     <div class="relative p-4 w-full max-w-md max-h-full">
       <!-- Modal content -->
-      <div class="relative bg-white rounded-lg shadow dark:bg-[#08101777]">
+      <div class="relative bg-white rounded-lg shadow dark:bg-[#081017]">
         <!-- Modal header -->
         <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
           <h3 class="text-xl font-semibold text-gray-900 dark:text-white mx-auto">Add Server</h3>
@@ -155,7 +155,7 @@
   <div id="refresh-key-modal" tabindex="-1" aria-hidden="true" class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
     <div class="relative p-4 w-full max-w-md max-h-full">
       <!-- Modal content -->
-      <div class="relative bg-white rounded-lg shadow dark:bg-[#08101777]">
+      <div class="relative bg-white rounded-lg shadow dark:bg-[#081017]">
         <!-- Modal header -->
         <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
           <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Refresh Server Key</h3>
@@ -186,7 +186,7 @@
   <div id="edit-server-modal" tabindex="-1" aria-hidden="true" class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
     <div class="relative p-4 w-full max-w-md max-h-full">
       <!-- Modal content -->
-      <div class="relative bg-white rounded-lg shadow dark:bg-[#08101777]">
+      <div class="relative bg-white rounded-lg shadow dark:bg-[#081017]">
         <!-- Modal header -->
         <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
           <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Edit <span id="target-edit-server-name"></span>'s Server</h3>

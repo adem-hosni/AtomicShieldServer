@@ -2,15 +2,15 @@
 {% block content %}
 
 <div
-  class="p-4 rounded-lg transition-all duration-300 bg-purple-200 dark:bg-[#08101777]"
+  class="p-4 rounded-lg transition-all duration-300 bg-purple-200 dark:bg-[#081017]"
 >
   {% include "components/dashboard/breadcrumb.jinja" with current_page="Bans" %}
 </div>
 <section
-    class="flex-1 px-4 rounded-lg transition-all duration-300 bg-purple-200 dark:bg-[#08101777] grid grid-rows-[auto,1fr] my-4"
+    class="flex-1 px-4 rounded-lg transition-all duration-300 bg-purple-200 dark:bg-[#081017] grid grid-rows-[auto,1fr] my-4"
   >
     <div class="flex flex-wrap w-full flex grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 justify-center py-6 text-center gap-6">
-      <div class="bg-[#08101777] h-max p-6 flex gap-4 rounded-xl">
+      <div class="bg-[#081017] h-max p-6 flex gap-4 rounded-xl">
         <div
           class="flex items-center justify-center w-12 h-12 rounded-xl bg-[#0e3638]"
         >
@@ -22,7 +22,7 @@
         </div>
       </div>
 
-      <div class="bg-[#08101777] h-max p-6 flex gap-4 rounded-xl">
+      <div class="bg-[#081017] h-max p-6 flex gap-4 rounded-xl">
         <div
           class="flex items-center justify-center w-12 h-12 rounded-xl bg-[#0e3638]"
         >
@@ -41,7 +41,7 @@
     class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400"
   >
     <thead
-      class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-[#08101777] dark:text-gray-400"
+      class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-[#081017] dark:text-gray-400"
     >
       <tr>
         <th scope="col" class="px-6 py-3">NAME</th>
@@ -55,9 +55,7 @@
     </thead>
     <tbody>
       {% for ban in bans %}
-      <tr
-        class="transition-all duration:300 bg-white border-b dark:bg-[#161616] dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#212121]"
-      >
+      <tr class="transition-all duration:300 border-b bg-[#0E1B23] border-gray-700 hover:bg-[#142733]">
         <td class="px-6 py-4 font-medium">{{ ban.username }}</td>
 
         <td
@@ -119,7 +117,7 @@
   </table>
   {% if bans|length == 0 %}
   <div
-    class="transition-all duration:300 bg-white border-b dark:bg-[#161616] dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#181818] flex text-center"
+    class="transition-all duration:300 bg-white border-b dark:bg-[#0E1B23] dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#181818] flex text-center"
   >
     <div
       scope="row"
@@ -139,7 +137,7 @@
 >
   <div class="relative p-4 w-full max-w-md max-h-full">
     <!-- Modal content -->
-    <div class="relative bg-white rounded-lg shadow dark:bg-[#08101777]">
+    <div class="relative bg-white rounded-lg shadow dark:bg-[#081017]">
       <!-- Modal header -->
       <div
         class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600"

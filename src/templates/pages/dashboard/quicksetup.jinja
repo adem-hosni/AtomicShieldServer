@@ -1,11 +1,11 @@
 {% extends 'bases/dashboard.jinja' %} {% block content %}
 <div
-  class="p-4 rounded-lg transition-all duration-300 bg-purple-200 dark:bg-[#08101777]"
+  class="p-4 rounded-lg transition-all duration-300 bg-purple-200 dark:bg-[#081017]"
 >
   {% include 'components/dashboard/breadcrumb.jinja' with current_page='Quick Setup' %}
 </div>
 
-<div class="w-full bg-[#08101777] p-6 rounded-xl mt-4" style="overflow-y: auto">
+<div class="w-full bg-[#081017] p-6 rounded-xl mt-4" style="overflow-y: auto">
   <div class="flex items-center mb-4 md:mb-0 gap-3">
     <div>
       <div class="w-12 h-12 flex group items-center transition-all justify-center rounded-xl text-white group-hover:text-white bg-[#0e3638] text-white transition-all duration-300">
@@ -25,7 +25,7 @@
   <form method="post">
     {% csrf_token %}
     <div class="w-full flex gap-4">
-      <select name="selected-dist" id="select-dist" class="ml-auto cursor-pointer text-center rounded-lg text-gray-300 font-medium bg-[#08101777] border p-2">
+      <select name="selected-dist" id="select-dist" class="ml-auto cursor-pointer text-center rounded-lg text-gray-300 font-medium bg-[#081017] border p-2">
         {% for dist in dists %}
           <option value="{{ dist }}">{{ dist }}</option>
         {% endfor %}
@@ -35,7 +35,7 @@
   </form>
 </div>
 
-<div class="w-full bg-[#08101777] p-6 rounded-xl mt-4 flex flex-wrap gap-6" style="overflow-y: auto" id="file-container"></div>
+<div class="w-full bg-[#081017] p-6 rounded-xl mt-4 flex flex-wrap gap-6" style="overflow-y: auto" id="file-container"></div>
 
 <script>
   const fileContainer = document.getElementById("file-container");
@@ -43,7 +43,7 @@
 
   const addFile = (filename, icon = "fa-file") => {
     const divContainerTop = document.createElement("div");
-    divContainerTop.classList.add("w-36", "h-40", "bg-[#08101777]", "rounded-lg", "flex");
+    divContainerTop.classList.add("w-36", "h-40", "bg-[#081017]", "rounded-lg", "flex");
     
     const divLayout = document.createElement("div");
     divLayout.classList.add("mx-auto", "my-auto", "text-center");

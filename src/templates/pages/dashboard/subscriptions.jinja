@@ -1,11 +1,11 @@
 {% extends 'bases/dashboard.jinja' %} {% load static %} {% block content %}
-  <div class="p-4 rounded-lg transition-all duration-300 bg-purple-200 dark:bg-[#08101777]">
+  <div class="p-4 rounded-lg transition-all duration-300 bg-purple-200 dark:bg-[#081017]">
     {% include 'components/dashboard/breadcrumb.jinja' with current_page='Subscriptions' %}
   </div>
   
   <script src="{% static 'vendor/iziToast/js/iziToast.js' %}"></script>
 
-  <div class="w-full bg-[#08101777] p-6 rounded-xl mt-4" style="overflow-y: auto">
+  <div class="w-full bg-[#081017] p-6 rounded-xl mt-4" style="overflow-y: auto">
     <div class="flex items-center mb-4 md:mb-0 gap-3">
       <div>
         <div
@@ -63,7 +63,7 @@
 
   <div class="relative overflow-x-auto shadow-md sm:rounded-lg mt-6">
     <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
-      <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-[#08101777] dark:text-gray-400">
+      <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-[#081017] dark:text-gray-400">
         <tr>
           <th scope="col" class="pl-6 py-3">Type</th>
           <th scope="col" class="px-6 py-3">Name</th>
@@ -74,7 +74,7 @@
       </thead>
       <tbody>
         {% for subscription in subscriptions %}
-          <tr class="transition-all duration:300 bg-white border-b dark:bg-[#161616] dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#212121]">
+          <tr class="transition-all duration:300 border-b bg-[#0E1B23] border-gray-700 hover:bg-[#142733]">
             <td class="px-6 py-4">
                 {% if subscription.type == 1 %}
                   <div class="border w-16 text-center font-medium border-[#E87C00] rounded p-1 text-[#E87C00] transition-all duration-300 hover:bg-[#E87C00] hover:text-black select-none">MTA:SA</div>

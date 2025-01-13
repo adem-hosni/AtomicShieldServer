@@ -106,7 +106,7 @@ class AddServerForm(forms.Form):
         choices=ServerType.choices,
         widget=forms.Select(
             attrs={
-                "class": "cursor-pointer text-center rounded-lg text-gray-300 font-medium w-full h-full bg-[#08101777] border py-2",
+                "class": "cursor-pointer text-center rounded-lg text-gray-300 font-medium w-full h-full bg-[#081017] border py-2",
                 "id": "server-type",
             }
         ),
@@ -119,7 +119,7 @@ class AddServerForm(forms.Form):
         choices=[],
         widget=forms.Select(
             attrs={
-                "class": "cursor-pointer text-center rounded-lg text-gray-300 font-medium w-full h-full bg-[#08101777] border py-2",
+                "class": "cursor-pointer text-center rounded-lg text-gray-300 font-medium w-full h-full bg-[#081017] border py-2",
                 "id": "server-type",
             }
         ),
@@ -134,7 +134,7 @@ class QuickSetupForm(forms.Form):
         choices=supported_dists,
         widget=forms.Select(
             attrs={
-                "class": "mt-4 cursor-pointer text-center rounded-lg text-gray-300 font-medium w-full h-full bg-[#08101777] border py-2",
+                "class": "mt-4 cursor-pointer text-center rounded-lg text-gray-300 font-medium w-full h-full bg-[#081017] border py-2",
                 "id": "distribution",
             }
         ),

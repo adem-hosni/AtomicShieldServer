@@ -1,6 +1,6 @@
 {% extends "bases/dashboard.jinja" %} {% block content %}
 <div
-  class="p-4 rounded-lg transition-all duration-300 bg-[#08101777]"
+  class="p-4 rounded-lg transition-all duration-300 bg-[#081017]"
 >
   {% include "components/dashboard/breadcrumb.jinja" with current_page="Dashboard" %}
 </div>
@@ -8,7 +8,7 @@
 <div class="flex flex-col">
   <!-- Main content area -->
   <main
-    class="flex-1 p-4 rounded-lg transition-all duration-300 bg-purple-200 dark:bg-[#08101777] grid grid-rows-[auto,1fr] my-4"
+    class="flex-1 p-4 rounded-lg transition-all duration-300 bg-purple-200 dark:bg-[#081017] grid grid-rows-[auto,1fr] my-4"
   >
     <h1
       href="#"
@@ -22,7 +22,7 @@
       >
     </h1>
     <div class="flex flex-wrap w-full flex grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 justify-center py-6 gap-6">
-      <div class="bg-[#08101777] h-max p-6 flex gap-4 rounded-xl">
+      <div class="bg-[#09121e] h-max p-6 flex gap-4 rounded-xl">
         <div
           class="flex items-center justify-center w-12 h-12 rounded-xl bg-[#0e3638]"
         >
@@ -34,7 +34,7 @@
         </div>
       </div>
 
-      <div class="bg-[#08101777] h-max p-6 flex gap-4 rounded-xl">
+      <div class="bg-[#09121e] h-max p-6 flex gap-4 rounded-xl">
         <div
           class="flex items-center justify-center w-12 h-12 rounded-xl bg-[#0e3638]"
         >
@@ -46,7 +46,7 @@
         </div>
       </div>
 
-      <div class="bg-[#08101777] h-max p-6 flex gap-4 rounded-xl">
+      <div class="bg-[#09121e] h-max p-6 flex gap-4 rounded-xl">
         <div
           class="flex items-center justify-center w-12 h-12 rounded-xl bg-[#0e3638]"
         >
@@ -60,7 +60,7 @@
     </div>
   </main>
 </div>
-<div class="w-full bg-[#08101777] p-6 rounded-xl" style="overflow-y: auto">
+<div class="w-full bg-[#081017] p-6 rounded-xl" style="overflow-y: auto">
   <div class="flex items-center mb-4 md:mb-0 gap-3">
     <div>
       <div
@@ -88,7 +88,7 @@
   {% for announcement in announcements %}
   <div class="mt-4 flex flex-col items-stretch">
     <div
-      class="flex items-center gap-3 rounded-xl bg-[#08101777] px-6 py-2.5 md:flex {% if not announcement.seen %}notification{% endif %} "
+      class="flex items-center gap-3 rounded-xl bg-[#09121e] px-6 py-2.5 md:flex {% if not announcement.seen %}notification{% endif %} "
       {% if not announcement.seen %}
       data-id="{{ announcement.dataid }}"
       {% endif %}

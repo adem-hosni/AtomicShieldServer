@@ -50,8 +50,8 @@
 - ~~Validate HWID~~
 - ~~HWID Caching~~
 - ~~Check server's response integrity~~
+- ~~Implement HTTP communication encryption~~
 - Fix imgui transparency issue
-- Implement HTTP communication encryption
 
 # Engine Integrity Checks
 - ~~Malicious Windows driver names verification~~

@@ -136,12 +136,28 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
                 | Q(disks__overlap=request_hwid_cache["disks"])
             )
         )
+        
+        if hwid:
+            hwid.bios_version = request_hwid["bios"]
+            hwid.computer_name = request_hwid["computer_name"]
+            hwid.cpuid = request_hwid["cpu"]
+            hwid.disks = request_hwid["disks"]
+            hwid.motherboard_serial = request_hwid["motherboard_serial"]
+            hwid.username = request_hwid["username"]
+            hwid.pnp_device = request_hwid["pnp_device"]
+
+            changes = await hwid.get_changes()
+
+            if changes:
+                await hwid.asave()
+                logger.info(
+                    f"{request_hwid['username']}'s engine HWID updated {changes} components, Spoofed HWID?"
+                )
 
     # Create a HWID if it's does not exists
     if not hwid:
         hwid = ClientHWID(
             username=request_hwid["username"],
-            mta_serial=request_hwid["extra"].get("mta_serial", "<NONE>"),
             disks=request_hwid["disks"],
             cpuid=request_hwid["cpu"],
             motherboard_serial=request_hwid["motherboard_serial"],
@@ -157,7 +173,6 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
         hwid.cpuid = request_hwid["cpu"]
         hwid.disks = request_hwid["disks"]
         hwid.motherboard_serial = request_hwid["motherboard_serial"]
-        hwid.mta_serial = request_hwid["extra"].get("mta_serial", "<NONE>")
         hwid.username = request_hwid["username"]
         hwid.pnp_device = request_hwid["pnp_device"]
 

@@ -17,14 +17,9 @@ class ClientHWIDAdmin(ModelAdmin):
         "display_disks",
         "username",
         "computer_name",
-        "display_serial",
         "motherboard_serial",
         "bios_version",
     ]
-
-    @admin.display(description="Serial")
-    def display_serial(self, obj: ClientHWID):
-        return obj.mta_serial
 
     @admin.display(description="Disks")
     def display_disks(self, obj: ClientHWID):

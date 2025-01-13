@@ -24,6 +24,7 @@ from anticheat.models import (
     AntiCheatConfigurations,
     AntiCheatConfigurationCategories,
     Ban,
+    DetectionReport
 )
 from .forms import (
     AddServerForm,
@@ -85,8 +86,9 @@ def render_maindashboard(request: HttpRequest) -> HttpResponse:
         {
             "username": request.user.username,
             "announcements": announcements,
-            "online_scanners": len(mta_guard.engines) * 2,
-            "banned_players": Ban.objects.count() * 2,
+            "online_scanners": len(mta_guard.engines),
+            "banned_players": Ban.objects.count(),
+            "detection_count": DetectionReport.objects.count(),
         },
     )
 

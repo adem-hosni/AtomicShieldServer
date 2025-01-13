@@ -27,7 +27,7 @@ from anticheat.models import (
 )
 from .forms import AddServerForm
 import utils
-from typing import Dict, Union, List
+from typing import Dict, Union
 from utils.aseclient import ASEQueryClient, ASEParser
 
 

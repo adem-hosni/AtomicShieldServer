@@ -1,7 +1,9 @@
 import os
+import base64
 from time import time
 from datetime import timedelta, datetime
 from channels.generic.websocket import AsyncWebsocketConsumer
+from core import atomic_core
 from .safe_server import SafeServerConsumer
 from django.conf import settings
 from ..models import ClientHWID, MaliciousSignatures, Ban, DetectionReport
@@ -99,7 +101,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
 
         data = json.dumps(data)
 
-        return await super().send(data, bytes_data, close)
+        return await super().send(None, atomic_core.encode(data), close)
 
     @property
     def group_name(self) -> str:
@@ -144,7 +146,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         --------
             None
         """
-        await self.process_packet(text_data)
+        await self.process_packet(atomic_core.decode(text_data))
 
     async def process_packet(self, packet: Union[str, bytes]):
         try:

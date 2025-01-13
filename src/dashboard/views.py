@@ -79,6 +79,11 @@ def render_maindashboard(request: HttpRequest) -> HttpResponse:
                 }
             )
         announcements.reverse()
+        
+    bans = 0
+    for ban in Ban.objects.all():
+        if not ban.is_expired:
+            bans += 1
 
     return render(
         request,
@@ -87,7 +92,7 @@ def render_maindashboard(request: HttpRequest) -> HttpResponse:
             "username": request.user.username,
             "announcements": announcements,
             "online_scanners": len(mta_guard.engines),
-            "banned_players": Ban.objects.count(),
+            "banned_players": bans,
             "detection_count": DetectionReport.objects.count(),
         },
     )

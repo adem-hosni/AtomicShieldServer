@@ -14,7 +14,6 @@ from .models import (
     Announcements,
     PatchNotes,
     GameServer,
-    Whitelist,
     ServerType,
     ServerStatus,
     ServerSubscription,
@@ -26,10 +25,7 @@ from anticheat.models import (
     Ban,
     DetectionReport
 )
-from .forms import (
-    AddServerForm,
-    WhitelistForm,
-)
+from .forms import AddServerForm
 import utils
 from typing import Dict, Union, List
 from utils.aseclient import ASEQueryClient, ASEParser
@@ -711,158 +707,3 @@ def render_subscriptions(request: HttpRequest) -> HttpResponse:
     )
 
 
-@login_required
-def render_whitelist(request: HttpRequest) -> HttpResponse:
-    add_form = WhitelistForm()
-    whitelists: List[Whitelist] = []
-    is_whitelist_enabled = True
-    target_server: GameServer = None
-
-    try:
-        target_server = GameServer.objects.get(
-            id=request.session.get("selected_server", -1)
-        )
-    except GameServer.DoesNotExist:
-        messages.error(request, "The selected server does not exists!")
-    else:
-        whitelists = Whitelist.objects.filter(game_server=target_server).order_by(
-            "-created_at"
-        )
-
-        is_whitelist_enabled = target_server.get_config_by_id(1)
-
-    if request.method == "POST":
-        request_body = request.POST
-        if "type" in request_body.keys():
-            match request_body["type"]:
-                case "add":
-                    add_form = WhitelistForm(request_body)
-                    if add_form.is_valid():
-                        if not is_whitelist_enabled:
-                            messages.error(
-                                request, "Whitelist configuration is disabled!"
-                            )
-                            return redirect(request.path)
-
-                        player_name = add_form.cleaned_data["name"]
-                        ip = add_form.cleaned_data["ip"]
-                        serial = add_form.cleaned_data["serial"]
-
-                        if not target_server:
-                            messages.error(request, "Invalid selected server!")
-                            return redirect(request.path)
-
-                        # Check if the ip pattern is correct
-                        if not utils.isvalid_ip(ip):
-                            messages.error(request, "Invalid ip!")
-                            return redirect(request.path)
-
-                        # Check if the serial is inequal to 32
-                        if len(serial) != 32:
-                            messages.error(request, "Invalid Serial!")
-                            return redirect(request.path)
-
-                        if Whitelist.objects.filter(
-                            Q(game_server=target_server)
-                            & (Q(name=player_name) | Q(serial=serial) | Q(ip=ip))
-                        ).exists():
-                            messages.error(request, "Whitelist already exists!")
-                            return redirect(request.path)
-
-                        new_whitelist = Whitelist(
-                            name=player_name,
-                            ip=ip,
-                            serial=serial,
-                            game_server=target_server,
-                        )
-                        new_whitelist.save()
-                        messages.success(
-                            request, f"{player_name}'s whitelist added successfuly!"
-                        )
-                    else:
-                        messages.error(request, "Empty whitelist!")
-
-                case "delete":
-                    if check_request_body_key(request_body, "target-whitelist", int):
-                        messages.error(request, "Unexptected error!")
-                        return HttpResponseRedirect(request.path)
-
-                    target_whitelist_id = int(request_body["target-whitelist"])
-                    try:
-                        target_whitelist = Whitelist.objects.get(id=target_whitelist_id)
-                    except Whitelist.DoesNotExist:
-                        messages.error(request, "Whitelist doesnt exists!")
-                        return HttpResponseRedirect(request.path)
-
-                    target_whitelist.delete()
-                    messages.success(
-                        request,
-                        f"Successfuly {target_whitelist.name}'s whitelist deleted!",
-                    )
-
-                case "edit":
-                    if not (
-                        "target-whitelist" in request_body.keys()
-                        or "player-serial" in request_body.keys()
-                        or "player-ip" in request_body.keys()
-                    ):
-                        messages.error(request, "Unexptected error!")
-                        return HttpResponseRedirect(request.path)
-
-                    if not is_whitelist_enabled:
-                        messages.error(request, "Whitelist configuration is disabled!")
-                        return redirect(request.path)
-
-                    target_whitelist_id = int(request_body["target-whitelist"])
-                    player_serial = request_body["player-serial"]
-                    player_ip = request_body["player-ip"]
-
-                    try:
-                        target_whitelist = Whitelist.objects.get(id=target_whitelist_id)
-                    except Whitelist.DoesNotExist:
-                        messages.error(request, "Whitelist doesnt exists!")
-                        return HttpResponseRedirect(request.path)
-
-                    # Check if the ip pattern is correct
-                    if not utils.isvalid_ip(player_ip):
-                        messages.error(request, "Invalid ip!")
-                        return redirect(request.path)
-
-                    # Check if the serial is inequal to 32
-                    if len(player_serial) != 32:
-                        messages.error(request, "Invalid Serial!")
-                        return redirect(request.path)
-
-                    target_whitelist.serial = player_serial
-                    target_whitelist.ip = player_ip
-
-                    target_whitelist.save()
-
-                    messages.success(
-                        request,
-                        f"{target_whitelist.name}'s whitelist saved successfuly!",
-                    )
-
-    return render(
-        request,
-        "pages/dashboard/whitelist.jinja",
-        {
-            "whitelists": [
-                {
-                    "id": whitelist.id,
-                    "name": whitelist.name,
-                    "ip": whitelist.ip,
-                    "serial": whitelist.serial,
-                    "created_on": whitelist.created_at,
-                    "last_update_at": (
-                        whitelist.last_update_at
-                        if whitelist.last_update_at
-                        else whitelist.created_at
-                    ),
-                }
-                for whitelist in whitelists
-            ],
-            "form": add_form,
-            "whitelist_disabled": not is_whitelist_enabled,
-        },
-    )

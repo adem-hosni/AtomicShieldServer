@@ -11,7 +11,7 @@ from django.contrib.auth.admin import (
     UserAdmin as BaseUserAdmin,
     GroupAdmin as BaseGroupAdmin,
 )
-from .models import GameServer, Announcements, PatchNotes, ServerSubscription, Whitelist
+from .models import GameServer, Announcements, PatchNotes, ServerSubscription
 
 from unfold.admin import ModelAdmin
 from unfold.forms import AdminPasswordChangeForm, UserChangeForm, UserCreationForm
@@ -127,12 +127,7 @@ class ServerSubscriptionAdmin(ModelAdmin):
         return obj.status
 
 
-class WhitelistAdmin(ModelAdmin):
-    list_display = ["name", "ip"]
-
-
 admin.site.register(GameServer, GameServerAdmin)
 admin.site.register(Announcements, AnnouncementAdmin)
 admin.site.register(PatchNotes, PatchNotesAdmin)
 admin.site.register(ServerSubscription, ServerSubscriptionAdmin)
-admin.site.register(Whitelist, WhitelistAdmin)

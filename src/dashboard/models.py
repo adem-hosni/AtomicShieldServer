@@ -110,23 +110,6 @@ class GameServer(models.Model):
         return f"{self.ip}:{self.port} ({self.id})"
 
 
-class Whitelist(models.Model):
-    name = models.CharField(max_length=32, null=False)
-    ip = models.CharField(max_length=49, blank=True)
-    serial = models.CharField(max_length=64, blank=True)
-    game_server = models.ForeignKey(GameServer, on_delete=models.CASCADE)
-    created_at = models.DateTimeField(auto_now_add=True)
-    last_update_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        db_table = "whitelists"
-        verbose_name = "Whitelist"
-        verbose_name_plural = "Whitelists"
-
-    def __str__(self) -> str:
-        return self.name
-
-
 class Announcements(models.Model):
     author = models.CharField(
         max_length=32, default="AtomicShield Development Team", null=False

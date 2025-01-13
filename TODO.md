@@ -8,9 +8,6 @@
 - ~~Integrating Server Creation with active subscriptions~~
 - ~~Add Subscriptions Section~~
 - ~~Add Quick Setup Section~~
-- ~~Add Whitelist view~~
-- ~~Add "whitelist add" functionality~~
-- ~~Add whitelist actions~~
 - ~~Add Server Edit action~~
 - ~~Add Discord Webhook Logs~~
 - ~~Add Disable bans functionality~~

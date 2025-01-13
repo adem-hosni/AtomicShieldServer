@@ -12,6 +12,5 @@ urlpatterns = [
     path("subscriptions", views.render_subscriptions),
     path("servers/select", views.select_server),
     path("servers/refresh_key", views.refresh_server_key, name="refresh_key"),
-    path("whitelist", views.render_whitelist, name="whitelist"),
     path("checkserver", views.check_server),
 ]

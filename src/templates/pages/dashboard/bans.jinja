@@ -17,8 +17,8 @@
           <i class="fa-solid fa-users text-gray-200 text-lg"></i>
         </div>
         <div class="flex flex-col">
-          <p class="text-zinc-400 font-medium text-sm">Total Joined Users</p>
-          <p class="text-xl font-semibold text-white counter">78,4567</p>
+          <p class="text-zinc-400 font-medium text-sm">Total Banned Players</p>
+          <p class="text-xl font-semibold text-white counter">{{ bans|length }}</p>
         </div>
       </div>
 
@@ -29,7 +29,7 @@
           <i class="fa-solid fa-ban text-gray-200 text-lg"></i>
         </div>
         <div class="flex flex-col">
-          <p class="text-zinc-400 font-medium text-sm">Detections</p>
+          <p class="text-zinc-400 font-medium text-sm">Total Detections</p>
           <p class="text-xl font-semibold text-white counter">153,081</p>
         </div>
       </div>
@@ -108,14 +108,9 @@
   </table>
   {% if bans|length == 0 %}
   <div
-    class="transition-all duration:300 bg-white border-b dark:bg-[#0E1B23] dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#181818] flex text-center"
+    class="transition-all duration:300 border-b bg-[#0E1B23] border-gray-700 hover:bg-[#142733] flex text-center"
   >
-    <div
-      scope="row"
-      class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-gray-400 dark:hover:text-white w-full"
-    >
-      No bans were found
-    </div>
+  <div scope="row" class="px-6 py-4 font-medium whitespace-nowrap text-gray-400 hover:text-white w-full">0 Bans</div>
   </div>
   {% endif %}
 </div>

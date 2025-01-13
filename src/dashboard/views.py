@@ -167,7 +167,8 @@ def render_bans(request: HttpRequest) -> HttpResponse:
                     "reason": ban.reason,
                 }
                 for ban in bans
-            ]
+            ],
+            "detections": 5
         },
     )
 

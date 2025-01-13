@@ -8,7 +8,7 @@
 - ~~Integrating Server Creation with active subscriptions~~
 - ~~Add Subscriptions Section~~
 - ~~Add Quick Setup Section~~
-- ~~Add Server Edit action~~
+wwwww- ~~Add Server Edit action~~
 - ~~Add Discord Webhook Logs~~
 - ~~Add Disable bans functionality~~
 - ~~Add Reset Configurations button~~

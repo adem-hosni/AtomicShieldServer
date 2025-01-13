@@ -107,7 +107,7 @@ class GameServer(models.Model):
         return config_templates
 
     def __str__(self) -> str:
-        return f"{self.ip}:{self.port} ({self.id})"
+        return f"{self.name} ({self.id})"
 
 
 class Announcements(models.Model):

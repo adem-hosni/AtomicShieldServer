@@ -65,5 +65,5 @@
 - ~~Check process handles~~
 - ~~Hide scan process~~
 - ~~Send screenshot with detection report~~
+- ~~Hook BaseThreadInitThunk~~
 - Send detection report for malicious strings
-- Hook LdrInitializeThunk to check for the thread module presence (Anti Module Cloaking)

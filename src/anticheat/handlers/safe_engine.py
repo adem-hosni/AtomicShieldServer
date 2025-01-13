@@ -109,7 +109,7 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
 
     # Try to get the hwid by one component at least
     try:
-        clients_queryset = await sync_to_async(list)(
+        hwid_queryset = await sync_to_async(list)(
             ClientHWID.objects.filter(
                 Q(motherboard_serial=request_hwid["motherboard_serial"])
                 | Q(bios_version=request_hwid["bios"])
@@ -118,17 +118,26 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
                 | Q(disks__overlap=request_hwid["disks"])
             )
         )
-        if len(clients_queryset) > 0:
-            hwid = clients_queryset[0]
+        if len(hwid_queryset) > 0:
+            hwid = hwid_queryset[0]
         else:
             hwid = None
     except ClientHWID.DoesNotExist:
         hwid = None
 
-    # TODO: HWID not found? Check if the hwid cache already exists
+    # HWID not found? Check if the hwid cache already exists
     if not hwid:
-        ...
+        hwid = await sync_to_async(ClientHWID)(
+            ClientHWID.objects.get(
+                Q(motherboard_serial=request_hwid_cache["motherboard_serial"])
+                | Q(bios_version=request_hwid_cache["bios"])
+                | Q(cpuid=request_hwid_cache["cpu"])
+                | Q(pnp_device=request_hwid_cache["pnp_device"])
+                | Q(disks__overlap=request_hwid_cache["disks"])
+            )
+        )
 
+    # Create a HWID if it's does not exists
     if not hwid:
         hwid = ClientHWID(
             username=request_hwid["username"],

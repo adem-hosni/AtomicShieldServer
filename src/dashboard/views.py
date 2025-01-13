@@ -160,7 +160,6 @@ def render_bans(request: HttpRequest) -> HttpResponse:
                     "id": ban.id,
                     "username": ban.hwid.username,
                     "banned_at": ban.banned_at,
-                    "game_serial": ban.hwid.mta_serial,
                     "duration": represent_timedelta_string(ban.duration),
                     "status": (
                         2 if ban.is_expired else int(ban.active)

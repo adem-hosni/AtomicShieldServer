@@ -10,7 +10,7 @@
     class="flex-1 px-4 rounded-lg transition-all duration-300 bg-purple-200 dark:bg-[#081017] grid grid-rows-[auto,1fr] my-4"
   >
     <div class="flex flex-wrap w-full flex grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 justify-center py-6 text-center gap-6">
-      <div class="bg-[#081017] h-max p-6 flex gap-4 rounded-xl">
+      <div class="bg-[#09121e] h-max p-6 flex gap-4 rounded-xl">
         <div
           class="flex items-center justify-center w-12 h-12 rounded-xl bg-[#0e3638]"
         >
@@ -22,7 +22,7 @@
         </div>
       </div>
 
-      <div class="bg-[#081017] h-max p-6 flex gap-4 rounded-xl">
+      <div class="bg-[#09121e] h-max p-6 flex gap-4 rounded-xl">
         <div
           class="flex items-center justify-center w-12 h-12 rounded-xl bg-[#0e3638]"
         >
@@ -45,7 +45,6 @@
     >
       <tr>
         <th scope="col" class="px-6 py-3">NAME</th>
-        <th scope="col" class="px-3 py-3">GAME SERIAL</th>
         <th scope="col" class="px-3 py-3">BANNED AT</th>
         <th scope="col" class="pl-3 py-3">DURATION</th>
         <th scope="col" class="pl-6 py-3">STATUS</th>
@@ -57,14 +56,6 @@
       {% for ban in bans %}
       <tr class="transition-all duration:300 border-b bg-[#0E1B23] border-gray-700 hover:bg-[#142733]">
         <td class="px-6 py-4 font-medium">{{ ban.username }}</td>
-
-        <td
-          scope="row"
-          class="px-3 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-gray-400 dark:hover:text-white cursor-pointer"
-          onclick="navigator.clipboard.writeText('{{ ban.key }}').then(() => iziToast.success({title: 'SUCCESS', message: 'Successfuly key copied to clipboard!'}))"
-        >
-          <span class="blur-sm hover:blur-0 transition duration-300">{{ ban.game_serial }}</span>
-        </td>
         
         <td class="px-1 py-4">{{ ban.banned_at }}</td>
         <td class="px-3 py-4">{{ ban.duration }}</td>

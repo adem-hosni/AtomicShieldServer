@@ -61,7 +61,7 @@ INSTALLED_APPS = [
 ASGI_APPLICATION = "AtomicShield.asgi.application"
 
 MIDDLEWARE = [
-    # "django_browser_reload.middleware.BrowserReloadMiddleware",  # Debug
+    "django_browser_reload.middleware.BrowserReloadMiddleware",  # Debug
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -72,7 +72,7 @@ MIDDLEWARE = [
 ]
 
 if DEBUG:
-    # INSTALLED_APPS.append("django_browser_reload")
+    INSTALLED_APPS.append("django_browser_reload")
     # INSTALLED_APPS.append("debug_toolbar")
 
     # MIDDLEWARE.append("debug_toolbar.middleware.DebugToolbarMiddleware")

@@ -1,58 +1,336 @@
-{% extends "bases/home.jinja" %}
-
-{% block content %}
-<section class="py-10">
-    <div class="text-center w-max border-2 rounded-lg px-16 py-4 mx-auto">
-        <div class="py-4">
-            <h1 class="font-extrabold text-5xl tracking-tight text-[rgba(255,255,255,0.7)] transition-all duration-300 hover:text-white">Sign Up</div>
-                {% if error %}
-                    <div class="bg-red-600 rounded py-2">{{ error }}</div>
-                {% endif %}
-            
-                <form method="POST">
-                    {% csrf_token %}
-                    <!-- Email Input -->
-                    <div class="my-5 relative h-10 w-64 min-w-[200px] mx-auto">
-                        {{ form.email }}
-                        <label class="before:content[' '] after:content[' '] pointer-events-none absolute left-0 -top-1.5 flex h-full w-full select-none !overflow-visible truncate text-[11px] font-normal leading-tight text-gray-300 transition-all before:pointer-events-none before:mt-[6.5px] before:mr-1 before:box-border before:block before:h-1.5 before:w-2.5 before:rounded-tl-md before:border-t before:border-l before:border-gray-300 before:transition-all after:pointer-events-none after:mt-[6.5px] after:ml-1 after:box-border after:block after:h-1.5 after:w-2.5 after:flex-grow after:rounded-tr-md after:border-t after:border-r after:border-gray-300 after:transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:leading-[3.75] peer-placeholder-shown:text-gray-300 peer-placeholder-shown:before:border-transparent peer-placeholder-shown:after:border-transparent peer-focus:text-[12px] peer-focus:leading-tight peer-focus:text-gray-300 peer-focus:after:border-t-2 peer-focus:after:border-r-2 peer-focus:after:!border-gray-300 peer-disabled:text-transparent peer-disabled:before:border-transparent peer-disabled:after:border-transparent peer-disabled:peer-placeholder-shown:text-gray-300">
-                            Email
-                        </label>
-                    </div>
-                    <!-- End Email Input -->
-
-                    <!-- Username Input -->
-                    <div class="my-5 relative h-10 w-64 min-w-[200px] mx-auto">
-                        {{ form.username }}
-                        <label class="before:content[' '] after:content[' '] pointer-events-none absolute left-0 -top-1.5 flex h-full w-full select-none !overflow-visible truncate text-[11px] font-normal leading-tight text-gray-300 transition-all before:pointer-events-none before:mt-[6.5px] before:mr-1 before:box-border before:block before:h-1.5 before:w-2.5 before:rounded-tl-md before:border-t before:border-l before:border-gray-300 before:transition-all after:pointer-events-none after:mt-[6.5px] after:ml-1 after:box-border after:block after:h-1.5 after:w-2.5 after:flex-grow after:rounded-tr-md after:border-t after:border-r after:border-gray-300 after:transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:leading-[3.75] peer-placeholder-shown:text-gray-300 peer-placeholder-shown:before:border-transparent peer-placeholder-shown:after:border-transparent peer-focus:text-[12px] peer-focus:leading-tight peer-focus:text-gray-300 peer-focus:after:border-t-2 peer-focus:after:border-r-2 peer-focus:after:!border-gray-300 peer-disabled:text-transparent peer-disabled:before:border-transparent peer-disabled:after:border-transparent peer-disabled:peer-placeholder-shown:text-gray-300">
-                            Username
-                        </label>
-                    </div>
-                    <!-- End Username Input -->
-                    
-                    <!-- Password Input -->
-                    <div class="my-5 relative h-10 w-64 min-w-[200px] mx-auto">
-                        {{ form.password }}
-                        <label class="before:content[' '] after:content[' '] pointer-events-none absolute left-0 -top-1.5 flex h-full w-full select-none !overflow-visible truncate text-[11px] font-normal leading-tight text-gray-300 transition-all before:pointer-events-none before:mt-[6.5px] before:mr-1 before:box-border before:block before:h-1.5 before:w-2.5 before:rounded-tl-md before:border-t before:border-l before:border-gray-300 before:transition-all after:pointer-events-none after:mt-[6.5px] after:ml-1 after:box-border after:block after:h-1.5 after:w-2.5 after:flex-grow after:rounded-tr-md after:border-t after:border-r after:border-gray-300 after:transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:leading-[3.75] peer-placeholder-shown:text-gray-300 peer-placeholder-shown:before:border-transparent peer-placeholder-shown:after:border-transparent peer-focus:text-[12px] peer-focus:leading-tight peer-focus:text-gray-300 peer-focus:after:border-t-2 peer-focus:after:border-r-2 peer-focus:after:!border-gray-300 peer-disabled:text-transparent peer-disabled:before:border-transparent peer-disabled:after:border-transparent peer-disabled:peer-placeholder-shown:text-gray-300">
-                            Password
-                        </label>
-                    </div>
-                    <!-- End Password Input -->
-
-                    <!-- Recaptcha -->
-                    {{ form.recaptcha }}
-                    <!-- End Recaptcha -->
-
-                    <!-- sign up Button -->
-                     <button class="border-2 border-[#01e4f4] text-[#01e4f4] font-bold w-64 px-3 py-2 rounded transition-all duration-300 hover:bg-[#01e4f4] hover:text-black active:scale-95 active:bg-[#7f4c1e]">sign up</button>
-                    <!-- End sign up Button -->
-
-                    <!-- Some Links -->
-                     <div class="py-5 gap-y-5">
-                         <a class="text-sm tracking-tight text-gray-300 transition-all duration-300 hover:text-[#01e4f4] hover:underline bl gap-y-5ock" href="/auth/signin">Have an account? Sign In</a>
-                         <a class="text-sm tracking-tight text-gray-300 transition-all duration-300 hover:text-[#01e4f4] hover:underline block" href="/auth/signup">Forgot password? Reset</a>
-                        </div>
-                </form>
+{% extends "bases/home.jinja" %} {% load static %} {% block content %}
+<div id="root">
+  <div class="w-full bg-background-theme flex items-start flex-col noselect">
+    <h1 class="hidden">Atomic Shield - Sign In</h1>
+    <img src="{% static 'image/logo-ico.svg' %}" alt="Atomic Shield" class="hidden" />
+    <header
+      class="flex flex-row py-4 justify-between items-center self-stretch z-50 bg-[#08101777] px-12 sticky md:top-0 backdrop-blur-md"
+    >
+      <div class="flex flex-row items-center gap-4 md:gap-12 w-full md:w-auto">
+        <a href="/home" class="flex h-12 items-center gap-2"
+          ><img src="{% static 'image/logo.svg' %}" alt="Atomic Shield" class="h-7" />
+          <div
+            class="text-[1.5rem] md:text-[1.75rem] font-jakartasans font-bold text-[#00A7FD] tracking-[-0.07rem] leading-[100%]"
+          >
+            Atomic Shield
+          </div></a
+        >
+        <div class="hidden md:flex items-start gap-4 md:gap-8">
+          <div
+            class="text-[#D7DFE5] text-sm md:text-base font-semibold font-jakartasans leading-5 transition duration-300 ease-in-out cursor-pointer hover:text-[#00A7FD] hover:drop-shadow-[0rem_0rem_1rem_#00A7FD]"
+          >
+            Home
+          </div>
+          <div
+            class="text-[#D7DFE5] text-sm md:text-base font-semibold font-jakartasans leading-5 transition duration-300 ease-in-out cursor-pointer hover:text-[#00A7FD] hover:drop-shadow-[0rem_0rem_1rem_#00A7FD]"
+          >
+            Features
+          </div>
+          <div
+            class="text-[#D7DFE5] text-sm md:text-base font-semibold font-jakartasans leading-5 transition duration-300 ease-in-out cursor-pointer hover:text-[#00A7FD] hover:drop-shadow-[0rem_0rem_1rem_#00A7FD]"
+          >
+            Pricing
+          </div>
+          <div
+            class="text-[#D7DFE5] text-sm md:text-base font-semibold font-jakartasans leading-5 transition duration-300 ease-in-out cursor-pointer hover:text-[#00A7FD] hover:drop-shadow-[0rem_0rem_1rem_#00A7FD]"
+          >
+            Contact
+          </div>
         </div>
+      </div>
+      <div class="flex flex-row items-center gap-4 md:gap-8 mt-0">
+        <a
+          href="/signin"
+          class="text-[#D7DFE5] hidden md:flex text-s md:text-base font-semibold font-jakartasans leading-5 transition duration-300 ease-in-out cursor-pointer hover:text-[#00A7FD] hover:drop-shadow-[0rem_0rem_1rem_#00A7FD]"
+          >Sign In</a
+        ><a
+          href=""
+          class="py-2 px-4 flex items-center justify-center bg-[#00A7FD] text-sm md:text-base text-background-theme rounded-full font-semibold font-jakartasans leading-5 border border-transparent hover:bg-transparent hover:border-[#00A7FD] hover:drop-shadow-[0rem_0rem_1rem_#00A7FD] hover:text-[#D7DFE5] transition-all duration-300"
+          >Dashboard</a
+        >
+      </div>
+    </header>
+    <div
+      class="flex py-12 items-center justify-center self-stretch px-4 sm:px-8 md:px-12"
+    >
+      <div class="flex flex-col items-center w-full max-w-lg mx-auto">
+        <div
+          class="flex min-h-[43rem] py-8 flex-col items-center gap-8 self-stretch"
+        >
+        <form method="POST">
+            {% csrf_token %}
+          <div class="flex w-full flex-col items-center gap-6">
+            <div class="flex flex-col items-center gap-2 w-full text-center">
+              <h1
+                class="text-[#D7DFE5] text-xl sm:text-2xl font-bold leading-6 sm:leading-8"
+              >
+                Create Your Account
+              </h1>
+              <p
+                class="text-[#D7DFE5] text-sm sm:text-base font-normal leading-5"
+              >
+                Join Atomic Shield today and start innovating!
+              </p>
+              {% if error %}
+                  <div class="bg-red-600 rounded py-2">{{ error }}</div>
+              {% endif %}
+            </div>
+            <div class="flex flex-col items-start gap-4 w-full">
+              <input
+                type="text"
+                class="flex px-3 py-2 gap-2 w-full border border-[#91a6b633] bg-[#121920] rounded-lg text-sm leading-5 text-[#D7DFE5] placeholder:text-[#d1e2eb66] focus:outline-none"
+                placeholder="Username"
+                name="username"
+              /><input
+                type="text"
+                class="flex px-3 py-2 gap-2 w-full border border-[#91a6b633] bg-[#121920] rounded-lg text-sm leading-5 text-[#D7DFE5] placeholder:text-[#d1e2eb66] focus:outline-none"
+                placeholder="Email Address"
+                name="email"
+              />
+              <div class="relative w-full">
+                <input
+                  type="password"
+                  class="flex px-3 py-2 gap-2 w-full border border-[#91a6b633] bg-[#121920] rounded-lg text-sm leading-5 text-[#D7DFE5] placeholder:text-[#d1e2eb66] focus:outline-none"
+                  placeholder="Password"
+                  name="password"
+                /><button
+                  type="button"
+                  class="absolute inset-y-0 right-3 flex items-center text-[#d1e2eb66]"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke-width="1.5"
+                    stroke="currentColor"
+                    class="w-5 h-5"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"
+                    ></path>
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    ></path>
+                  </svg>
+                </button>
+              </div>
+              {{ form.recaptcha }}
+              <button
+                class="flex px-3 py-2 justify-center items-center w-full rounded-lg bg-[#00A7FD] text-background-theme text-sm sm:text-base font-semibold leading-5"
+              >
+                Sign Up
+              </button>
+            </div>
+            <div class="flex items-center w-full gap-2">
+              <div class="flex-1 h-[1px] bg-[#121920]"></div>
+              <span
+                class="text-[#d1e2eb9e] font-medium text-xs sm:text-sm whitespace-nowrap"
+                >or continue with</span
+              >
+              <div class="flex-1 h-[1px] bg-[#121920]"></div>
+            </div>
+            <div
+              class="flex p-2 items-center justify-center self-stretch rounded-lg border border-[#91a6b633] relative"
+            >
+              <div
+                class="text-[#D7DFE5] text-center font-jakartasansn font-semibold leading-[1.25rem] text-base"
+              >
+                Discord
+              </div>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 20 20"
+                fill="none"
+                class="w-5 h-5 absolute left-2"
+              >
+                <mask
+                  id="mask0_9_9404"
+                  maskUnits="userSpaceOnUse"
+                  x="0"
+                  y="0"
+                  width="20"
+                  height="20"
+                >
+                  <path d="M20 0H0V20H20V0Z" fill="white"></path>
+                </mask>
+                <g mask="url(#mask0_9_9404)">
+                  <path
+                    d="M0 9.97674C0 4.46512 4.46512 0 9.97674 0C15.4884 0 19.9535 4.46512 19.9535 9.97674C19.9535 15.4884 15.4884 19.9535 9.97674 19.9535C4.46512 19.9419 0 15.4767 0 9.97674Z"
+                    fill="#5865F2"
+                  ></path>
+                  <path
+                    d="M14.4651 5.91857C13.6163 5.53485 12.7325 5.25578 11.8139 5.10461C11.6977 5.31392 11.5698 5.58136 11.4767 5.80229C10.5 5.65113 9.51162 5.65113 8.53487 5.80229C8.43022 5.5581 8.31394 5.32554 8.18603 5.10461C7.26743 5.25578 6.37208 5.53485 5.53487 5.9302C3.86045 8.4302 3.40697 10.8604 3.6279 13.2674C4.61627 14 5.70929 14.5581 6.88371 14.9069C7.15115 14.5465 7.38371 14.1744 7.58138 13.779C7.19766 13.6395 6.8372 13.4651 6.48836 13.2558C6.58138 13.186 6.66278 13.1162 6.7558 13.0465C8.81394 14.0232 11.2093 14.0232 13.2674 13.0465C13.3605 13.1162 13.4418 13.186 13.5349 13.2558C13.186 13.4651 12.8139 13.6395 12.4302 13.779C12.6279 14.1744 12.8605 14.5465 13.1279 14.9069C14.3023 14.5465 15.407 14 16.3837 13.2674C16.6395 10.4767 15.9186 8.0581 14.4651 5.91857ZM7.86046 11.779C7.22092 11.779 6.70929 11.1976 6.70929 10.4883C6.70929 9.77903 7.22092 9.18601 7.86046 9.18601C8.51162 9.18601 9.02325 9.7674 9.02325 10.4883C9.01162 11.1976 8.51162 11.779 7.86046 11.779ZM12.1395 11.779C11.5 11.779 10.9884 11.1976 10.9884 10.4883C10.9884 9.77903 11.5 9.18601 12.1395 9.18601C12.7907 9.18601 13.3023 9.7674 13.2907 10.4883C13.2791 11.2093 12.7791 11.779 12.1395 11.779Z"
+                    fill="white"
+                  ></path>
+                </g>
+              </svg>
+            </div>
+          </div>
+          </form>
+        </div>
+      </div>
     </div>
-</section>
+    <footer
+      id="contact"
+      class="bg-background-theme flex flex-col px-6 pb-6 md:px-12 md:pb-12 items-center md:items-start gap-6 self-stretch z-10 relative"
+    >
+      <div
+        class="w-full h-[1.5px] bg-gray-theme absolute top-[-0.5rem] md:top-[-1rem] left-0"
+      ></div>
+      <div
+        class="flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-12 self-stretch text-center md:text-left"
+      >
+        <div
+          class="flex flex-col justify-between items-center md:items-start flex100 self-stretch w-full md:w-[12.5rem]"
+        >
+          <div class="flex h-12 items-center gap-2">
+            <img src="{% static 'image/logo.svg' %}" alt="Atomic Shield" class="h-7" />
+            <div
+              class="text-[1.25rem] md:text-[1.5rem] lg:text-[1.75rem] font-jakartasans font-bold text-[#00A7FD] tracking-[-0.07rem] leading-[100%]"
+            >
+              Atomic Shield
+            </div>
+          </div>
+          <div class="flex items-center gap-3 mt-4 md:mt-0">
+            <a href=""
+              ><img
+                src="{% static 'image/facebook.svg' %}"
+                alt="facebook"
+                class="h-[1.5rem]" /></a
+            ><a href=""
+              ><img
+                src="{% static 'image/instagram.svg' %}"
+                alt="instagram"
+                class="h-[1.5rem]" /></a
+            ><a href=""
+              ><img src="{% static 'image/twitter.svg' %}" alt="twitter" class="h-[1.5rem]"
+            /></a>
+          </div>
+        </div>
+        <div
+          class="flex w-full md:w-[12.5rem] flex-col justify-center items-center md:items-start gap-2"
+        >
+          <div
+            class="text-[#D7DFE5] font-jakartasans text-[0.9375rem] font-semibold leading-[1.25rem]"
+          >
+            Company
+          </div>
+          <div
+            class="text-[#d7dfe58a] font-jakartasans text-[0.9375rem] font-semibold leading-[1.25rem]"
+          >
+            About Us
+          </div>
+          <div
+            class="text-[#d7dfe58a] font-jakartasans text-[0.9375rem] font-semibold leading-[1.25rem]"
+          >
+            Careers
+          </div>
+          <div
+            class="text-[#d7dfe58a] font-jakartasans text-[0.9375rem] font-semibold leading-[1.25rem]"
+          >
+            Press
+          </div>
+          <div
+            class="text-[#d7dfe58a] font-jakartasans text-[0.9375rem] font-semibold leading-[1.25rem]"
+          >
+            Blog
+          </div>
+        </div>
+        <div
+          class="flex w-full md:w-[12.5rem] flex-col justify-center items-center md:items-start gap-2"
+        >
+          <div
+            class="text-[#D7DFE5] font-jakartasans text-[0.9375rem] font-semibold leading-[1.25rem]"
+          >
+            Resources
+          </div>
+          <div
+            class="text-[#d7dfe58a] font-jakartasans text-[0.9375rem] font-semibold leading-[1.25rem]"
+          >
+            Help Center
+          </div>
+          <div
+            class="text-[#d7dfe58a] font-jakartasans text-[0.9375rem] font-semibold leading-[1.25rem]"
+          >
+            Community
+          </div>
+          <div
+            class="text-[#d7dfe58a] font-jakartasans text-[0.9375rem] font-semibold leading-[1.25rem]"
+          >
+            Developers
+          </div>
+          <div
+            class="text-[#d7dfe58a] font-jakartasans text-[0.9375rem] font-semibold leading-[1.25rem]"
+          >
+            Documentation
+          </div>
+        </div>
+        <div
+          class="flex w-full md:w-[12.5rem] flex-col justify-center items-center md:items-start gap-2"
+        >
+          <div
+            class="text-[#D7DFE5] font-jakartasans text-[0.9375rem] font-semibold leading-[1.25rem]"
+          >
+            Legal
+          </div>
+          <div
+            class="text-[#d7dfe58a] font-jakartasans text-[0.9375rem] font-semibold leading-[1.25rem]"
+          >
+            Privacy Policy
+          </div>
+          <div
+            class="text-[#d7dfe58a] font-jakartasans text-[0.9375rem] font-semibold leading-[1.25rem]"
+          >
+            Terms of Service
+          </div>
+          <div
+            class="text-[#d7dfe58a] font-jakartasans text-[0.9375rem] font-semibold leading-[1.25rem]"
+          >
+            Security
+          </div>
+          <div
+            class="text-[#d7dfe58a] font-jakartasans text-[0.9375rem] font-semibold leading-[1.25rem]"
+          >
+            Compliance
+          </div>
+        </div>
+        <div
+          class="flex w-full md:w-[12.5rem] flex-col justify-center items-center md:items-start gap-2"
+        >
+          <div
+            class="text-[#D7DFE5] font-jakartasans text-[0.9375rem] font-semibold leading-[1.25rem]"
+          >
+            Contact
+          </div>
+          <div
+            class="text-[#d7dfe58a] font-jakartasans text-[0.9375rem] font-semibold leading-[1.25rem]"
+          >
+            Support
+          </div>
+          <div
+            class="text-[#d7dfe58a] font-jakartasans text-[0.9375rem] font-semibold leading-[1.25rem]"
+          >
+            Sales
+          </div>
+          <div
+            class="text-[#d7dfe58a] font-jakartasans text-[0.9375rem] font-semibold leading-[1.25rem]"
+          >
+            Partners
+          </div>
+          <div
+            class="text-[#d7dfe58a] font-jakartasans text-[0.9375rem] font-semibold leading-[1.25rem]"
+          >
+            Affiliates
+          </div>
+        </div>
+      </div>
+    </footer>
+  </div>
+</div>
 {% endblock content %}

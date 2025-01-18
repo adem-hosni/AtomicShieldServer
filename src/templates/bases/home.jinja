@@ -11,6 +11,12 @@
     <title>Atomic Shield - Home</title>
 
     <link
+      rel="stylesheet"
+      href="{% static 'vendor/iziToast/css/iziToast.css' %}"
+    />
+    <script src="{% static 'vendor/iziToast/js/iziToast.js' %}"></script>
+
+    <link
       href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&amp;display=swap"
       rel="stylesheet"
     />
@@ -1742,5 +1748,16 @@
   <body class="scrollbar-hidden">
     {% block content %}
     {% endblock content %}
+
+    <script>
+      {% if messages %}
+        {% for message in messages %}
+          iziToast.{{ message.tags }}({
+              title: '{{ message.level_tag|capfirst }}',
+              message: '{{ message }}',
+          });
+        {% endfor %}
+      {% endif %}
+    </script>
   </body>
 </html>

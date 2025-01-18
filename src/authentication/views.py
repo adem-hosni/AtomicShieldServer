@@ -3,6 +3,7 @@ from django.db.models import Q
 from django.http import HttpRequest, HttpResponse
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
+from django.contrib import messages
 
 from .forms import SignInForm, SignUpForm
 
@@ -10,8 +11,6 @@ from .forms import SignInForm, SignUpForm
 def render_signin(request: HttpRequest) -> HttpResponse:
     if request.user.is_authenticated:
         return redirect("/dashboard/main")
-
-    error = ""
 
     if request.method == "POST":
         form = SignInForm(request.POST)
@@ -31,21 +30,19 @@ def render_signin(request: HttpRequest) -> HttpResponse:
                     login(request, user)
                     return redirect("/dashboard/main")
                 else:
-                    error = "Password is incorrect"
+                    messages.error(request, "Password is incorrect")
             else:
-                error = "Username is incorrect"
+                messages.error(request, "Username is incorrect")
 
     else:
         form = SignInForm()
 
-    return render(request, "pages/auth/signin.jinja", {"form": form, "error": error})
+    return render(request, "pages/auth/signin.jinja", {"form": form})
 
 
 def render_signup(request: HttpRequest) -> HttpResponse:
     if request.user.is_authenticated:
         return redirect("/dashboard/main")
-
-    error = ""
 
     if request.method == "POST":
         form = SignUpForm(request.POST)
@@ -56,10 +53,10 @@ def render_signup(request: HttpRequest) -> HttpResponse:
             password = form.cleaned_data["password"]
 
             if len(str(password)) < 8:
-                error = "Password must have at least 8 characters"
+                messages.error(request, "Password must have at least 8 characters")
             else:
                 if User.objects.filter(username=username).exists():
-                    error = "Username already exists"
+                    messages.error(request, "Username already exists")
                 else:
                     user = User.objects.create_user(
                         username=username, email=email, password=password
@@ -71,7 +68,7 @@ def render_signup(request: HttpRequest) -> HttpResponse:
     else:
         form = SignUpForm()
 
-    return render(request, "pages/auth/signup.jinja", {"form": form, "error": error})
+    return render(request, "pages/auth/signup.jinja", {"form": form})
 
 
 def render_logout(request: HttpRequest) -> HttpResponse:

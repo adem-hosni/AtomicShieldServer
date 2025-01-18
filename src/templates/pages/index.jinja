@@ -1,4 +1,4 @@
-{% extends "bases/home.jinja" %} {% load static %}  {% block content %}
+{% extends "bases/home.jinja" %} {% load static %} {% block content %}
 <div id="root">
   <div class="w-full bg-background-theme flex items-start flex-col noselect">
     <h1 class="hidden">Atomic Shield</h1>
@@ -7,32 +7,32 @@
       class="flex flex-row py-4 justify-between items-center self-stretch z-50 bg-[#08101777] px-12 sticky md:top-0 backdrop-blur-md"
     >
       <div class="flex flex-row items-center gap-4 md:gap-12 w-full md:w-auto">
-        <a href="/" class="flex h-12 items-center gap-2"
+        <a href="/home" class="flex h-12 items-center gap-2"
           ><img src="{% static 'image/logo.svg' %}" alt="Atomic Shield" class="h-7" />
           <div
-            class="text-[1.5rem] md:text-[1.75rem] font-jakartasans font-bold text-blue-theme tracking-[-0.07rem] leading-[100%]"
+            class="text-[1.5rem] md:text-[1.75rem] font-jakartasans font-bold text-[#00A7FD] tracking-[-0.07rem] leading-[100%]"
           >
             Atomic Shield
           </div></a
         >
         <div class="hidden md:flex items-start gap-4 md:gap-8">
           <div
-            class="text-white-gray text-sm md:text-base font-semibold font-jakartasans leading-5 transition duration-300 ease-in-out cursor-pointer hover:text-blue-theme hover:drop-shadow-[0rem_0rem_1rem_#00A7FD]"
+            class="text-[#D7DFE5] text-sm md:text-base font-semibold font-jakartasans leading-5 transition duration-300 ease-in-out cursor-pointer hover:text-[#00A7FD] hover:drop-shadow-[0rem_0rem_1rem_#00A7FD]"
           >
             Home
           </div>
           <div
-            class="text-white-gray text-sm md:text-base font-semibold font-jakartasans leading-5 transition duration-300 ease-in-out cursor-pointer hover:text-blue-theme hover:drop-shadow-[0rem_0rem_1rem_#00A7FD]"
+            class="text-[#D7DFE5] text-sm md:text-base font-semibold font-jakartasans leading-5 transition duration-300 ease-in-out cursor-pointer hover:text-[#00A7FD] hover:drop-shadow-[0rem_0rem_1rem_#00A7FD]"
           >
             Features
           </div>
           <div
-            class="text-white-gray text-sm md:text-base font-semibold font-jakartasans leading-5 transition duration-300 ease-in-out cursor-pointer hover:text-blue-theme hover:drop-shadow-[0rem_0rem_1rem_#00A7FD]"
+            class="text-[#D7DFE5] text-sm md:text-base font-semibold font-jakartasans leading-5 transition duration-300 ease-in-out cursor-pointer hover:text-[#00A7FD] hover:drop-shadow-[0rem_0rem_1rem_#00A7FD]"
           >
             Pricing
           </div>
           <div
-            class="text-white-gray text-sm md:text-base font-semibold font-jakartasans leading-5 transition duration-300 ease-in-out cursor-pointer hover:text-blue-theme hover:drop-shadow-[0rem_0rem_1rem_#00A7FD]"
+            class="text-[#D7DFE5] text-sm md:text-base font-semibold font-jakartasans leading-5 transition duration-300 ease-in-out cursor-pointer hover:text-[#00A7FD] hover:drop-shadow-[0rem_0rem_1rem_#00A7FD]"
           >
             Contact
           </div>
@@ -41,12 +41,11 @@
       <div class="flex flex-row items-center gap-4 md:gap-8 mt-0">
         <a
           href="/auth/signin"
-          class="text-white-gray hidden md:flex text-s md:text-base font-semibold font-jakartasans leading-5 transition duration-300 ease-in-out cursor-pointer hover:text-blue-theme hover:drop-shadow-[0rem_0rem_1rem_#00A7FD]"
+          class="text-[#D7DFE5] hidden md:flex text-s md:text-base font-semibold font-jakartasans leading-5 transition duration-300 ease-in-out cursor-pointer hover:text-[#00A7FD] hover:drop-shadow-[0rem_0rem_1rem_#00A7FD]"
           >Sign In</a
-        >
-        <a
+        ><a
           href="/dashboard/main"
-          class="py-2 px-4 flex items-center justify-center bg-blue-theme text-sm md:text-base text-background-theme rounded-full font-semibold font-jakartasans leading-5 border border-transparent hover:bg-transparent hover:border-blue-theme hover:drop-shadow-[0rem_0rem_1rem_#00A7FD] hover:text-white-gray transition-all duration-300"
+          class="py-2 px-4 flex items-center justify-center bg-[#00A7FD] text-sm md:text-base text-background-theme rounded-full font-semibold font-jakartasans leading-5 border border-transparent hover:bg-transparent hover:border-[#00A7FD] hover:drop-shadow-[0rem_0rem_1rem_#00A7FD] hover:text-[#D7DFE5] transition-all duration-300"
           >Dashboard</a
         >
       </div>
@@ -68,11 +67,11 @@
           "
           aria-hidden="true"
           height="654"
-          width="498"
+          width="692"
         ></canvas>
       </div>
       <div
-        class="relative z-10 flex w-full max-w-screen-xl flex-col items-start"
+        class="relative z-10 flex w-full flex-col items-start"
       >
         <div class="flex flex-col items-center self-stretch px-6 md:px-12">
           <div
@@ -87,34 +86,34 @@
               >
                 <div>
                   <span
-                    class="dark:text-white opacity-0 text-white-gray"
+                    class="dark:text-white opacity-0 text-[#D7DFE5]"
                     style="filter: blur(0px); opacity: 1"
                     >Unbreakable </span
                   ><span
-                    class="dark:text-white opacity-0 text-blue-theme"
+                    class="dark:text-white opacity-0 text-[#00A7FD]"
                     style="filter: blur(0px); opacity: 1"
                     >Protection </span
                   ><span
-                    class="dark:text-white opacity-0 text-white-gray"
+                    class="dark:text-white opacity-0 text-[#D7DFE5]"
                     style="filter: blur(0px); opacity: 1"
                     >for </span
                   ><span
-                    class="dark:text-white opacity-0 text-white-gray"
+                    class="dark:text-white opacity-0 text-[#D7DFE5]"
                     style="filter: blur(0px); opacity: 1"
                     >Your </span
                   ><span
-                    class="dark:text-white opacity-0 text-white-gray"
+                    class="dark:text-white opacity-0 text-[#D7DFE5]"
                     style="filter: blur(0px); opacity: 1"
                     >FiveM </span
                   ><span
-                    class="dark:text-white opacity-0 text-blue-theme"
+                    class="dark:text-white opacity-0 text-[#00A7FD]"
                     style="filter: blur(0px); opacity: 1"
                     >Server
                   </span>
                 </div>
               </div>
               <div
-                class="py-2 px-4 flex items-center justify-center bg-blue-theme text-sm sm:text-base md:text-base text-background-theme rounded-full font-semibold font-jakartasans leading-5 border border-transparent hover:bg-transparent hover:border-blue-theme hover:drop-shadow-[0rem_0rem_1rem_#00A7FD] hover:text-white-gray transition-all duration-300"
+                class="py-2 px-4 flex items-center justify-center bg-[#00A7FD] text-sm sm:text-base md:text-base text-background-theme rounded-full font-semibold font-jakartasans leading-5 border border-transparent hover:bg-transparent hover:border-[#00A7FD] hover:drop-shadow-[0rem_0rem_1rem_#00A7FD] hover:text-[#D7DFE5] transition-all duration-300"
               >
                 View Plans
               </div>
@@ -137,13 +136,13 @@
                         class="h-5 lg:h-7 md:h-6 sm:h-5"
                       />
                       <div
-                        class="text-[1rem] sm:text-[0.4375rem] lg:text-[1.75rem] md:text-[0.875rem] font-jakartasans font-bold text-blue-theme tracking-[-0.07rem] leading-[100%]"
+                        class="text-[1rem] sm:text-[0.4375rem] lg:text-[1.75rem] md:text-[0.875rem] font-jakartasans font-bold text-[#00A7FD] tracking-[-0.07rem] leading-[100%]"
                       >
                         Atomic Shield
                       </div>
                     </div>
                     <div
-                      class="py-1 lg:py-2 px-2 lg:px-4 md:px-3 sm:px-2 flex items-center justify-center bg-blue-theme text-xs sm:text-sm md:text-base lg:text-base text-background-theme rounded-full font-semibold font-jakartasans leading-5 border border-transparent hover:bg-transparent hover:border-blue-theme hover:drop-shadow-[0rem_0rem_1rem_#00A7FD] hover:text-white-gray transition-all duration-300"
+                      class="py-1 lg:py-2 px-2 lg:px-4 md:px-3 sm:px-2 flex items-center justify-center bg-[#00A7FD] text-xs sm:text-sm md:text-base lg:text-base text-background-theme rounded-full font-semibold font-jakartasans leading-5 border border-transparent hover:bg-transparent hover:border-[#00A7FD] hover:drop-shadow-[0rem_0rem_1rem_#00A7FD] hover:text-[#D7DFE5] transition-all duration-300"
                     >
                       Dashboard
                     </div>
@@ -181,27 +180,27 @@
           </div>
           <div
             id="features"
-            class="flex gap-2 sm:gap-3 lg:gap-12 md:gap-6 py-3 sm:py-3 lg:py-12 md:py-6 flex-col justify-center items-start self-stretch opacity-0"
+            class="flex gap-2 sm:gap-3 lg:gap-12 md:gap-6 py-3 sm:py-3 lg:py-12 md:py-6 flex-col justify-center items-start self-stretch animate-custom-fadeIn"
           >
             <div
               class="text-center font-publicsans font-bold leading-[3.25rem] tracking-[-0.06rem] lg:text-5xl text-[2rem] w-full"
             >
               <div>
                 <span
-                  class="dark:text-white opacity-0 text-white-gray"
-                  style="filter: blur(10px)"
+                  class="dark:text-white opacity-0 text-[#D7DFE5]"
+                  style="filter: blur(0px); opacity: 1"
                   >Why </span
                 ><span
-                  class="dark:text-white opacity-0 text-white-gray"
-                  style="filter: blur(10px)"
+                  class="dark:text-white opacity-0 text-[#D7DFE5]"
+                  style="filter: blur(0px); opacity: 1"
                   >Choose </span
                 ><span
-                  class="dark:text-white opacity-0 text-blue-theme"
-                  style="filter: blur(10px)"
+                  class="dark:text-white opacity-0 text-[#00A7FD]"
+                  style="filter: blur(0px); opacity: 1"
                   >Atomic </span
                 ><span
-                  class="dark:text-white opacity-0 text-blue-theme"
-                  style="filter: blur(10px)"
+                  class="dark:text-white opacity-0 text-[#00A7FD]"
+                  style="filter: blur(0px); opacity: 1"
                   >Shield
                 </span>
               </div>
@@ -211,18 +210,18 @@
                 class="flex flex-col md:flex-row gap-6 self-stretch items-start"
               >
                 <div
-                  class="flex card-shine-effect h-[20rem] md:h-[30rem] pt-8 flex-col items-start flex-1 rounded-[1.375rem] relative border border-[#91a6b633] bg-[#121920] hover:border-blue-theme justify-between hover:scale-105 transition-all duration-300"
+                  class="flex card-shine-effect h-[20rem] md:h-[30rem] pt-8 flex-col items-start flex-1 rounded-[1.375rem] relative border border-[#91a6b633] bg-[#121920] hover:border-[#00A7FD] justify-between hover:scale-105 transition-all duration-300"
                 >
                   <div
                     class="flex gap-2 px-8 flex-col items-start self-stretch"
                   >
                     <div
-                      class="self-stretch text-white-gray text-[1.75rem] font-bold leading-[2rem]"
+                      class="self-stretch text-[#D7DFE5] text-[1.75rem] font-bold leading-[2rem]"
                     >
                       Real-Time Detection
                     </div>
                     <div
-                      class="self-stretch text-white-gray text-[1.25rem] font-medium leading-[2rem]"
+                      class="self-stretch text-[#D7DFE5] text-[1.25rem] font-medium leading-[2rem]"
                     >
                       Instantly detect and prevent cheating activities.
                     </div>
@@ -230,18 +229,18 @@
                   <img src="{% static 'image/elm-one.svg' %}" class="w-full h-auto" />
                 </div>
                 <div
-                  class="flex card-shine-effect h-[20rem] md:h-[30rem] w-full md:w-[30rem] pt-8 flex-col items-start rounded-[1.375rem] border border-[#91a6b633] bg-[#121920] hover:border-blue-theme justify-between hover:scale-105 transition-all duration-300"
+                  class="flex card-shine-effect h-[20rem] md:h-[30rem] w-full md:w-[30rem] pt-8 flex-col items-start rounded-[1.375rem] border border-[#91a6b633] bg-[#121920] hover:border-[#00A7FD] justify-between hover:scale-105 transition-all duration-300"
                 >
                   <div
                     class="flex gap-2 px-8 flex-col items-start self-stretch"
                   >
                     <div
-                      class="self-stretch text-white-gray text-[1.75rem] font-bold leading-[2rem]"
+                      class="self-stretch text-[#D7DFE5] text-[1.75rem] font-bold leading-[2rem]"
                     >
                       User-Friendly Interface
                     </div>
                     <div
-                      class="self-stretch text-white-gray text-[1.25rem] font-medium leading-[2rem]"
+                      class="self-stretch text-[#D7DFE5] text-[1.25rem] font-medium leading-[2rem]"
                     >
                       Easy to navigate and manage.
                     </div>
@@ -256,18 +255,18 @@
                 class="flex flex-col md:flex-row gap-6 self-stretch items-start"
               >
                 <div
-                  class="flex card-shine-effect h-[20rem] md:h-[30rem] w-full md:w-[30rem] pt-8 flex-col items-start rounded-[1.375rem] border border-[#91a6b633] bg-[#121920] hover:border-blue-theme justify-between hover:scale-105 transition-all duration-300"
+                  class="flex card-shine-effect h-[20rem] md:h-[30rem] w-full md:w-[30rem] pt-8 flex-col items-start rounded-[1.375rem] border border-[#91a6b633] bg-[#121920] hover:border-[#00A7FD] justify-between hover:scale-105 transition-all duration-300"
                 >
                   <div
                     class="flex gap-2 px-8 flex-col items-start self-stretch"
                   >
                     <div
-                      class="self-stretch text-white-gray text-[1.75rem] font-bold leading-[2rem]"
+                      class="self-stretch text-[#D7DFE5] text-[1.75rem] font-bold leading-[2rem]"
                     >
                       Secure and Reliable
                     </div>
                     <div
-                      class="self-stretch text-white-gray text-[1.25rem] font-medium leading-[2rem]"
+                      class="self-stretch text-[#D7DFE5] text-[1.25rem] font-medium leading-[2rem]"
                     >
                       Built with top-notch security.
                     </div>
@@ -278,18 +277,18 @@
                   />
                 </div>
                 <div
-                  class="flex card-shine-effect h-[20rem] md:h-[30rem] pt-8 flex-col items-start flex-1 rounded-[1.375rem] relative border border-[#91a6b633] bg-[#121920] hover:border-blue-theme justify-between hover:scale-105 transition-all duration-300"
+                  class="flex card-shine-effect h-[20rem] md:h-[30rem] pt-8 flex-col items-start flex-1 rounded-[1.375rem] relative border border-[#91a6b633] bg-[#121920] hover:border-[#00A7FD] justify-between hover:scale-105 transition-all duration-300"
                 >
                   <div
                     class="flex gap-2 px-8 flex-col items-start self-stretch"
                   >
                     <div
-                      class="self-stretch text-white-gray text-[1.75rem] font-bold leading-[2rem]"
+                      class="self-stretch text-[#D7DFE5] text-[1.75rem] font-bold leading-[2rem]"
                     >
                       24/7 Support
                     </div>
                     <div
-                      class="self-stretch text-white-gray text-[1.25rem] font-medium leading-[2rem]"
+                      class="self-stretch text-[#D7DFE5] text-[1.25rem] font-medium leading-[2rem]"
                     >
                       Always here to help.
                     </div>
@@ -300,19 +299,19 @@
             </div>
           </div>
           <div
-            class="flex py-1 sm:py-3 lg:py-12 md:py-6 flex-col items-center self-stretch opacity-0"
+            class="flex py-1 sm:py-3 lg:py-12 md:py-6 flex-col items-center self-stretch animate-custom-fadeIn"
           >
             <div
               class="flex py-12 items-start gap-2 sm:gap-1 lg:gap-24 md:gap-12 flex-col md:flex-row w-full"
             >
               <div
-                class="text-white-gray font-publicsans font-bold text-[2rem] sm:text-[2.5rem] md:text-[3rem] tracking-[-0.06rem] leading-[3.25rem]"
+                class="text-[#D7DFE5] font-publicsans font-bold text-[2rem] sm:text-[2.5rem] md:text-[3rem] tracking-[-0.06rem] leading-[3.25rem]"
               >
-                About <span class="text-blue-theme">Atomic Shield</span>
+                About <span class="text-[#00A7FD]">Atomic Shield</span>
               </div>
               <div class="flex pt-2 flex-col items-start w-full">
                 <div
-                  class="text-white-gray font-jakartasans font-medium leading-8 tracking-[-0.0075rem] text-[1.25rem] sm:text-[1.5rem] md:text-[1.5rem]"
+                  class="text-[#D7DFE5] font-jakartasans font-medium leading-8 tracking-[-0.0075rem] text-[1.25rem] sm:text-[1.5rem] md:text-[1.5rem]"
                 >
                   Atomic Shield provides the most advanced anti-cheat solutions
                   to protect your gaming experience from cheaters and hackers.
@@ -324,7 +323,7 @@
           </div>
           <div
             id="pricing"
-            class="flex py-3 sm:py-3 lg:py-12 md:py-6 flex-col justify-center self-stretch items-start gap-2 sm:gap-1 lg:gap-24 md:gap-12 opacity-0"
+            class="flex py-3 sm:py-3 lg:py-12 md:py-6 flex-col justify-center self-stretch items-start gap-2 sm:gap-1 lg:gap-24 md:gap-12 animate-custom-fadeIn"
           >
             <div
               class="flex flex-col items-center gap-2 sm:gap-1 lg:gap-24 md:gap-12 self-stretch"
@@ -333,23 +332,19 @@
                 class="flex flex-col items-start gap-2 lg:gap-4 self-stretch"
               >
                 <div
-                  class="text-white-gray self-stretch text-center font-jakartasans text-[2rem] lg:text-[4rem] font-bold leading-[4.25rem] tracking-[-0.08rem]"
+                  class="text-[#D7DFE5] self-stretch text-center font-jakartasans text-[2rem] lg:text-[4rem] font-bold leading-[4.25rem] tracking-[-0.08rem]"
                 >
                   Flexible Pricing Plans
                 </div>
                 <div
-                  class="text-white-gray self-stretch text-center font-jakartasans text-base lg:text-[1.5rem] font-normal leading-[2rem] tracking-[-0.0075rem]"
+                  class="text-[#D7DFE5] self-stretch text-center font-jakartasans text-base lg:text-[1.5rem] font-normal leading-[2rem] tracking-[-0.0075rem]"
                 >
                   Our pricing plans are designed to be affordable and flexible,
                   catering to all types of users. Choose the plan that best
                   suits your needs and enjoy uninterrupted protection.
                 </div>
               </div>
-              <button
-                class="py-1 lg:py-2 px-2 lg:px-4 md:px-3 sm:px-2 flex items-center justify-center bg-blue-theme text-xs sm:text-sm md:text-base lg:text-base text-background-theme rounded-full font-semibold font-jakartasans leading-5 border border-transparent hover:bg-transparent hover:border-blue-theme hover:drop-shadow-[0rem_0rem_1rem_#00A7FD] hover:text-white-gray transition-all duration-300"
-              >
-                View Pricing
-              </button>
+              <div class="flex justify-center items-center gap-5 self-stretch flex-col sm:flex-row sm:flex-wrap my-4"><div class="flex p-6 flex-col items-start gap-6 rounded-[1.25rem] animation-pcicing animate-slideLeft relative w-full sm:w-[calc(33.33%-1.25rem)] sm:max-w-[400px] border border-[#91a6b633] hover:border-[#00A7FD] hover:scale-105 transition-all duration-300" style="animation-delay: 0s;"><div class="card-content rounded-[1.25rem] bg-[#00000067] card-shine-effect backdrop-blur-3xl"></div><div class="flex flex-col items-start gap-4 self-stretch z-10"><div class="self-stretch text-[#D7DFE5] font-jakartasans text-base font-bold leading-6">Basic</div><div class="flex items-baseline gap-1 self-stretch"><div class="text-[#D7DFE5] text-5xl font-publicsans font-bold leading-[3.25rem]">$70</div><div class="text-[#D7DFE5] text-xl font-publicsans font-medium leading-[1.5rem] flex-1">per month</div></div><div class="pricing-text self-stretch overflow-hidden text-[#d6dfe69e] text-ellipsis font-jakartasans text-[0.8125rem] font-medium leading-4">Start Securing Your Server Now!</div></div><a href="" class="flex items-center justify-center self-stretch px-4 py-2 rounded-xl z-10 border text-[#D7DFE5] border-[#91a6b633] hover:bg-[#00A7FD] hover:text-background-theme hover:border-[#00A7FD] hover:drop-shadow-[0rem_0rem_1rem_#00A7FD] transition-all duration-300"><div class="text-[0.9375rem] font-publicsans font-medium leading-[1.5rem]">Purchase Now</div></a><div class="h-[0.1rem] w-full bg-[#d6dfe633] z-10"></div><div class="flex items-center justify-start text-[#D7DFE5] font-jakartasans"><div class="w-full z-10 flex"><img src="./image/tick.svg" class="w-4 mr-3"><div class="text-xs sm:text-sm md:text-base lg:text-base font-jakartasans font-medium">Live Web Panel</div></div></div><div class="flex items-center justify-start text-[#D7DFE5] font-jakartasans"><div class="w-full z-10 flex"><img src="./image/tick.svg" class="w-4 mr-3"><div class="text-xs sm:text-sm md:text-base lg:text-base font-jakartasans font-medium">Fully configurable detections</div></div></div><div class="flex items-center justify-start text-[#D7DFE5] font-jakartasans"><div class="w-full z-10 flex"><img src="./image/tick.svg" class="w-4 mr-3"><div class="text-xs sm:text-sm md:text-base lg:text-base font-jakartasans font-medium">Detection webhooks on Discord</div></div></div><div class="flex items-center justify-start text-[#D7DFE5] font-jakartasans"><div class="w-full z-10 flex"><img src="./image/tick.svg" class="w-4 mr-3"><div class="text-xs sm:text-sm md:text-base lg:text-base font-jakartasans font-medium">Instant Delivery</div></div></div><div class="flex items-center justify-start text-[#D7DFE5] font-jakartasans"><div class="w-full z-10 opacity-60 flex"><img src="./image/untick.svg" class="w-4 mr-3"><div class="text-xs sm:text-sm md:text-base lg:text-base font-jakartasans font-medium">Custom Launcher</div></div></div></div><div class="flex p-6 flex-col items-start gap-6 rounded-[1.25rem] animation-pcicing animate-slideLeft relative w-full sm:w-[calc(33.33%-1.25rem)] sm:max-w-[400px] border border-[#91a6b633] hover:border-[#00A7FD] hover:scale-105 transition-all duration-300" style="animation-delay: 0.2s;"><div class="card-content rounded-[1.25rem] bg-[#00000067] card-shine-effect backdrop-blur-3xl"></div><div class="flex flex-col items-start gap-4 self-stretch z-10"><div class="self-stretch text-[#D7DFE5] font-jakartasans text-base font-bold leading-6">Pro</div><div class="flex items-baseline gap-1 self-stretch"><div class="text-[#D7DFE5] text-5xl font-publicsans font-bold leading-[3.25rem]">$175</div><div class="text-[#D7DFE5] text-xl font-publicsans font-medium leading-[1.5rem] flex-1">3 months</div></div><div class="pricing-text self-stretch overflow-hidden text-[#d6dfe69e] text-ellipsis font-jakartasans text-[0.8125rem] font-medium leading-4">Start Securing Your Server Now!</div></div><a href="" class="flex items-center justify-center self-stretch px-4 py-2 rounded-xl z-10 border text-[#D7DFE5] border-[#91a6b633] hover:bg-[#00A7FD] hover:text-background-theme hover:border-[#00A7FD] hover:drop-shadow-[0rem_0rem_1rem_#00A7FD] transition-all duration-300"><div class="text-[0.9375rem] font-publicsans font-medium leading-[1.5rem]">Purchase Now</div></a><div class="h-[0.1rem] w-full bg-[#d6dfe633] z-10"></div><div class="flex items-center justify-start text-[#D7DFE5] font-jakartasans"><div class="w-full z-10 flex"><img src="./image/tick.svg" class="w-4 mr-3"><div class="text-xs sm:text-sm md:text-base lg:text-base font-jakartasans font-medium">Live Web Panel</div></div></div><div class="flex items-center justify-start text-[#D7DFE5] font-jakartasans"><div class="w-full z-10 flex"><img src="./image/tick.svg" class="w-4 mr-3"><div class="text-xs sm:text-sm md:text-base lg:text-base font-jakartasans font-medium">Fully configurable detections</div></div></div><div class="flex items-center justify-start text-[#D7DFE5] font-jakartasans"><div class="w-full z-10 flex"><img src="./image/tick.svg" class="w-4 mr-3"><div class="text-xs sm:text-sm md:text-base lg:text-base font-jakartasans font-medium">Detection webhooks on Discord</div></div></div><div class="flex items-center justify-start text-[#D7DFE5] font-jakartasans"><div class="w-full z-10 flex"><img src="./image/tick.svg" class="w-4 mr-3"><div class="text-xs sm:text-sm md:text-base lg:text-base font-jakartasans font-medium">Instant Delivery</div></div></div><div class="flex items-center justify-start text-[#D7DFE5] font-jakartasans"><div class="w-full z-10 opacity-60 flex"><img src="./image/untick.svg" class="w-4 mr-3"><div class="text-xs sm:text-sm md:text-base lg:text-base font-jakartasans font-medium">Custom Launcher</div></div></div></div><div class="flex p-6 flex-col items-start gap-6 rounded-[1.25rem] animation-pcicing animate-slideLeft relative w-full sm:w-[calc(33.33%-1.25rem)] sm:max-w-[400px] border border-[#91a6b633] hover:border-[#00A7FD] hover:scale-105 transition-all duration-300" style="animation-delay: 0.4s;"><div class="card-content rounded-[1.25rem] bg-[#00000067] card-shine-effect backdrop-blur-3xl"></div><div class="flex flex-col items-start gap-4 self-stretch z-10"><div class="self-stretch text-[#D7DFE5] font-jakartasans text-base font-bold leading-6">Enterprise</div><div class="flex items-baseline gap-1 self-stretch"><div class="text-[#D7DFE5] text-5xl font-publicsans font-bold leading-[3.25rem]">$250</div><div class="text-[#D7DFE5] text-xl font-publicsans font-medium leading-[1.5rem] flex-1">3 months</div></div><div class="pricing-text self-stretch overflow-hidden text-[#d6dfe69e] text-ellipsis font-jakartasans text-[0.8125rem] font-medium leading-4">Start Securing Your Server Now!</div></div><a href="" class="flex items-center justify-center self-stretch px-4 py-2 rounded-xl z-10 border text-[#D7DFE5] border-[#91a6b633] hover:bg-[#00A7FD] hover:text-background-theme hover:border-[#00A7FD] hover:drop-shadow-[0rem_0rem_1rem_#00A7FD] transition-all duration-300"><div class="text-[0.9375rem] font-publicsans font-medium leading-[1.5rem]">Purchase Now</div></a><div class="h-[0.1rem] w-full bg-[#d6dfe633] z-10"></div><div class="flex items-center justify-start text-[#D7DFE5] font-jakartasans"><div class="w-full z-10 flex"><img src="./image/tick.svg" class="w-4 mr-3"><div class="text-xs sm:text-sm md:text-base lg:text-base font-jakartasans font-medium">Live Web Panel</div></div></div><div class="flex items-center justify-start text-[#D7DFE5] font-jakartasans"><div class="w-full z-10 flex"><img src="./image/tick.svg" class="w-4 mr-3"><div class="text-xs sm:text-sm md:text-base lg:text-base font-jakartasans font-medium">Fully configurable detections</div></div></div><div class="flex items-center justify-start text-[#D7DFE5] font-jakartasans"><div class="w-full z-10 flex"><img src="./image/tick.svg" class="w-4 mr-3"><div class="text-xs sm:text-sm md:text-base lg:text-base font-jakartasans font-medium">Detection webhooks on Discord</div></div></div><div class="flex items-center justify-start text-[#D7DFE5] font-jakartasans"><div class="w-full z-10 flex"><img src="./image/tick.svg" class="w-4 mr-3"><div class="text-xs sm:text-sm md:text-base lg:text-base font-jakartasans font-medium">Instant Delivery</div></div></div><div class="flex items-center justify-start text-[#D7DFE5] font-jakartasans"><div class="w-full z-10 flex"><img src="./image/tick.svg" class="w-4 mr-3"><div class="text-xs sm:text-sm md:text-base lg:text-base font-jakartasans font-medium">Custom Launcher</div></div></div></div></div>
             </div>
             <img
               src="{% static 'image/office.png' %}"
@@ -357,7 +352,7 @@
             />
           </div>
           <div
-            class="flex py-3 sm:py-12 flex-col justify-center items-center gap-3 sm:gap-12 self-stretch relative opacity-0"
+            class="flex py-3 sm:py-12 flex-col justify-center items-center gap-3 sm:gap-12 self-stretch relative animate-custom-fadeIn"
           >
             <div
               class="h-full w-8 sm:w-32 absolute left-0 top-0 bg-gradient-to-r from-background-theme via-background-theme to-transparent z-20"
@@ -366,14 +361,14 @@
               class="h-full w-8 sm:w-32 absolute right-0 top-0 bg-gradient-to-l from-background-theme via-background-theme to-transparent z-20"
             ></div>
             <div
-              class="self-stretch text-white-gray text-center font-publicsans text-[2rem] lg:text-[4rem] font-bold sm:leading-[3.25rem] tracking-[-0.06rem] z-20"
+              class="self-stretch text-[#D7DFE5] text-center font-publicsans text-[2rem] lg:text-[4rem] font-bold sm:leading-[3.25rem] tracking-[-0.06rem] z-20"
             >
               What Our Users Say
             </div>
             <div class="w-full h-full overflow-hidden">
               <div class="flex items-start gap-6 self-stretch animate-scroll">
                 <div
-                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-blue-theme rounded-[1.375rem]"
+                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-[#00A7FD] rounded-[1.375rem]"
                 >
                   <div class="flex items-center gap-3 self-stretch">
                     <img
@@ -383,7 +378,7 @@
                     />
                     <div class="flex flex-col items-start flex100">
                       <div
-                        class="self-stretch text-white-gray font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
+                        class="self-stretch text-[#D7DFE5] font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
                       >
                         vix&lt;33
                       </div>
@@ -411,7 +406,7 @@
                   </div>
                 </div>
                 <div
-                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-blue-theme rounded-[1.375rem]"
+                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-[#00A7FD] rounded-[1.375rem]"
                 >
                   <div class="flex items-center gap-3 self-stretch">
                     <img
@@ -421,7 +416,7 @@
                     />
                     <div class="flex flex-col items-start flex100">
                       <div
-                        class="self-stretch text-white-gray font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
+                        class="self-stretch text-[#D7DFE5] font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
                       >
                         sosa
                       </div>
@@ -449,7 +444,7 @@
                   </div>
                 </div>
                 <div
-                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-blue-theme rounded-[1.375rem]"
+                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-[#00A7FD] rounded-[1.375rem]"
                 >
                   <div class="flex items-center gap-3 self-stretch">
                     <img
@@ -459,7 +454,7 @@
                     />
                     <div class="flex flex-col items-start flex100">
                       <div
-                        class="self-stretch text-white-gray font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
+                        class="self-stretch text-[#D7DFE5] font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
                       >
                         Dominic
                       </div>
@@ -487,7 +482,7 @@
                   </div>
                 </div>
                 <div
-                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-blue-theme rounded-[1.375rem]"
+                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-[#00A7FD] rounded-[1.375rem]"
                 >
                   <div class="flex items-center gap-3 self-stretch">
                     <img
@@ -497,7 +492,7 @@
                     />
                     <div class="flex flex-col items-start flex100">
                       <div
-                        class="self-stretch text-white-gray font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
+                        class="self-stretch text-[#D7DFE5] font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
                       >
                         vix&lt;33
                       </div>
@@ -525,7 +520,7 @@
                   </div>
                 </div>
                 <div
-                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-blue-theme rounded-[1.375rem]"
+                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-[#00A7FD] rounded-[1.375rem]"
                 >
                   <div class="flex items-center gap-3 self-stretch">
                     <img
@@ -535,7 +530,7 @@
                     />
                     <div class="flex flex-col items-start flex100">
                       <div
-                        class="self-stretch text-white-gray font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
+                        class="self-stretch text-[#D7DFE5] font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
                       >
                         sosa
                       </div>
@@ -563,7 +558,7 @@
                   </div>
                 </div>
                 <div
-                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-blue-theme rounded-[1.375rem]"
+                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-[#00A7FD] rounded-[1.375rem]"
                 >
                   <div class="flex items-center gap-3 self-stretch">
                     <img
@@ -573,7 +568,7 @@
                     />
                     <div class="flex flex-col items-start flex100">
                       <div
-                        class="self-stretch text-white-gray font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
+                        class="self-stretch text-[#D7DFE5] font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
                       >
                         Dominic
                       </div>
@@ -601,7 +596,7 @@
                   </div>
                 </div>
                 <div
-                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-blue-theme rounded-[1.375rem]"
+                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-[#00A7FD] rounded-[1.375rem]"
                 >
                   <div class="flex items-center gap-3 self-stretch">
                     <img
@@ -611,7 +606,7 @@
                     />
                     <div class="flex flex-col items-start flex100">
                       <div
-                        class="self-stretch text-white-gray font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
+                        class="self-stretch text-[#D7DFE5] font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
                       >
                         vix&lt;33
                       </div>
@@ -639,7 +634,7 @@
                   </div>
                 </div>
                 <div
-                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-blue-theme rounded-[1.375rem]"
+                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-[#00A7FD] rounded-[1.375rem]"
                 >
                   <div class="flex items-center gap-3 self-stretch">
                     <img
@@ -649,7 +644,7 @@
                     />
                     <div class="flex flex-col items-start flex100">
                       <div
-                        class="self-stretch text-white-gray font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
+                        class="self-stretch text-[#D7DFE5] font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
                       >
                         sosa
                       </div>
@@ -677,7 +672,7 @@
                   </div>
                 </div>
                 <div
-                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-blue-theme rounded-[1.375rem]"
+                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-[#00A7FD] rounded-[1.375rem]"
                 >
                   <div class="flex items-center gap-3 self-stretch">
                     <img
@@ -687,7 +682,7 @@
                     />
                     <div class="flex flex-col items-start flex100">
                       <div
-                        class="self-stretch text-white-gray font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
+                        class="self-stretch text-[#D7DFE5] font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
                       >
                         Dominic
                       </div>
@@ -715,7 +710,7 @@
                   </div>
                 </div>
                 <div
-                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-blue-theme rounded-[1.375rem]"
+                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-[#00A7FD] rounded-[1.375rem]"
                 >
                   <div class="flex items-center gap-3 self-stretch">
                     <img
@@ -725,7 +720,7 @@
                     />
                     <div class="flex flex-col items-start flex100">
                       <div
-                        class="self-stretch text-white-gray font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
+                        class="self-stretch text-[#D7DFE5] font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
                       >
                         vix&lt;33
                       </div>
@@ -753,7 +748,7 @@
                   </div>
                 </div>
                 <div
-                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-blue-theme rounded-[1.375rem]"
+                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-[#00A7FD] rounded-[1.375rem]"
                 >
                   <div class="flex items-center gap-3 self-stretch">
                     <img
@@ -763,7 +758,7 @@
                     />
                     <div class="flex flex-col items-start flex100">
                       <div
-                        class="self-stretch text-white-gray font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
+                        class="self-stretch text-[#D7DFE5] font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
                       >
                         sosa
                       </div>
@@ -791,7 +786,7 @@
                   </div>
                 </div>
                 <div
-                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-blue-theme rounded-[1.375rem]"
+                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-[#00A7FD] rounded-[1.375rem]"
                 >
                   <div class="flex items-center gap-3 self-stretch">
                     <img
@@ -801,7 +796,7 @@
                     />
                     <div class="flex flex-col items-start flex100">
                       <div
-                        class="self-stretch text-white-gray font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
+                        class="self-stretch text-[#D7DFE5] font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
                       >
                         Dominic
                       </div>
@@ -829,7 +824,7 @@
                   </div>
                 </div>
                 <div
-                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-blue-theme rounded-[1.375rem]"
+                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-[#00A7FD] rounded-[1.375rem]"
                 >
                   <div class="flex items-center gap-3 self-stretch">
                     <img
@@ -839,7 +834,7 @@
                     />
                     <div class="flex flex-col items-start flex100">
                       <div
-                        class="self-stretch text-white-gray font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
+                        class="self-stretch text-[#D7DFE5] font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
                       >
                         vix&lt;33
                       </div>
@@ -867,7 +862,7 @@
                   </div>
                 </div>
                 <div
-                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-blue-theme rounded-[1.375rem]"
+                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-[#00A7FD] rounded-[1.375rem]"
                 >
                   <div class="flex items-center gap-3 self-stretch">
                     <img
@@ -877,7 +872,7 @@
                     />
                     <div class="flex flex-col items-start flex100">
                       <div
-                        class="self-stretch text-white-gray font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
+                        class="self-stretch text-[#D7DFE5] font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
                       >
                         sosa
                       </div>
@@ -905,7 +900,7 @@
                   </div>
                 </div>
                 <div
-                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-blue-theme rounded-[1.375rem]"
+                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-[#00A7FD] rounded-[1.375rem]"
                 >
                   <div class="flex items-center gap-3 self-stretch">
                     <img
@@ -915,7 +910,7 @@
                     />
                     <div class="flex flex-col items-start flex100">
                       <div
-                        class="self-stretch text-white-gray font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
+                        class="self-stretch text-[#D7DFE5] font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
                       >
                         Dominic
                       </div>
@@ -943,7 +938,7 @@
                   </div>
                 </div>
                 <div
-                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-blue-theme rounded-[1.375rem]"
+                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-[#00A7FD] rounded-[1.375rem]"
                 >
                   <div class="flex items-center gap-3 self-stretch">
                     <img
@@ -953,7 +948,7 @@
                     />
                     <div class="flex flex-col items-start flex100">
                       <div
-                        class="self-stretch text-white-gray font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
+                        class="self-stretch text-[#D7DFE5] font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
                       >
                         vix&lt;33
                       </div>
@@ -981,7 +976,7 @@
                   </div>
                 </div>
                 <div
-                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-blue-theme rounded-[1.375rem]"
+                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-[#00A7FD] rounded-[1.375rem]"
                 >
                   <div class="flex items-center gap-3 self-stretch">
                     <img
@@ -991,7 +986,7 @@
                     />
                     <div class="flex flex-col items-start flex100">
                       <div
-                        class="self-stretch text-white-gray font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
+                        class="self-stretch text-[#D7DFE5] font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
                       >
                         sosa
                       </div>
@@ -1019,7 +1014,7 @@
                   </div>
                 </div>
                 <div
-                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-blue-theme rounded-[1.375rem]"
+                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-[#00A7FD] rounded-[1.375rem]"
                 >
                   <div class="flex items-center gap-3 self-stretch">
                     <img
@@ -1029,7 +1024,7 @@
                     />
                     <div class="flex flex-col items-start flex100">
                       <div
-                        class="self-stretch text-white-gray font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
+                        class="self-stretch text-[#D7DFE5] font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
                       >
                         Dominic
                       </div>
@@ -1057,7 +1052,7 @@
                   </div>
                 </div>
                 <div
-                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-blue-theme rounded-[1.375rem]"
+                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-[#00A7FD] rounded-[1.375rem]"
                 >
                   <div class="flex items-center gap-3 self-stretch">
                     <img
@@ -1067,7 +1062,7 @@
                     />
                     <div class="flex flex-col items-start flex100">
                       <div
-                        class="self-stretch text-white-gray font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
+                        class="self-stretch text-[#D7DFE5] font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
                       >
                         vix&lt;33
                       </div>
@@ -1095,7 +1090,7 @@
                   </div>
                 </div>
                 <div
-                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-blue-theme rounded-[1.375rem]"
+                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-[#00A7FD] rounded-[1.375rem]"
                 >
                   <div class="flex items-center gap-3 self-stretch">
                     <img
@@ -1105,7 +1100,7 @@
                     />
                     <div class="flex flex-col items-start flex100">
                       <div
-                        class="self-stretch text-white-gray font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
+                        class="self-stretch text-[#D7DFE5] font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
                       >
                         sosa
                       </div>
@@ -1133,7 +1128,7 @@
                   </div>
                 </div>
                 <div
-                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-blue-theme rounded-[1.375rem]"
+                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-[#00A7FD] rounded-[1.375rem]"
                 >
                   <div class="flex items-center gap-3 self-stretch">
                     <img
@@ -1143,7 +1138,7 @@
                     />
                     <div class="flex flex-col items-start flex100">
                       <div
-                        class="self-stretch text-white-gray font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
+                        class="self-stretch text-[#D7DFE5] font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
                       >
                         Dominic
                       </div>
@@ -1171,7 +1166,7 @@
                   </div>
                 </div>
                 <div
-                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-blue-theme rounded-[1.375rem]"
+                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-[#00A7FD] rounded-[1.375rem]"
                 >
                   <div class="flex items-center gap-3 self-stretch">
                     <img
@@ -1181,7 +1176,7 @@
                     />
                     <div class="flex flex-col items-start flex100">
                       <div
-                        class="self-stretch text-white-gray font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
+                        class="self-stretch text-[#D7DFE5] font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
                       >
                         vix&lt;33
                       </div>
@@ -1209,7 +1204,7 @@
                   </div>
                 </div>
                 <div
-                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-blue-theme rounded-[1.375rem]"
+                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-[#00A7FD] rounded-[1.375rem]"
                 >
                   <div class="flex items-center gap-3 self-stretch">
                     <img
@@ -1219,7 +1214,7 @@
                     />
                     <div class="flex flex-col items-start flex100">
                       <div
-                        class="self-stretch text-white-gray font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
+                        class="self-stretch text-[#D7DFE5] font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
                       >
                         sosa
                       </div>
@@ -1247,7 +1242,7 @@
                   </div>
                 </div>
                 <div
-                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-blue-theme rounded-[1.375rem]"
+                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-[#00A7FD] rounded-[1.375rem]"
                 >
                   <div class="flex items-center gap-3 self-stretch">
                     <img
@@ -1257,7 +1252,7 @@
                     />
                     <div class="flex flex-col items-start flex100">
                       <div
-                        class="self-stretch text-white-gray font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
+                        class="self-stretch text-[#D7DFE5] font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
                       >
                         Dominic
                       </div>
@@ -1285,7 +1280,7 @@
                   </div>
                 </div>
                 <div
-                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-blue-theme rounded-[1.375rem]"
+                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-[#00A7FD] rounded-[1.375rem]"
                 >
                   <div class="flex items-center gap-3 self-stretch">
                     <img
@@ -1295,7 +1290,7 @@
                     />
                     <div class="flex flex-col items-start flex100">
                       <div
-                        class="self-stretch text-white-gray font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
+                        class="self-stretch text-[#D7DFE5] font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
                       >
                         vix&lt;33
                       </div>
@@ -1323,7 +1318,7 @@
                   </div>
                 </div>
                 <div
-                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-blue-theme rounded-[1.375rem]"
+                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-[#00A7FD] rounded-[1.375rem]"
                 >
                   <div class="flex items-center gap-3 self-stretch">
                     <img
@@ -1333,7 +1328,7 @@
                     />
                     <div class="flex flex-col items-start flex100">
                       <div
-                        class="self-stretch text-white-gray font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
+                        class="self-stretch text-[#D7DFE5] font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
                       >
                         sosa
                       </div>
@@ -1361,7 +1356,7 @@
                   </div>
                 </div>
                 <div
-                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-blue-theme rounded-[1.375rem]"
+                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-[#00A7FD] rounded-[1.375rem]"
                 >
                   <div class="flex items-center gap-3 self-stretch">
                     <img
@@ -1371,7 +1366,7 @@
                     />
                     <div class="flex flex-col items-start flex100">
                       <div
-                        class="self-stretch text-white-gray font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
+                        class="self-stretch text-[#D7DFE5] font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
                       >
                         Dominic
                       </div>
@@ -1399,7 +1394,7 @@
                   </div>
                 </div>
                 <div
-                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-blue-theme rounded-[1.375rem]"
+                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-[#00A7FD] rounded-[1.375rem]"
                 >
                   <div class="flex items-center gap-3 self-stretch">
                     <img
@@ -1409,7 +1404,7 @@
                     />
                     <div class="flex flex-col items-start flex100">
                       <div
-                        class="self-stretch text-white-gray font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
+                        class="self-stretch text-[#D7DFE5] font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
                       >
                         vix&lt;33
                       </div>
@@ -1437,7 +1432,7 @@
                   </div>
                 </div>
                 <div
-                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-blue-theme rounded-[1.375rem]"
+                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-[#00A7FD] rounded-[1.375rem]"
                 >
                   <div class="flex items-center gap-3 self-stretch">
                     <img
@@ -1447,7 +1442,7 @@
                     />
                     <div class="flex flex-col items-start flex100">
                       <div
-                        class="self-stretch text-white-gray font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
+                        class="self-stretch text-[#D7DFE5] font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
                       >
                         sosa
                       </div>
@@ -1475,7 +1470,7 @@
                   </div>
                 </div>
                 <div
-                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-blue-theme rounded-[1.375rem]"
+                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-[#00A7FD] rounded-[1.375rem]"
                 >
                   <div class="flex items-center gap-3 self-stretch">
                     <img
@@ -1485,7 +1480,7 @@
                     />
                     <div class="flex flex-col items-start flex100">
                       <div
-                        class="self-stretch text-white-gray font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
+                        class="self-stretch text-[#D7DFE5] font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
                       >
                         Dominic
                       </div>
@@ -1513,7 +1508,7 @@
                   </div>
                 </div>
                 <div
-                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-blue-theme rounded-[1.375rem]"
+                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-[#00A7FD] rounded-[1.375rem]"
                 >
                   <div class="flex items-center gap-3 self-stretch">
                     <img
@@ -1523,7 +1518,7 @@
                     />
                     <div class="flex flex-col items-start flex100">
                       <div
-                        class="self-stretch text-white-gray font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
+                        class="self-stretch text-[#D7DFE5] font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
                       >
                         vix&lt;33
                       </div>
@@ -1551,7 +1546,7 @@
                   </div>
                 </div>
                 <div
-                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-blue-theme rounded-[1.375rem]"
+                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-[#00A7FD] rounded-[1.375rem]"
                 >
                   <div class="flex items-center gap-3 self-stretch">
                     <img
@@ -1561,7 +1556,7 @@
                     />
                     <div class="flex flex-col items-start flex100">
                       <div
-                        class="self-stretch text-white-gray font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
+                        class="self-stretch text-[#D7DFE5] font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
                       >
                         sosa
                       </div>
@@ -1589,7 +1584,7 @@
                   </div>
                 </div>
                 <div
-                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-blue-theme rounded-[1.375rem]"
+                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-[#00A7FD] rounded-[1.375rem]"
                 >
                   <div class="flex items-center gap-3 self-stretch">
                     <img
@@ -1599,7 +1594,7 @@
                     />
                     <div class="flex flex-col items-start flex100">
                       <div
-                        class="self-stretch text-white-gray font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
+                        class="self-stretch text-[#D7DFE5] font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
                       >
                         Dominic
                       </div>
@@ -1627,7 +1622,7 @@
                   </div>
                 </div>
                 <div
-                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-blue-theme rounded-[1.375rem]"
+                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-[#00A7FD] rounded-[1.375rem]"
                 >
                   <div class="flex items-center gap-3 self-stretch">
                     <img
@@ -1637,7 +1632,7 @@
                     />
                     <div class="flex flex-col items-start flex100">
                       <div
-                        class="self-stretch text-white-gray font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
+                        class="self-stretch text-[#D7DFE5] font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
                       >
                         vix&lt;33
                       </div>
@@ -1665,7 +1660,7 @@
                   </div>
                 </div>
                 <div
-                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-blue-theme rounded-[1.375rem]"
+                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-[#00A7FD] rounded-[1.375rem]"
                 >
                   <div class="flex items-center gap-3 self-stretch">
                     <img
@@ -1675,7 +1670,7 @@
                     />
                     <div class="flex flex-col items-start flex100">
                       <div
-                        class="self-stretch text-white-gray font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
+                        class="self-stretch text-[#D7DFE5] font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
                       >
                         sosa
                       </div>
@@ -1703,7 +1698,7 @@
                   </div>
                 </div>
                 <div
-                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-blue-theme rounded-[1.375rem]"
+                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-[#00A7FD] rounded-[1.375rem]"
                 >
                   <div class="flex items-center gap-3 self-stretch">
                     <img
@@ -1713,7 +1708,7 @@
                     />
                     <div class="flex flex-col items-start flex100">
                       <div
-                        class="self-stretch text-white-gray font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
+                        class="self-stretch text-[#D7DFE5] font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
                       >
                         Dominic
                       </div>
@@ -1741,7 +1736,7 @@
                   </div>
                 </div>
                 <div
-                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-blue-theme rounded-[1.375rem]"
+                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-[#00A7FD] rounded-[1.375rem]"
                 >
                   <div class="flex items-center gap-3 self-stretch">
                     <img
@@ -1751,7 +1746,7 @@
                     />
                     <div class="flex flex-col items-start flex100">
                       <div
-                        class="self-stretch text-white-gray font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
+                        class="self-stretch text-[#D7DFE5] font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
                       >
                         vix&lt;33
                       </div>
@@ -1779,7 +1774,7 @@
                   </div>
                 </div>
                 <div
-                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-blue-theme rounded-[1.375rem]"
+                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-[#00A7FD] rounded-[1.375rem]"
                 >
                   <div class="flex items-center gap-3 self-stretch">
                     <img
@@ -1789,7 +1784,7 @@
                     />
                     <div class="flex flex-col items-start flex100">
                       <div
-                        class="self-stretch text-white-gray font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
+                        class="self-stretch text-[#D7DFE5] font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
                       >
                         sosa
                       </div>
@@ -1817,7 +1812,7 @@
                   </div>
                 </div>
                 <div
-                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-blue-theme rounded-[1.375rem]"
+                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-[#00A7FD] rounded-[1.375rem]"
                 >
                   <div class="flex items-center gap-3 self-stretch">
                     <img
@@ -1827,7 +1822,7 @@
                     />
                     <div class="flex flex-col items-start flex100">
                       <div
-                        class="self-stretch text-white-gray font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
+                        class="self-stretch text-[#D7DFE5] font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
                       >
                         Dominic
                       </div>
@@ -1855,7 +1850,7 @@
                   </div>
                 </div>
                 <div
-                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-blue-theme rounded-[1.375rem]"
+                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-[#00A7FD] rounded-[1.375rem]"
                 >
                   <div class="flex items-center gap-3 self-stretch">
                     <img
@@ -1865,7 +1860,7 @@
                     />
                     <div class="flex flex-col items-start flex100">
                       <div
-                        class="self-stretch text-white-gray font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
+                        class="self-stretch text-[#D7DFE5] font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
                       >
                         vix&lt;33
                       </div>
@@ -1893,7 +1888,7 @@
                   </div>
                 </div>
                 <div
-                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-blue-theme rounded-[1.375rem]"
+                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-[#00A7FD] rounded-[1.375rem]"
                 >
                   <div class="flex items-center gap-3 self-stretch">
                     <img
@@ -1903,7 +1898,7 @@
                     />
                     <div class="flex flex-col items-start flex100">
                       <div
-                        class="self-stretch text-white-gray font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
+                        class="self-stretch text-[#D7DFE5] font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
                       >
                         sosa
                       </div>
@@ -1931,7 +1926,7 @@
                   </div>
                 </div>
                 <div
-                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-blue-theme rounded-[1.375rem]"
+                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-[#00A7FD] rounded-[1.375rem]"
                 >
                   <div class="flex items-center gap-3 self-stretch">
                     <img
@@ -1941,7 +1936,7 @@
                     />
                     <div class="flex flex-col items-start flex100">
                       <div
-                        class="self-stretch text-white-gray font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
+                        class="self-stretch text-[#D7DFE5] font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
                       >
                         Dominic
                       </div>
@@ -1969,7 +1964,7 @@
                   </div>
                 </div>
                 <div
-                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-blue-theme rounded-[1.375rem]"
+                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-[#00A7FD] rounded-[1.375rem]"
                 >
                   <div class="flex items-center gap-3 self-stretch">
                     <img
@@ -1979,7 +1974,7 @@
                     />
                     <div class="flex flex-col items-start flex100">
                       <div
-                        class="self-stretch text-white-gray font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
+                        class="self-stretch text-[#D7DFE5] font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
                       >
                         vix&lt;33
                       </div>
@@ -2007,7 +2002,7 @@
                   </div>
                 </div>
                 <div
-                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-blue-theme rounded-[1.375rem]"
+                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-[#00A7FD] rounded-[1.375rem]"
                 >
                   <div class="flex items-center gap-3 self-stretch">
                     <img
@@ -2017,7 +2012,7 @@
                     />
                     <div class="flex flex-col items-start flex100">
                       <div
-                        class="self-stretch text-white-gray font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
+                        class="self-stretch text-[#D7DFE5] font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
                       >
                         sosa
                       </div>
@@ -2045,7 +2040,7 @@
                   </div>
                 </div>
                 <div
-                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-blue-theme rounded-[1.375rem]"
+                  class="flex min-w-72 p-6 flex-col items-start gap-4 bg-gray-theme border border-[#91a6b633] hover:border-[#00A7FD] rounded-[1.375rem]"
                 >
                   <div class="flex items-center gap-3 self-stretch">
                     <img
@@ -2055,7 +2050,7 @@
                     />
                     <div class="flex flex-col items-start flex100">
                       <div
-                        class="self-stretch text-white-gray font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
+                        class="self-stretch text-[#D7DFE5] font-jakartasans text-[0.9375rem] font-bold leading-[1.25rem]"
                       >
                         Dominic
                       </div>
@@ -2086,11 +2081,11 @@
             </div>
           </div>
           <div
-            class="flex pt-4 md:pt-16 pb-24 flex-col items-start gap-6 self-stretch opacity-0"
+            class="flex pt-4 md:pt-16 pb-24 flex-col items-start gap-6 self-stretch animate-custom-fadeIn"
           >
             <div class="flex flex-col items-start gap-2 lg:gap-4 self-stretch">
               <div
-                class="text-white-gray self-stretch text-center font-jakartasans text-[2rem] lg:text-[4rem] font-bold leading-[4.25rem] tracking-[-0.08rem]"
+                class="text-[#D7DFE5] self-stretch text-center font-jakartasans text-[2rem] lg:text-[4rem] font-bold leading-[4.25rem] tracking-[-0.08rem]"
               >
                 Counter Statistics
               </div>
@@ -2111,9 +2106,9 @@
                   Unique Bans Issued
                 </div>
                 <div
-                  class="z-10 text-ellipsis font-jakartasans text-[4rem] font-bold leading-8 text-blue-theme tracking-[-0.0075rem] drop-shadow-[0rem_0rem_1rem_#47c2ff5a]"
+                  class="z-10 text-ellipsis font-jakartasans text-[4rem] font-bold leading-8 text-[#00A7FD] tracking-[-0.0075rem] drop-shadow-[0rem_0rem_1rem_#47c2ff5a]"
                 >
-                  0K
+                  1K
                 </div>
               </div>
               <div
@@ -2133,9 +2128,9 @@
                   Years on the market
                 </div>
                 <div
-                  class="z-10 text-ellipsis font-jakartasans text-[4rem] font-bold leading-8 text-blue-theme tracking-[-0.0075rem] drop-shadow-[0rem_0rem_1rem_#47c2ff5a]"
+                  class="z-10 text-ellipsis font-jakartasans text-[4rem] font-bold leading-8 text-[#00A7FD] tracking-[-0.0075rem] drop-shadow-[0rem_0rem_1rem_#47c2ff5a]"
                 >
-                  0+
+                  1+
                 </div>
               </div>
               <div
@@ -2155,9 +2150,9 @@
                   Servers Protected
                 </div>
                 <div
-                  class="z-10 text-ellipsis font-jakartasans text-[4rem] font-bold leading-8 text-blue-theme tracking-[-0.0075rem] drop-shadow-[0rem_0rem_1rem_#47c2ff5a]"
+                  class="z-10 text-ellipsis font-jakartasans text-[4rem] font-bold leading-8 text-[#00A7FD] tracking-[-0.0075rem] drop-shadow-[0rem_0rem_1rem_#47c2ff5a]"
                 >
-                  0+
+                  10+
                 </div>
               </div>
             </div>
@@ -2181,7 +2176,7 @@
           <div class="flex h-12 items-center gap-2">
             <img src="{% static 'image/logo.svg' %}" alt="Atomic Shield" class="h-7" />
             <div
-              class="text-[1.25rem] md:text-[1.5rem] lg:text-[1.75rem] font-jakartasans font-bold text-blue-theme tracking-[-0.07rem] leading-[100%]"
+              class="text-[1.25rem] md:text-[1.5rem] lg:text-[1.75rem] font-jakartasans font-bold text-[#00A7FD] tracking-[-0.07rem] leading-[100%]"
             >
               Atomic Shield
             </div>

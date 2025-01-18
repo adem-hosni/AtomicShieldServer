@@ -16,7 +16,7 @@ class AntiCheatConfigurationCategories(models.Model):
     name = models.CharField(max_length=32)
     description = models.TextField()
     server_type = models.IntegerField(
-        choices=ServerType, null=False, default=ServerType.MTASA
+        choices=ServerType, null=False, default=ServerType.FIVEM
     )
 
     class Meta:
@@ -33,7 +33,7 @@ class AntiCheatConfigTemplates(models.Model):
     description = models.TextField(null=True, default=None, blank=True)
     pseudo_name = models.CharField(max_length=32, unique=True)
     server_type = models.IntegerField(
-        choices=ServerType, null=False, default=ServerType.MTASA
+        choices=ServerType, null=False, default=ServerType.FIVEM
     )
     config_type = models.IntegerField(
         choices=AntiCheatConfigDataTypes,
@@ -84,7 +84,7 @@ class MaliciousSignatures(models.Model):
     name = models.CharField(max_length=64, unique=True)
     signatures = models.JSONField(blank=False, default=list)
     type = models.IntegerField(
-        choices=ServerType, default=ServerType.MTASA, blank=False
+        choices=ServerType, default=ServerType.FIVEM, blank=False
     )
     priority = models.IntegerField(null=True, default=None)
     ban_message = models.CharField(null=True, blank=True, max_length=64)

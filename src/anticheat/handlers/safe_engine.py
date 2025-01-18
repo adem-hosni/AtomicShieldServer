@@ -136,7 +136,7 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
                 | Q(disks__overlap=request_hwid_cache["disks"])
             )
         )
-        
+
         if hwid:
             hwid.bios_version = request_hwid["bios"]
             hwid.computer_name = request_hwid["computer_name"]
@@ -223,87 +223,6 @@ async def handle_signatures_sync(consumer: SafeEngineConsumer, request: Dict[str
     )
 
 
-async def handle_malicious_signature_detected(
-    consumer: SafeEngineConsumer, request: Dict[str, Any]
-):
-    if not check_request_body_key(request, "signatures", list):
-        return consumer.close()
-
-    try:
-        signatures_queryset: List[MaliciousSignatures] = [
-            await MaliciousSignatures.objects.aget(name=signature)
-            for signature in request["signatures"]
-        ]
-    except MaliciousSignatures.DoesNotExist:
-        signatures_queryset: List[MaliciousSignatures] = []
-
-    if not len(signatures_queryset):
-        return
-
-    logger.warning(
-        f"DETECTED \"{', '.join(request['signatures'])}\" ON {consumer.address[0]}:{consumer.address[1]} -> \"{signatures_queryset[0].ban_message}\""
-    )
-
-    target_ban = signatures_queryset[0]
-    consumer.detected_signatures += signatures_queryset
-    await consumer.ban(
-        target_ban.ban_message,
-        target_ban.ban_duaration,
-        consumer.connected_server.game_server if consumer.connected_server else None,
-    )
-
-
-async def handle_game_anticheat_status(
-    consumer: SafeEngineConsumer, request: Dict[str, Any]
-):
-    if not check_request_body_key(request, "status", bool):
-        return
-
-    if not request["status"]:
-        if not consumer.is_flagged_as(FlagType.MISSING_MTASA_AC_COMPONENT):
-            await consumer.flag_as(
-                FlagType.MISSING_MTASA_AC_COMPONENT,
-                "MTA:SA AntiCheat Component Blocked",
-            )
-
-            warn_count = await Warning.get_warns(consumer.hwid)
-            if warn_count < 3:
-                logger.warning(
-                    f"MTA:SA AntiCheat component blocked for {consumer.address} (warns: {warn_count+1}/3)"
-                )
-                await Warning.warn(consumer.hwid)
-            else:
-                logger.warning(
-                    f"MTA:SA AntiCheat component blocked for {consumer.address}"
-                )
-                await consumer.ban(
-                    "MTA:SA AntiCheat component blocked", timedelta(days=3)
-                )
-
-            message_description = f"""AtomicShield AntiCheat detected Missing MTA:SA anticheat component for **{consumer.hwid.username}**."""
-            await discord.send_discord_embed(
-                settings.DETECTIONS_WEBHOOK_URL,
-                "AntiCheat Alert",
-                description=message_description,
-                footer="AtomicShield For your servers safety",
-            )
-
-            if consumer.connected_server:
-                detections_webhook_url = (
-                    await consumer.connected_server.game_server.get_config_by_id(
-                        config_ids.PLAYER_DETECTION_WEBHOOK_URL
-                    )
-                )
-
-                if len(detections_webhook_url):
-                    await discord.send_discord_embed(
-                        detections_webhook_url,
-                        "AntiCheat Alert",
-                        description=message_description,
-                        footer="AtomicShield For your servers safety",
-                    )
-
-
 async def handle_scanner_disconnect(consumer: SafeEngineConsumer):
     logger.info(f"{consumer.hwid.username}'s scanner disconnected from network.")
     fivem_guard.remove_safe_scanner(consumer)
@@ -311,56 +230,6 @@ async def handle_scanner_disconnect(consumer: SafeEngineConsumer):
         "AtomicShield AntiCheat Agent Not Running. To join this server, please ensure the AtomicShield AntiCheat Agent is open and active.",
         True,
     )
-
-
-async def handle_request_upload(consumer: SafeEngineConsumer, request: Dict[str, Any]):
-    # Check if the requested data exists
-    if not check_request_body_key(request, "upload_type", int):
-        logger.warning(f"Upload type didn't received from {consumer.address}")
-        return consumer.close()
-
-    if not request["upload_type"] in SafeUploadType.values:
-        logger.warning(
-            f"Requested an unknown upload type {request['upload_type']} from {consumer.address}"
-        )
-        return consumer.close()
-
-    if not check_request_body_key(request, "hash", str):
-        logger.warning(f"Upload hash didn't received from {consumer.address}")
-        return consumer.close()
-
-    if not check_request_body_key(request, "upload_name", str):
-        logger.warning(f"Upload name didn't received from {consumer.address}")
-        return consumer.close()
-
-    if not re.match(r"^[a-fA-F0-9]{32}$", request["hash"]):
-        logger.warning(
-            f"Invalid hash received from {consumer.address} {request['hash']}"
-        )
-        return
-
-    upload_dir = os.path.join(settings.UPLOAD_DIR, request["upload_name"].lower())
-
-    # Create a folder upload type if not exists
-    os.makedirs(upload_dir, exist_ok=True)
-
-    response = {"upload": True}
-
-    # Check if the file is already uploaded from it's hash
-    for upload in os.listdir(upload_dir):
-        upload_hash_with_ext = upload.split("-")[1]
-        upload_hash = upload_hash_with_ext.split(".", 1)[0]
-        if upload_hash == request["hash"]:
-            response["upload"] = True
-            logger.warnning(
-                f"Upload already exists of {request['upload_name']} from {consumer.address}: {consumer.hwid.username}"
-            )
-            break
-
-    logger.warnning(
-        f"Requested upload {request['upload_name']} from {consumer.address}: {consumer.hwid.username}, upload hash: {request['hash']}"
-    )
-    return consumer.send(SafeEnginePacketID.REQUEST_UPLOAD, response)
 
 
 async def handle_cheat_detection(consumer: SafeEngineConsumer, request: Dict[str, Any]):
@@ -393,11 +262,11 @@ async def handle_cheat_detection(consumer: SafeEngineConsumer, request: Dict[str
     screenshot_buffer = base64.b64decode(request["ss"])
 
     await consumer.ban(
-        f"CHEATING, {request['detection_type'].name}",
+        f"{request['detection_type'].label}",
         timedelta(seconds=10),
         report=request["report"],
         image_buffer=screenshot_buffer,
-        detection_type=request['detection_type']
+        detection_type=request["detection_type"],
     )
     logger.info(
         f"CHEATER REPORT! {consumer.hwid.computer_name} treated as cheater with {request['detection_type'].name}"

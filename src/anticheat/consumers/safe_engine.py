@@ -181,9 +181,6 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         from ..handlers.safe_engine import (
             handle_network_join,
             handle_signatures_sync,
-            handle_malicious_signature_detected,
-            handle_game_anticheat_status,
-            handle_request_upload,
             handle_cheat_detection,
         )
 
@@ -192,12 +189,6 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                 await handle_network_join(self, request_body)
             case SafeEnginePacketID.SYNC_SIGNATURES:
                 await handle_signatures_sync(self, request_body)
-            case SafeEnginePacketID.MALICIOUS_SIGNATURE_DETECTION:
-                await handle_malicious_signature_detected(self, request_body)
-            case SafeEnginePacketID.GAME_ANTICHEAT_COMPONENT_STATUS:
-                await handle_game_anticheat_status(self, request_body)
-            case SafeEnginePacketID.REQUEST_UPLOAD:
-                await handle_request_upload(self, request_body)
             case SafeEnginePacketID.CHEAT_DETECTION:
                 await handle_cheat_detection(self, request_body)
 

@@ -8,13 +8,13 @@
 - ~~Integrating Server Creation with active subscriptions~~
 - ~~Add Subscriptions Section~~
 - ~~Add Quick Setup Section~~
-wwwww- ~~Add Server Edit action~~
+- ~~Add Server Edit action~~
 - ~~Add Discord Webhook Logs~~
 - ~~Add Disable bans functionality~~
 - ~~Add Reset Configurations button~~
 - ~~Add 404 Page Not Found Page~~
+- ~~Validate received HWID caches~~
 - Show online player
-- Validate received HWID caches
 - SSL Verification
 - Take player screenshot
 - Show detection screenshot

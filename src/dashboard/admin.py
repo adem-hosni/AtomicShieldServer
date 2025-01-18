@@ -31,7 +31,7 @@ def protected_admin_view(view, cacheable: bool = False):
 
     def inner(request: HttpRequest, *args, **kwargs):
         request_ip = request.META.get("HTTP_X_REAL_IP", request.META.get("REMOTE_ADDR"))
-        with open(f"{settings.CONFIG_DIR}\\admins.json", "r") as file:
+        with open(f"{settings.CONFIG_DIR}/admins.json", "r") as file:
             admins = json.load(file)
         if not request_ip in admins:
             logger.warning(f"{request_ip} trying to view admin dashboard. Unauthorized access!")

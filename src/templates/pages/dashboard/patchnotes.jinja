@@ -40,7 +40,7 @@
     {% for patchnote in patchnotes %}
     <div class="mt-4 flex flex-col items-stretch">
       <div
-        class="flex items-center gap-3 rounded-xl bg-[#161616] px-6 py-2.5 md:flex {% if not patchnote.seen %}notification{% endif %}"
+        class="flex items-center gap-3 rounded-xl bg-[#09121e] px-6 py-2.5 md:flex {% if not patchnote.seen %}notification{% endif %}"
         {% if not patchnote.seen %}
         data-id="{{ patchnote.dataid }}"
         {% endif %}

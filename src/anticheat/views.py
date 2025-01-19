@@ -55,7 +55,7 @@ def version_check(request: HttpRequest) -> HttpResponse:
     if not check_request_body_key(request_body, "version", str):
         return HttpResponse(json.dumps({"success": False}))
 
-    with open(f"{settings.CONFIG_DIR}\\version.json", "r") as file:
+    with open(f"{settings.CONFIG_DIR}/version.json", "r") as file:
         version = json.load(file)
     client_version = request_body["version"]
 

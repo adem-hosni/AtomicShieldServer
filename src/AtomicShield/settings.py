@@ -35,8 +35,15 @@ if DEBUG:
 else:
     BIN_DIR = os.path.join(BASE_DIR.parent, "bin", "production")
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = [
+    'atomic-shield.com',
+    'www.atomic-shield.com',
+]
 
+CSRF_TRUSTED_ORIGINS = [
+    'https://atomic-shield.com',
+    'https://www.atomic-shield.com',
+]
 
 # Application definition
 

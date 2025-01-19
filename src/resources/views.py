@@ -15,6 +15,6 @@ def download_fivem_engine(request: HttpRequest) -> HttpResponse:
     ) as file:
         engine_buffer = atomic_core.encode(file.read())
 
-    logger.info(f"{request.get_host()} downloaded FiveM's engine")
+    logger.info(f"{request.META.get("HTTP_X_REAL_IP", request.META.get("REMOTE_ADDR"))} downloaded FiveM's engine")
 
     return HttpResponse(engine_buffer, content_type="application/octet-stream")

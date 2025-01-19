@@ -195,35 +195,35 @@ LOGGING = {
             "filename": os.path.join(BASE_DIR, "../logs/console.log"),
             "formatter": "verbose",
         },
-        'debug_file': {
-            'level': 'DEBUG',
-            'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, '../logs/debug.log'),
-            'formatter': 'verbose',
+        "debug_file": {
+            "level": "DEBUG",
+            "class": "logging.FileHandler",
+            "filename": os.path.join(BASE_DIR, "../logs/debug.log"),
+            "formatter": "verbose",
         },
-        'info_file': {
-            'level': 'INFO',
-            'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, '../logs/info.log'),
-            'formatter': 'verbose',
+        "info_file": {
+            "level": "INFO",
+            "class": "logging.FileHandler",
+            "filename": os.path.join(BASE_DIR, "../logs/info.log"),
+            "formatter": "verbose",
         },
-        'warning_file': {
-            'level': 'WARNING',
-            'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, '../logs/warning.log'),
-            'formatter': 'verbose',
+        "warning_file": {
+            "level": "WARNING",
+            "class": "logging.FileHandler",
+            "filename": os.path.join(BASE_DIR, "../logs/warning.log"),
+            "formatter": "verbose",
         },
-        'error_file': {
-            'level': 'ERROR',
-            'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, '../logs/error.log'),
-            'formatter': 'verbose',
+        "error_file": {
+            "level": "ERROR",
+            "class": "logging.FileHandler",
+            "filename": os.path.join(BASE_DIR, "../logs/error.log"),
+            "formatter": "verbose",
         },
-        'critical_file': {
-            'level': 'CRITICAL',
-            'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, '../logs/critical.log'),
-            'formatter': 'verbose',
+        "critical_file": {
+            "level": "CRITICAL",
+            "class": "logging.FileHandler",
+            "filename": os.path.join(BASE_DIR, "../logs/critical.log"),
+            "formatter": "verbose",
         },
     },
     "root": {
@@ -305,14 +305,16 @@ EMAIL_SUBJECT_PREFIX = "[AtomicShield] "
 if not DEBUG:
     # Redirect from http to https
     SECURE_SSL_REDIRECT = True
-    
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
     SECURE_HSTS_PRELOAD = True
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_SECONDS = 31536000  # Enforce HTTPS for 1 year
 
     SESSION_COOKIE_SECURE = True
     SESSION_COOKIE_SAMESITE = "Strict"
     SESSION_COOKIE_HTTPONLY = True
-    
+
     CSRF_COOKIE_SECURE = True
     CSRF_COOKIE_HTTPONLY = True
     CSRF_USE_SESSIONS = True

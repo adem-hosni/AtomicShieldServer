@@ -303,6 +303,9 @@ DEFAULT_FROM_EMAIL = "AtomicShield@localhost"
 EMAIL_SUBJECT_PREFIX = "[AtomicShield] "
 
 if not DEBUG:
+    # Redirect from http to https
+    SECURE_SSL_REDIRECT = True
+    
     SECURE_HSTS_PRELOAD = True
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 

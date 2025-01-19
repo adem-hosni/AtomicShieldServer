@@ -51,13 +51,16 @@ def server_status(request: HttpRequest) -> HttpResponse:
 
 @csrf_exempt
 def version_check(request: HttpRequest) -> HttpResponse:
-    request_body = json.loads(atomic_core.decode(request.body))
-    if not check_request_body_key(request_body, "version", str):
-        return HttpResponse(json.dumps({"success": False}))
+    try:
+        request_body = json.loads(atomic_core.decode(request.body))
+        if not check_request_body_key(request_body, "version", str):
+            return HttpResponse(json.dumps({"success": False}))
 
-    with open(f"{settings.CONFIG_DIR}/version.json", "r") as file:
-        version = json.load(file)
-    client_version = request_body["version"]
+        with open(f"{settings.CONFIG_DIR}/version.json", "r") as file:
+            version = json.load(file)
+        client_version = request_body["version"]
+    except Exception:
+        return HttpResponse()
 
     return HttpResponse(
         atomic_core.encode(

@@ -93,7 +93,7 @@ class GameServer(models.Model):
             server_configs = {}
 
         queryset = await sync_to_async(list)(
-            AntiCheatConfigTemplates.objects.filter(server_type=ServerType.MTASA)
+            AntiCheatConfigTemplates.objects.filter(server_type=ServerType.FIVEM)
         )
 
         config_templates = {config.id: config.default_value for config in queryset}

@@ -38,6 +38,7 @@ else:
 ALLOWED_HOSTS = [
     'atomic-shield.com',
     'www.atomic-shield.com',
+    "127.0.0.1",
 ]
 
 CSRF_TRUSTED_ORIGINS = [

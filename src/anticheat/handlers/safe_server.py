@@ -185,31 +185,31 @@ async def handle_request_player_join(
     response = {"join": False, "message": ""}
 
     # Check if the AtomicShield agent is connected
-    player_scanner = fivem_guard.get_scanner_by_ip(request["ip"])
-    response["join"] = not player_scanner is None
+    engine = fivem_guard.get_scanner_by_ip(request["ip"])
+    response["join"] = not engine is None
     if not response["join"]:
         response["message"] = (
             "Protected Server with AtomicShield: Open AtomicShield AntiCheat agent to join this server.\nDownload Link: https://atomic-shield.com"
         )
         logger.info('Connection refused: "AtomicShield Agent Not Connected"')
     else:
-        if player_scanner.is_flagged:
+        if engine.is_flagged:
             logger.info(
-                f'Connection refused: Client is flagged: "{player_scanner.flag_message}"'
+                f'Connection refused: Client is flagged: "{engine.flag_message}"'
             )
             response["join"] = False
-            response["message"] = player_scanner.flag_message
+            response["message"] = engine.flag_message
 
-        if len(player_scanner.detected_signatures) > 0:
+        if len(engine.detected_signatures) > 0:
             logger.info(
-                f'Connection refused: Malicious signatures detected on the client: "{player_scanner.detected_signatures[0].ban_message}"'
+                f'Connection refused: Malicious signatures detected on the client: "{engine.detected_signatures[0].ban_message}"'
             )
             response["join"] = False
-            response["message"] = player_scanner.detected_signatures[0].ban_message
+            response["message"] = engine.detected_signatures[0].ban_message
 
         # Check if the player is banned
         bans = await sync_to_async(list)(
-            Ban.objects.filter(hwid=player_scanner.hwid).order_by("banned_at")
+            Ban.objects.filter(hwid=engine.hwid).order_by("banned_at")
         )
 
         if len(bans):
@@ -221,7 +221,7 @@ async def handle_request_player_join(
             )
 
     if response["join"]:
-        player_scanner.connected_server = consumer
+        engine.connected_server = consumer
         logger.info(f"{request['ip']}'s Fivem server connection accepted successfuly!")
     
     return await consumer.send(

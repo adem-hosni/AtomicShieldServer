@@ -38,10 +38,18 @@ class DetectionType(models.IntegerChoices):
     UNRECOGNIZED_IAT = 2, "Unrecognized IAT"
     DLL_FOUND = 3, "Direct X DLL Found"
     SECURE_BOOT_DISABLED = 4, "Secure Boot Disabled"
-    DEBUG_MODE_ENABLED =5, "Debug Mode Enabled"
-    TEST_SIGNING_ENABLED = 6 , "Test Signing Enabled"
-    INJECTED_DLL = 7 , "Inject Dll"
+    DEBUG_MODE_ENABLED = 5, "Debug Mode Enabled"
+    TEST_SIGNING_ENABLED = 6, "Test Signing Enabled"
+    INJECTED_DLL = 7, "Inject Dll"
     CHEAT_SIGNATURE_FOUND = 8, "Cheat Signature Found"
     MALICIOUS_PROCESS_HANDLE_OPEN = 9, "Malicious Process opened FiveM handle"
     MALICIOUS_DRIVER = 10, "Malicious Driver Found"
     THREAD_SHELLCODE = 11, "Thread Shell Code"
+
+
+unstrict_detection_types = [
+    DetectionType.MALICIOUS_DRIVER,
+    DetectionType.TEST_SIGNING_ENABLED,
+    DetectionType.DEBUG_MODE_ENABLED,
+    DetectionType.TEST_SIGNING_ENABLED,
+]

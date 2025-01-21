@@ -15,7 +15,7 @@ from shared.enums import (
     WebSocketGroupNames,
     DetectionType,
 )
-from shared.flags import Flag, FlagType
+from shared.flags import Flag, DetectionType
 import json
 from typing import Union, Dict, List, Optional, Any
 import logging
@@ -314,11 +314,11 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             return self._flags[0]._message
         return ""
 
-    async def flag_as(self, flag_type: FlagType, message: str):
+    async def flag_as(self, flag_type: DetectionType, message: str = "UnNormal Behaviour Detected"):
         self._flags.append(Flag(flag_type, message))
         await self.kick(message)
 
-    def is_flagged_as(self, flag_type: FlagType) -> bool:
+    def is_flagged_as(self, flag_type: DetectionType) -> bool:
         for flag in self._flags:
             if flag.type == flag_type:
                 return True
@@ -341,7 +341,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         if flag:
             self._flags.append(
                 Flag(
-                    FlagType.CUSTOM,
+                    DetectionType.CUSTOM,
                     reason if len(reason) else "UnNormal behaviour detected",
                 )
             )

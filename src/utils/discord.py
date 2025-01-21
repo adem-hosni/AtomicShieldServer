@@ -12,7 +12,7 @@ async def send_discord_embed(
     fields: Optional[List[Tuple[str, str]]] = [],
     footer: Optional[str] = None,
     image_buffer: Optional[bytes] = None,
-    color: Optional[nextcord.Color] = nextcord.Color.dark_gold(),
+    color: Optional[nextcord.Color] = 0x01e4f4,
     bot_name: Optional[str] = f"{settings.ANTICHEAT_NAME} AntiCheat",
 ):
     embed = nextcord.Embed(title=title, description=description, color=color)

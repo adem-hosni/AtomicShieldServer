@@ -10,6 +10,7 @@ from shared.enums import (
     SafeEnginePacketID,
     SafeUploadType,
     DetectionType,
+    unstrict_detection_types
 )
 from shared.flags import FlagType
 from utils import check_request_body_key, discord
@@ -258,14 +259,22 @@ async def handle_cheat_detection(consumer: SafeEngineConsumer, request: Dict[str
         return await consumer.close()
 
     screenshot_buffer = base64.b64decode(request["ss"])
+    
+    await consumer.flag_as(request["detection_type"], "CHEATING BEHAVIOUR DETECTED")
 
-    await consumer.ban(
-        f"{request['detection_type'].label}",
-        timedelta(seconds=10),
-        report=request["report"],
-        image_buffer=screenshot_buffer,
-        detection_type=request["detection_type"],
-    )
+    if not consumer.connected_server and request["detection_type"] in unstrict_detection_types:
+        logger.warning(f"UnNormal Behaviour detected inside {consumer.hwid.computer_name}'s computer - {request["detection_type"].label}")
+    else:
+        # The player is connected and the detection type is not strict
+        logger.info(f"BANNED {consumer.hwid}")
+        await consumer.ban(
+            f"{request['detection_type'].label}",
+            timedelta(seconds=10),
+            report=request["report"],
+            image_buffer=screenshot_buffer,
+            detection_type=request["detection_type"],
+        )
+            
     logger.info(
         f"CHEATER REPORT! {consumer.hwid.computer_name} treated as cheater with {request['detection_type'].name}"
     )

@@ -314,7 +314,7 @@ def render_servers(request: HttpRequest) -> HttpResponse:
                         return redirect(request.path)
 
                     if (
-                        server_type != ServerType.MTASA.value
+                        server_type != ServerType.FIVEM.value
                         and server_type != ServerType.FIVEM.value
                     ):
                         messages.error(request, "Invalid server type!")

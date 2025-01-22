@@ -11,6 +11,7 @@ from typing import Dict
 from django.conf import settings
 from django.db.models import Q
 from ..models import Ban
+from shared.enums import unstrict_detection_types, DetectionType
 from ..consumers.safe_server import SafeServerConsumer
 from .. import config_ids
 import logging
@@ -195,10 +196,34 @@ async def handle_request_player_join(
     else:
         if engine.is_flagged:
             logger.info(
-                f'Connection refused: Client is flagged: "{engine.flag_message}"'
+                f'{engine.hwid.computer_name} Client is flagged: "{engine.flag_message}"'
             )
-            response["join"] = False
-            response["message"] = engine.flag_message
+            
+            # Check if there is some strict flags
+            isstrict_flag = False
+            for flag in engine.get_flags():
+                if not flag in unstrict_detection_types:
+                    isstrict_flag = True
+                    break
+                
+                config_id = -1
+                match flag.type:
+                    case DetectionType.SECURE_BOOT_DISABLED:
+                        config_id = config_ids.FORCE_SECUREBOOT
+                    case DetectionType.TEST_SIGNING_ENABLED:
+                        config_id = config_ids.FORCE_TESTSIGNING
+                try:
+                    # Found a configuration that blocks the player
+                    if not await consumer.game_server.get_config_by_id(config_id):
+                        response["join"] = False
+                        response["message"] = engine.flag_message
+                        print("join")
+                    else:
+                        print("dont join")
+                        
+                except Exception:
+                    # Not Found?
+                    ...
 
         if len(engine.detected_signatures) > 0:
             logger.info(

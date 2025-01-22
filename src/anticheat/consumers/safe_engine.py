@@ -293,6 +293,9 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
 
         self._detected_signatures = value
 
+    def get_flags(self) -> List[Flag]:
+        return self._flags
+
     @property
     def is_flagged(self) -> bool:
         """
@@ -314,7 +317,9 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             return self._flags[0]._message
         return ""
 
-    async def flag_as(self, flag_type: DetectionType, message: str = "UnNormal Behaviour Detected"):
+    async def flag_as(
+        self, flag_type: DetectionType, message: str = "UnNormal Behaviour Detected"
+    ):
         self._flags.append(Flag(flag_type, message))
         await self.kick(message)
 

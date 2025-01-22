@@ -36,14 +36,15 @@ else:
     BIN_DIR = os.path.join(BASE_DIR.parent, "bin", "production")
 
 ALLOWED_HOSTS = [
-    'atomic-shield.com',
-    'www.atomic-shield.com',
+    "atomic-shield.com",
+    "www.atomic-shield.com",
     "127.0.0.1",
+    "157.173.212.241",
 ]
 
 CSRF_TRUSTED_ORIGINS = [
-    'https://atomic-shield.com',
-    'https://www.atomic-shield.com',
+    "https://atomic-shield.com",
+    "https://www.atomic-shield.com",
 ]
 
 # Application definition

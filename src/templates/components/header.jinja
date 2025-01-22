@@ -1,0 +1,47 @@
+{% load static %}
+<header
+      class="flex flex-row py-4 justify-between items-center self-stretch z-50 bg-[#08101777] px-12 sticky md:top-0 backdrop-blur-md"
+    >
+      <div class="flex flex-row items-center gap-4 md:gap-12 w-full md:w-auto">
+        <a href="/" class="flex h-12 items-center gap-2"
+          ><img src="{% static 'image/logo.svg' %}" alt="Atomic Shield" class="h-7" />
+          <div
+            class="text-[1.5rem] md:text-[1.75rem] font-jakartasans font-bold text-blue-theme tracking-[-0.07rem] leading-[100%]"
+          >
+            Atomic Shield
+          </div></a
+        >
+        <div class="hidden md:flex items-start gap-4 md:gap-8">
+          <div
+            class="text-[#D7DFE5] text-sm md:text-base font-semibold font-jakartasans leading-5 transition duration-300 ease-in-out cursor-pointer hover:text-[#00A7FD] hover:drop-shadow-[0rem_0rem_1rem_#00A7FD]"
+          >
+            Features
+          </div>
+          <div
+            class="text-[#D7DFE5] text-sm md:text-base font-semibold font-jakartasans leading-5 transition duration-300 ease-in-out cursor-pointer hover:text-[#00A7FD] hover:drop-shadow-[0rem_0rem_1rem_#00A7FD]"
+          >
+            Pricing
+          </div>
+          <a
+            href="https://discord.gg/YFCRffsZKK"
+            class="text-[#D7DFE5] text-sm md:text-base font-semibold font-jakartasans leading-5 transition duration-300 ease-in-out cursor-pointer hover:text-[#00A7FD] hover:drop-shadow-[0rem_0rem_1rem_#00A7FD]"
+            >Discord</a
+          ><a
+            href="/policy"
+            class="text-[#D7DFE5] text-sm md:text-base font-semibold font-jakartasans leading-5 transition duration-300 ease-in-out cursor-pointer hover:text-[#00A7FD] hover:drop-shadow-[0rem_0rem_1rem_#00A7FD]"
+            >Policy</a
+          >
+        </div>
+      </div>
+      <div class="flex flex-row items-center gap-4 md:gap-8 mt-0">
+        <a
+          href="/auth/signin"
+          class="text-[#D7DFE5] hidden md:flex text-s md:text-base font-semibold font-jakartasans leading-5 transition duration-300 ease-in-out cursor-pointer hover:text-[#00A7FD] hover:drop-shadow-[0rem_0rem_1rem_#00A7FD]"
+          >Sign In</a
+        ><a
+          href="/dashboard/main"
+          class="py-2 px-4 flex items-center justify-center bg-[#00A7FD] text-sm md:text-base text-background-theme rounded-full font-semibold font-jakartasans leading-5 border border-transparent hover:bg-transparent hover:border-[#00A7FD] hover:drop-shadow-[0rem_0rem_1rem_#00A7FD] hover:text-[#D7DFE5] transition-all duration-300"
+          >Dashboard</a
+        >
+      </div>
+    </header>

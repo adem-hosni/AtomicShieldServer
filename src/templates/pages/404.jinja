@@ -1,16 +1,34 @@
-{% extends "bases/home.jinja" %} {% load static %} {% block content %}
-<section class="mt-6">
-    <div class="max-w-screen-xl px-4 py-8 mt-6 mx-auto lg:py-16">
-        <div class="grid items-center gap-8 mb-8 lg:mb-16 lg:gap-12 lg:grid-cols-12 ">
-            <div class="col-span-6 text-center sm:mb-6 lg:text-left lg:mb-0">
-                <h1 class="mb-4 text-4xl text-gray-400 font-extrabold leading-none tracking-tight md:text-5xl text-white animate-on-scroll animate__animated animate__backInLeft">
-                    Requested URL Not Found!
-                  <!-- <span class="text-[#01e4f4]">Cheaters</span> -->
-                </h1>
-                <h1 class="max-w-xl mx-auto mb-6 font-bold lg:mx-0 xl:mb-8 md:text-lg xl:text-xl animate-on-scroll-right animate__animated animate__backInRight text-[#01e4f4] select-none">{{ request.path }}</h1>
+{% extends "bases/auth.jinja" %} {% load static %} {% block content %}
+    <div id="root">
+      <div
+        class="w-full bg-background-theme flex items-start flex-col noselect"
+      >
+        <h1 class="hidden">Atomic Shield - Sign In</h1>
+        <img
+          src="./static/image/logo-ico.svg"
+          alt="Atomic Shield"
+          class="hidden"
+        />
+        {% include "components/header.jinja" %}
+        <div class="flex py-12 self-stretch px-4 sm:px-8 md:px-12">
+          <div class="w-full">
+            <div class="min-h-[43rem] py-4 text-white self-stretch px-4">
+              <section id="terms-of-service" class="mb-12">
+                <h2
+                  class="text-6xl text-gray-300 font-extrabold tracking-tight pl-4 mb-2"
+                >
+                  404 Not Found
+                </h2>
+                <div class="p-3 pl-6 rounded-lg">
+                  <p class="text-gray-300 mb-4 text-xl font-bold">
+                    The Requested URL Not Found!
+                  </p>
+                </div>
+              </section>
             </div>
+          </div>
         </div>
+        {% include "components/footer.jinja" %}
+      </div>
     </div>
-</section>
-<script src="{% static 'js/particles.js' %}"></script>
-{% endblock content %}
+    {% endblock content %}

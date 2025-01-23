@@ -5,6 +5,8 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from django.contrib.auth.models import User
 from dashboard.models import GameServer
 from typing import Dict, Any, Union, Optional
+from core import atomic_core
+
 
 logger = logging.getLogger(__name__)
 
@@ -102,26 +104,29 @@ class SafeServerConsumer(AsyncWebsocketConsumer):
         the request based on its type. If the request type is not recognized, the
         connection is closed.
         """
+        await self.process_packet(atomic_core.decode(text_data))
+    
+    async def process_packet(self, packet: Union[str, bytes]):
         try:
             # Attempt to parse the incoming message as JSON
-            request_body: Dict[str, Any] = json.loads(text_data)
+            request_body: Dict[str, Any] = json.loads(packet)
         except json.decoder.JSONDecodeError:
-            logger.warning(f"Failed to parse request. (request body: {request_body})")
-            return self.close()
+            logger.warning(f"Failed to parse request. (request body: {packet})")
+            return await self.close()
 
         # Check if the request body contains a 'type' key
         if not "type" in request_body.keys():
             logger.warning(
                 f"Failed to get request type. (given request: {request_body})"
             )
-            return self.close()
+            return await self.close()
 
         try:
             # Convert the 'type' field to a PacketID
             request_body["type"] = SafeServerPacketID(request_body["type"])
         except ValueError:
             logger.warning(f"Undefined request type (given: {request_body['type']})")
-            return self.close()
+            return await self.close()
 
         from ..handlers.safe_server import (
             handle_network_join,

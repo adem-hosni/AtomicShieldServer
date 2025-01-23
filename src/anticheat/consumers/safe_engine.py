@@ -321,7 +321,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         self, flag_type: DetectionType, message: str = "UnNormal Behaviour Detected"
     ):
         self._flags.append(Flag(flag_type, message))
-        await self.kick(message)
+        await self.kick(message, detection_type=flag_type)
 
     def is_flagged_as(self, flag_type: DetectionType) -> bool:
         for flag in self._flags:
@@ -330,7 +330,10 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         return False
 
     async def kick(
-        self, reason: Optional[str] = "", flag: Optional[bool] = False
+        self,
+        reason: Optional[str] = "",
+        flag: Optional[bool] = False,
+        detection_type: DetectionType = DetectionType.CUSTOM
     ) -> bool:
         """
         Kicks a client by sending a PLAYER_KICK packet to the connected server.
@@ -346,7 +349,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         if flag:
             self._flags.append(
                 Flag(
-                    DetectionType.CUSTOM,
+                    detection_type,
                     reason if len(reason) else "UnNormal behaviour detected",
                 )
             )
@@ -364,7 +367,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         reason: str,
         duration: timedelta,
         target_game_server=None,
-        detection_type: DetectionType = None,
+        detection_type: DetectionType = DetectionType.CUSTOM,
         report: Dict[str, Any] = {},
         image_buffer: bytes = None,
     ):
@@ -381,7 +384,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             with open(image_path, "wb") as file:
                 file.write(image_buffer)
 
-        await self.kick(reason, flag=True)
+        await self.kick(reason, flag=True, detection_type=detection_type)
         ban = Ban(
             hwid=self._hwid,
             duration=duration,

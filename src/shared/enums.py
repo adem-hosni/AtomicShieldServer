@@ -34,6 +34,7 @@ class SafeUploadType(models.IntegerChoices):
 
 
 class DetectionType(models.IntegerChoices):
+    CUSTOM = 0, "Custom"
     UNAUTHORIZED_THREAD = 1, "Unauthorized Thread"
     UNRECOGNIZED_IAT = 2, "Unrecognized IAT"
     DLL_FOUND = 3, "Direct X DLL Found"

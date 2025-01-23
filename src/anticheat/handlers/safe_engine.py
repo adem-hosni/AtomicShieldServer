@@ -12,7 +12,7 @@ from shared.enums import (
     DetectionType,
     unstrict_detection_types
 )
-from shared.flags import FlagType
+from shared.flags import Flag
 from utils import check_request_body_key, discord
 from asgiref.sync import sync_to_async
 from django.db.models import Q

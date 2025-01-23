@@ -2,7 +2,7 @@ import re
 import logging
 from string import ascii_uppercase, digits
 from random import shuffle
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from datetime import timedelta
 
 
@@ -126,3 +126,26 @@ def caesar_encrypt(plaintext, shift):
             encrypted_text += char  # Non-alphabetic characters remain unchanged
     return encrypted_text
 
+
+def format_string(string: str, vars: Dict[str, str] = {}):
+    loaded_vars: List[str] = []
+    current_var = ""
+    include = False
+    for char in string:
+        if char == "}" and include:
+            include = False
+            loaded_vars.append(current_var)
+            current_var = ""
+        
+        if include:
+            current_var += char
+        
+        if char == "{":
+            include = True
+
+    for key, value in vars.items():
+        for loaded_var in loaded_vars:
+            if loaded_var.lower().strip() == key.lower():
+                string = string.replace("{" + loaded_var + "}", value)
+    
+    return string

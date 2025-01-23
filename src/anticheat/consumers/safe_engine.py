@@ -7,7 +7,7 @@ from core import atomic_core
 from .safe_server import SafeServerConsumer
 from django.conf import settings
 from ..models import ClientHWID, MaliciousSignatures, Ban, DetectionReport
-from utils import discord, represent_timedelta_string, check_request_body_key
+import utils
 from shared.models import ServerType
 from shared.enums import (
     SafeEnginePacketID,
@@ -16,6 +16,7 @@ from shared.enums import (
     DetectionType,
 )
 from shared.flags import Flag, DetectionType
+from .. import config_ids
 import json
 from typing import Union, Dict, List, Optional, Any
 import logging
@@ -157,9 +158,9 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             return await self.close()
 
         # Verify that the request body contains a 'type' key and 'ut' key
-        if not check_request_body_key(request_body, "type", int):
+        if not utils.check_request_body_key(request_body, "type", int):
             return await self.close()
-        if not check_request_body_key(request_body, "ut", int):
+        if not utils.check_request_body_key(request_body, "ut", int):
             return await self.close()
 
         # Check the request's unix timestamp for integrity
@@ -403,14 +404,19 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             ban.report = detection_report
 
         await ban.asave()
-
+        
+        embed_title = "Banned Player"
+        if self._connected_server:
+            embed_title = await self._connected_server.game_server.get_config_by_id(config_id=config_ids.DISCORD_EMBED_TITLE)
+        embed_title = utils.format_string(embed_title, {"name", self._hwid.username})
+        
         try:
-            await discord.send_discord_embed(
+            await utils.discord.send_discord_embed(
                 settings.DETECTIONS_WEBHOOK_URL,
-                "Banned Player",
+                embed_title,
                 f"""
                 **{self._hwid.username}** banned due to ```{reason}```
-                **Ban Duration**: `{represent_timedelta_string(ban.duration)}`
+                **Ban Duration**: `{utils.represent_timedelta_string(ban.duration)}`
                 """,
                 fields=[
                     (f"{key}:", f"```{value}```", False)

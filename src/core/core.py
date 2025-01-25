@@ -78,7 +78,6 @@ class AtomicCore:
             )
 
         encryption_key_index = buffer[0] - 31
-        print(buffer)
         
         # Check if the first byte is valid for the encryption key
         if encryption_key_index > len(self._aes_keys) or encryption_key_index < 0:

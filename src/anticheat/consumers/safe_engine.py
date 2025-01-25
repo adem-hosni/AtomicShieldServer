@@ -372,6 +372,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         report: Dict[str, Any] = {},
         image_buffer: bytes = None,
     ):
+        image_path = ""
         if image_buffer:
             screenshots_directory = os.path.join(
                 settings.MEDIA_ROOT, "detections", "proofs"
@@ -408,8 +409,8 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         embed_title = "Banned Player"
         if self._connected_server:
             embed_title = await self._connected_server.game_server.get_config_by_id(config_id=config_ids.DISCORD_EMBED_TITLE)
-        embed_title = utils.format_string(embed_title, {"name", self._hwid.username})
-        
+        embed_title = utils.format_string(embed_title, {"name": self._hwid.username})
+
         try:
             await utils.discord.send_discord_embed(
                 settings.DETECTIONS_WEBHOOK_URL,

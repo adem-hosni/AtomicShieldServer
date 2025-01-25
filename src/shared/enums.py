@@ -52,5 +52,5 @@ unstrict_detection_types = [
     DetectionType.MALICIOUS_DRIVER,
     DetectionType.TEST_SIGNING_ENABLED,
     DetectionType.DEBUG_MODE_ENABLED,
-    DetectionType.TEST_SIGNING_ENABLED,
+    DetectionType.SECURE_BOOT_DISABLED,
 ]

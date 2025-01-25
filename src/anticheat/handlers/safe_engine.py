@@ -16,6 +16,7 @@ from shared.flags import Flag
 from utils import check_request_body_key, discord
 from asgiref.sync import sync_to_async
 from django.db.models import Q
+from anticheat.models import AntiCheatConfigurations, AntiCheatConfigTemplates
 from ..models import MaliciousSignatures, ClientHWID, ServerType, Warning
 from .. import config_ids
 from typing import Dict, List, Any
@@ -261,26 +262,74 @@ async def handle_cheat_detection(consumer: SafeEngineConsumer, request: Dict[str
 
     screenshot_buffer = base64.b64decode(request["ss"])
 
-    await consumer.flag_as(request["detection_type"], "CHEATING BEHAVIOUR DETECTED")
+    await consumer.flag_as(request["detection_type"], request["detection_type"].label)
 
+    # Strict Detection ? Ban
+    if not request["detection_type"] in unstrict_detection_types:
+        logger.warning(
+            f"Strict Ban Cheating Behaviour detected on {consumer.hwid.name}'s computer!"
+        )
+        await consumer.ban(
+            request["detection_type"].label,
+            duration=timedelta(days=16),
+            target_game_server=consumer.game_server,
+        )
+
+    # Unstrict Detection, check server confis
     if (
-        not consumer.connected_server
+        consumer.connected_server
         and request["detection_type"] in unstrict_detection_types
     ):
-        logger.warning(
-            f"UnNormal Behaviour detected inside {consumer.hwid.computer_name}'s computer - {request['detection_type'].label}"
-        )
-    else:
-        # The player is connected and the detection type is not strict
-        logger.info(f"BANNED {consumer.hwid}")
-        await consumer.ban(
-            f"{request['detection_type'].label}",
-            timedelta(seconds=10),
-            report=request["report"],
-            image_buffer=screenshot_buffer,
-            detection_type=request["detection_type"],
-        )
+        # Check if the malicious driver is about Process Hacker
+        if request["detection_type"] == DetectionType.MALICIOUS_DRIVER:
+            if str(request["report"]["BlackListed Driver"]).endswith(
+                "kprocesshacker.sys"
+            ):
+                try:
+                    processhacker_allowed = (
+                        await consumer.connected_server.game_server.get_config_by_id(
+                            config_ids.ALLOW_PROCESS_HACKER
+                        )
+                    )
+                except AntiCheatConfigTemplates.DoesNotExist:
+                    processhacker_allowed = False
 
-    logger.info(
-        f"CHEATER REPORT! {consumer.hwid.computer_name} treated as cheater with {request['detection_type'].name}"
-    )
+                if not processhacker_allowed:
+                    await consumer.kick(
+                        "Process Hacker is not Allowed on the connected server"
+                    )
+
+        # Check for Secure Boot is forced
+        if request["detection_type"] == DetectionType.SECURE_BOOT_DISABLED:
+            try:
+                force_secureboot = (
+                    await consumer.connected_server.game_server.get_config_by_id(
+                        config_ids.FORCE_SECUREBOOT
+                    )
+                )
+            except AntiCheatConfigTemplates.DoesNotExist:
+                force_secureboot = False
+            if force_secureboot:
+                await consumer.kick(
+                    "This server requires Secure Boot to be enabled on your machine."
+                )
+
+        # Check for Force Test Signing Disabled
+        if request["detection_type"] == DetectionType.TEST_SIGNING_ENABLED:
+            try:
+                testsigning_enabled = (
+                    await consumer.connected_server.game_server.get_config_by_id(
+                        config_ids.FORCE_TESTSIGNING
+                    )
+                )
+            except AntiCheatConfigTemplates.DoesNotExist:
+                testsigning_enabled = False
+
+            if testsigning_enabled:
+                await consumer.kick(
+                    "This server requires Test Signing to be disabled on your machine."
+                )
+    else:
+        logger.info(
+            f"CHEATER REPORT! {consumer.hwid.computer_name} treated as cheater with {request['detection_type'].name}"
+        )

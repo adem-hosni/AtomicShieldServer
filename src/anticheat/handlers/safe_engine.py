@@ -270,9 +270,12 @@ async def handle_cheat_detection(consumer: SafeEngineConsumer, request: Dict[str
             f"Strict Ban Cheating Behaviour detected on {consumer.hwid.name}'s computer!"
         )
         await consumer.ban(
-            request["detection_type"].label,
+            detection_type=request["detection_type"],
             duration=timedelta(days=16),
             target_game_server=consumer.game_server,
+            image_buffer=screenshot_buffer,
+            reason=request["detection_type"].label,
+            report=request["report"]
         )
 
     # Unstrict Detection, check server confis

@@ -104,7 +104,7 @@ class SafeServerConsumer(AsyncWebsocketConsumer):
         the request based on its type. If the request type is not recognized, the
         connection is closed.
         """
-        await self.process_packet(atomic_core.decode(text_data))
+        await self.process_packet(text_data)
     
     async def process_packet(self, packet: Union[str, bytes]):
         try:

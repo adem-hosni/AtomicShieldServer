@@ -1,5 +1,4 @@
 import asyncio
-import asyncio
 import json
 import logging
 from shared.enums import SafeServerPacketID, WebSocketGroupNames
@@ -45,7 +44,6 @@ class SafeServerConsumer(AsyncWebsocketConsumer):
         self._group_name = ""
         self._owner: User = None
         self._game_server: GameServer = None
-        self._pending_responses = {}
         self._pending_responses = {}
 
     async def connect(self):
@@ -109,8 +107,6 @@ class SafeServerConsumer(AsyncWebsocketConsumer):
         connection is closed.
         """
         await self.process_packet((text_data))
-        await self.process_packet((text_data))
-        await self.process_packet(text_data)
     
     async def process_packet(self, packet: Union[str, bytes]):
         try:
@@ -138,10 +134,6 @@ class SafeServerConsumer(AsyncWebsocketConsumer):
             self._pending_responses[request_body["type"]].set_result(request_body)
             del self._pending_responses[request_body["type"]]
     
-        if request_body["type"] in self._pending_responses:
-            self._pending_responses[request_body["type"]].set_result(request_body)
-            del self._pending_responses[request_body["type"]]
-
         from ..handlers.safe_server import (
             handle_network_join,
             handle_sync_anticheat_configs,
@@ -268,13 +260,6 @@ class SafeServerConsumer(AsyncWebsocketConsumer):
             )
 
     async def request_status(self) -> Dict[str, Union[str, bool, int, float]]:
-        response_future = asyncio.get_event_loop().create_future()
-        self._pending_responses[SafeServerPacketID.REQUEST_STATUS] = response_future
-        
-        await self.send(SafeServerPacketID.REQUEST_STATUS, {})
-        
-        response = await response_future
-        print(response)
         response_future = asyncio.get_event_loop().create_future()
         self._pending_responses[SafeServerPacketID.REQUEST_STATUS] = response_future
         

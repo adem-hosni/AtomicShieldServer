@@ -187,6 +187,8 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
     logger.info(
         f"{request_hwid['username']}'s engine asking for network join (Computer Name: \"{hwid.computer_name}\", Bios Version: \"{hwid.bios_version}\", CPU ID: \"{hwid.cpuid}\", Motherboard Serial: \"{hwid.motherboard_serial}\")"
     )
+    
+    consumer.connected_server = fivem_guard.get_server_by_ip("127.0.0.1")
 
     consumer.group_name = WebSocketGroupNames.SAFE_ENGINES.value
     consumer.channel_layer.group_add(consumer.group_name, consumer.channel_name)
@@ -266,7 +268,7 @@ async def handle_cheat_detection(consumer: SafeEngineConsumer, request: Dict[str
     # Strict Detection ? Ban
     if not request["detection_type"] in unstrict_detection_types:
         logger.warning(
-            f"Strict Ban Cheating Behaviour detected on {consumer.hwid.name}'s computer!"
+            f"Strict Ban Cheating Behaviour detected on {consumer.hwid.username}'s computer!"
         )
         await consumer.ban(
             detection_type=request["detection_type"],

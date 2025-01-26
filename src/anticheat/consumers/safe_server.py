@@ -267,3 +267,4 @@ class SafeServerConsumer(AsyncWebsocketConsumer):
         
         response = await response_future
         print(response)
+        return response

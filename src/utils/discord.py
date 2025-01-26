@@ -27,7 +27,10 @@ async def send_discord_embed(
 
     async with ClientSession() as session:
         webhook = nextcord.Webhook.from_url(webhook_url, session=session)
-        await webhook.send(
-            embed=embed, username=bot_name, avatar_url=settings.BOT_AVATAR_URL,
-            file=nextcord.File(BytesIO(image_buffer), "image.jpg")
-        )
+        if image_buffer:
+            await webhook.send(
+                embed=embed, username=bot_name, avatar_url=settings.BOT_AVATAR_URL,
+                file=nextcord.File(BytesIO(image_buffer), "image.jpg")
+            )
+        else:
+            await webhook.send(embed=embed, username=bot_name, avatar_url=settings.BOT_AVATAR_URL)

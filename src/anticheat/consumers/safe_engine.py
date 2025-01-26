@@ -8,6 +8,7 @@ from .safe_server import SafeServerConsumer
 from django.conf import settings
 from ..models import ClientHWID, MaliciousSignatures, Ban, DetectionReport
 import utils
+import utils.discord
 from shared.models import ServerType
 from shared.enums import (
     SafeEnginePacketID,
@@ -408,9 +409,6 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         await ban.asave()
         
         embed_title = "Banned Player"
-        if self._connected_server:
-            embed_title = await self._connected_server.game_server.get_config_by_id(config_id=config_ids.DISCORD_EMBED_TITLE)
-        embed_title = utils.format_string(embed_title, {"name": self._hwid.username})
 
         try:
             await utils.discord.send_discord_embed(
@@ -418,7 +416,6 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                 embed_title,
                 f"""
                 **{self._hwid.username}** banned due to ```{reason}```
-                **Ban Duration**: `{utils.represent_timedelta_string(ban.duration)}`
                 """,
                 fields=[
                     (f"{key}:", f"```{value}```", False)
@@ -426,6 +423,28 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                 ],
                 image_buffer=image_buffer,
             )
+            if self._connected_server:
+                send_alerts = await self._connected_server.game_server.get_config_by_id(config_ids.ALLOW_SEND_DETECTION_ALERT)
+
+                if send_alerts:
+                    webhook_url = await self._connected_server.game_server.get_config_by_id(config_id=config_ids.DISCORD_WEBHOOK_URL)
+                    if len(webhook_url) > 0:
+                        embed_title = await self._connected_server.game_server.get_config_by_id(config_id=config_ids.DISCORD_EMBED_TITLE)
+                        embed_title = utils.format_string(embed_title, {"name": self._hwid.username})
+                        allow_send_screenshot = bool(await self._connected_server.game_server.get_config_by_id(config_id=config_ids.ALLOW_SEND_SCREENSHOT_ALERT))
+                        
+                        print(allow_send_screenshot)
+
+                        await utils.discord.send_discord_embed(
+                            webhook_url,
+                            embed_title,
+                            f"""
+                            **{self._hwid.username}** banned due to ```{reason}```
+                            """,
+                            image_buffer=image_buffer if allow_send_screenshot else None,
+                        )
+
+
         except Exception as err:
             logger.error(
                 f"An error occured while trying to send discord detection report: {err}"

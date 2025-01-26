@@ -188,6 +188,9 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
     logger.info(
         f"{request_hwid['username']}'s engine asking for network join (Computer Name: \"{hwid.computer_name}\", Bios Version: \"{hwid.bios_version}\", CPU ID: \"{hwid.cpuid}\", Motherboard Serial: \"{hwid.motherboard_serial}\")"
     )
+    
+    consumer.connected_server = fivem_guard.get_server_by_ip("127.0.0.1")
+    print(f"Found: {bool(consumer.connected_server)}")
 
     consumer.group_name = WebSocketGroupNames.SAFE_ENGINES.value
     consumer.channel_layer.group_add(consumer.group_name, consumer.channel_name)

@@ -332,6 +332,24 @@ async def handle_cheat_detection(consumer: SafeEngineConsumer, request: Dict[str
                 await consumer.kick(
                     "This server requires Test Signing to be disabled on your machine."
                 )
+        
+        # Check for Allowed Server Plugins
+        if request["detection_type"] == DetectionType.DLL_FOUND:
+            try:
+                allowed_plugins = (
+                    await consumer.connected_server.game_server.get_config_by_id(
+                        config_ids.ALLOWED_FIVEM_PLUGINS
+                    )
+                )
+            except AntiCheatConfigTemplates.DoesNotExist:
+                allowed_plugins = ""
+
+            if request["report"]["plugin"].strip().lower() in allowed_plugins.lower():
+                await consumer.kick(
+                    f"This server doesnt not allow FiveM Plugins ({request['report']['plugin']})"
+                )
+            
+            logger.info(f"CHEATER REPORT! {consumer.hwid.computer_name} is flagged as {request['detection_type']} in {consumer.connected_server.game_server.name} ({consumer.connected_server.game_server.ip})")
     else:
         logger.info(
             f"CHEATER REPORT! {consumer.hwid.computer_name} treated as cheater with {request['detection_type'].name}"

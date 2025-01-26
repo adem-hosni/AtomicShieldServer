@@ -1,5 +1,5 @@
 import os
-import base64
+from anticheat.models import AntiCheatConfigTemplates
 from time import time
 from datetime import timedelta, datetime
 from channels.generic.websocket import AsyncWebsocketConsumer
@@ -429,3 +429,72 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             logger.error(
                 f"An error occured while trying to send discord detection report: {err}"
             )
+    
+    async def handle_detection(self, detection: DetectionType, report: Dict[str, Any]):
+        # Check if the malicious driver is about Process Hacker
+        if detection == DetectionType.MALICIOUS_DRIVER:
+            if str(report["BlackListed Driver"]).endswith(
+                "kprocesshacker.sys"
+            ):
+                try:
+                    processhacker_allowed = (
+                        await self._connected_server.game_server.get_config_by_id(
+                            config_ids.ALLOW_PROCESS_HACKER
+                        )
+                    )
+                except AntiCheatConfigTemplates.DoesNotExist:
+                    processhacker_allowed = False
+
+                if not processhacker_allowed:
+                    await self.kick(
+                        "Process Hacker is not Allowed on the connected server"
+                    )
+
+        # Check for Secure Boot is forced
+        if detection == DetectionType.SECURE_BOOT_DISABLED:
+            try:
+                force_secureboot = (
+                    await self._connected_server.game_server.get_config_by_id(
+                        config_ids.FORCE_SECUREBOOT
+                    )
+                )
+            except AntiCheatConfigTemplates.DoesNotExist:
+                force_secureboot = False
+            if force_secureboot:
+                await self.kick(
+                    "This server requires Secure Boot to be enabled on your machine."
+                )
+
+        # Check for Force Test Signing Disabled
+        if detection == DetectionType.TEST_SIGNING_ENABLED:
+            try:
+                testsigning_enabled = (
+                    await self._connected_server.game_server.get_config_by_id(
+                        config_ids.FORCE_TESTSIGNING
+                    )
+                )
+            except AntiCheatConfigTemplates.DoesNotExist:
+                testsigning_enabled = False
+
+            if testsigning_enabled:
+                await self.kick(
+                    "This server requires Test Signing to be disabled on your machine."
+                )
+        
+        # Check for Allowed Server Plugins
+        if detection == DetectionType.DLL_FOUND:
+            try:
+                allowed_plugins = (
+                    await self._connected_server.game_server.get_config_by_id(
+                        config_ids.ALLOWED_FIVEM_PLUGINS
+                    )
+                )
+            except AntiCheatConfigTemplates.DoesNotExist:
+                allowed_plugins = ""
+
+            if report["plugin"].strip().lower() in allowed_plugins.lower():
+                await self.kick(
+                    f"This server doesnt not allow FiveM Plugins ({report['plugin']})"
+                )
+            
+            logger.info(f"CHEATER REPORT! {self._hwid.computer_name} is flagged as {detection} in {self._connected_server.game_server.name} ({self._connected_server.game_server.ip})")

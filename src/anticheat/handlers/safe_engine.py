@@ -16,7 +16,6 @@ from shared.flags import Flag
 from utils import check_request_body_key, discord
 from asgiref.sync import sync_to_async
 from django.db.models import Q
-from anticheat.models import AntiCheatConfigurations, AntiCheatConfigTemplates
 from ..models import MaliciousSignatures, ClientHWID, ServerType, Warning
 from .. import config_ids
 from typing import Dict, List, Any
@@ -283,73 +282,7 @@ async def handle_cheat_detection(consumer: SafeEngineConsumer, request: Dict[str
         consumer.connected_server
         and request["detection_type"] in unstrict_detection_types
     ):
-        # Check if the malicious driver is about Process Hacker
-        if request["detection_type"] == DetectionType.MALICIOUS_DRIVER:
-            if str(request["report"]["BlackListed Driver"]).endswith(
-                "kprocesshacker.sys"
-            ):
-                try:
-                    processhacker_allowed = (
-                        await consumer.connected_server.game_server.get_config_by_id(
-                            config_ids.ALLOW_PROCESS_HACKER
-                        )
-                    )
-                except AntiCheatConfigTemplates.DoesNotExist:
-                    processhacker_allowed = False
-
-                if not processhacker_allowed:
-                    await consumer.kick(
-                        "Process Hacker is not Allowed on the connected server"
-                    )
-
-        # Check for Secure Boot is forced
-        if request["detection_type"] == DetectionType.SECURE_BOOT_DISABLED:
-            try:
-                force_secureboot = (
-                    await consumer.connected_server.game_server.get_config_by_id(
-                        config_ids.FORCE_SECUREBOOT
-                    )
-                )
-            except AntiCheatConfigTemplates.DoesNotExist:
-                force_secureboot = False
-            if force_secureboot:
-                await consumer.kick(
-                    "This server requires Secure Boot to be enabled on your machine."
-                )
-
-        # Check for Force Test Signing Disabled
-        if request["detection_type"] == DetectionType.TEST_SIGNING_ENABLED:
-            try:
-                testsigning_enabled = (
-                    await consumer.connected_server.game_server.get_config_by_id(
-                        config_ids.FORCE_TESTSIGNING
-                    )
-                )
-            except AntiCheatConfigTemplates.DoesNotExist:
-                testsigning_enabled = False
-
-            if testsigning_enabled:
-                await consumer.kick(
-                    "This server requires Test Signing to be disabled on your machine."
-                )
-        
-        # Check for Allowed Server Plugins
-        if request["detection_type"] == DetectionType.DLL_FOUND:
-            try:
-                allowed_plugins = (
-                    await consumer.connected_server.game_server.get_config_by_id(
-                        config_ids.ALLOWED_FIVEM_PLUGINS
-                    )
-                )
-            except AntiCheatConfigTemplates.DoesNotExist:
-                allowed_plugins = ""
-
-            if request["report"]["plugin"].strip().lower() in allowed_plugins.lower():
-                await consumer.kick(
-                    f"This server doesnt not allow FiveM Plugins ({request['report']['plugin']})"
-                )
-            
-            logger.info(f"CHEATER REPORT! {consumer.hwid.computer_name} is flagged as {request['detection_type']} in {consumer.connected_server.game_server.name} ({consumer.connected_server.game_server.ip})")
+        consumer.handle_detection(request["detection_type"])
     else:
         logger.info(
             f"CHEATER REPORT! {consumer.hwid.computer_name} treated as cheater with {request['detection_type'].name}"

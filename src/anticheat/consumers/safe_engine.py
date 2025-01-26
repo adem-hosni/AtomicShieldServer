@@ -347,7 +347,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         --------
             bool: True if the kick was successful, False otherwise.
         """
-        if flag:
+        if flag and not self.is_flagged_as(detection_type):
             self._flags.append(
                 Flag(
                     detection_type,

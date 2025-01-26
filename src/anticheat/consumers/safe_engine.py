@@ -433,8 +433,6 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                         embed_title = utils.format_string(embed_title, {"name": self._hwid.username})
                         allow_send_screenshot = bool(await self._connected_server.game_server.get_config_by_id(config_id=config_ids.ALLOW_SEND_SCREENSHOT_ALERT))
                         
-                        print(allow_send_screenshot)
-
                         await utils.discord.send_discord_embed(
                             webhook_url,
                             embed_title,

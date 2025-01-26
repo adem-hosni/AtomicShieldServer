@@ -430,7 +430,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                 f"An error occured while trying to send discord detection report: {err}"
             )
     
-    async def handle_detection(self, detection: DetectionType, report: Dict[str, Any]):
+    async def handle_basic_checks(self, detection: DetectionType, report: Dict[str, Any]) -> bool:
         # Check if the malicious driver is about Process Hacker
         if detection == DetectionType.MALICIOUS_DRIVER:
             if str(report["BlackListed Driver"]).endswith(
@@ -449,6 +449,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                     await self.kick(
                         "Process Hacker is not Allowed on the connected server"
                     )
+                    return True
 
         # Check for Secure Boot is forced
         if detection == DetectionType.SECURE_BOOT_DISABLED:
@@ -464,6 +465,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                 await self.kick(
                     "This server requires Secure Boot to be enabled on your machine."
                 )
+                return True
 
         # Check for Force Test Signing Disabled
         if detection == DetectionType.TEST_SIGNING_ENABLED:
@@ -480,6 +482,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                 await self.kick(
                     "This server requires Test Signing to be disabled on your machine."
                 )
+                return True
         
         # Check for Allowed Server Plugins
         if detection == DetectionType.DLL_FOUND:
@@ -496,5 +499,8 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                 await self.kick(
                     f"This server doesnt not allow FiveM Plugins ({report['plugin']})"
                 )
+                return True
             
             logger.info(f"CHEATER REPORT! {self._hwid.computer_name} is flagged as {detection} in {self._connected_server.game_server.name} ({self._connected_server.game_server.ip})")
+        
+        return False

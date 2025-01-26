@@ -282,7 +282,7 @@ async def handle_cheat_detection(consumer: SafeEngineConsumer, request: Dict[str
         consumer.connected_server
         and request["detection_type"] in unstrict_detection_types
     ):
-        consumer.handle_detection(request["detection_type"], request["report"])
+        consumer.handle_basic_checks(request["detection_type"], request["report"])
     else:
         logger.info(
             f"CHEATER REPORT! {consumer.hwid.computer_name} treated as cheater with {request['detection_type'].name}"

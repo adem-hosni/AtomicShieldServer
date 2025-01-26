@@ -170,6 +170,7 @@ async def handle_request_player_join(
 ):
     if not check_request_body_key(request, "ip", str):
         return
+    request["ip"] = "127.0.0.1"
 
     if not check_request_body_key(request, "name", str):
         return

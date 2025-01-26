@@ -1,6 +1,7 @@
 import os
 import logging
 import json
+from asgiref.sync import sync_to_async
 from django.shortcuts import render, redirect
 from django.conf import settings
 from django.contrib import messages
@@ -8,7 +9,7 @@ from django.urls import reverse
 from django.db.models import Q
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, FileResponse
 from django.contrib.auth.decorators import login_required
-from guards.multitheftauto import mta_guard
+from guards import fivem_guard
 from utils import check_request_body_key, represent_timedelta_string
 from .models import (
     Announcements,
@@ -23,7 +24,7 @@ from anticheat.models import (
     AntiCheatConfigurations,
     AntiCheatConfigurationCategories,
     Ban,
-    DetectionReport
+    DetectionReport,
 )
 from .forms import AddServerForm
 import utils
@@ -75,7 +76,7 @@ def render_maindashboard(request: HttpRequest) -> HttpResponse:
                 }
             )
         announcements.reverse()
-        
+
     bans = 0
     for ban in Ban.objects.all():
         if not ban.is_expired:
@@ -87,7 +88,7 @@ def render_maindashboard(request: HttpRequest) -> HttpResponse:
         {
             "username": request.user.username,
             "announcements": announcements,
-            "online_scanners": len(mta_guard.engines),
+            "online_scanners": len(fivem_guard.engines),
             "banned_players": bans,
             "detection_count": DetectionReport.objects.count(),
         },
@@ -168,7 +169,7 @@ def render_bans(request: HttpRequest) -> HttpResponse:
                 }
                 for ban in bans
             ],
-            "detections": 5
+            "detections": 5,
         },
     )
 
@@ -407,7 +408,7 @@ def render_servers(request: HttpRequest) -> HttpResponse:
                     "port": server.port,
                     "name": server.name,
                     "type": server.type,
-                    "status": mta_guard.is_server_running(server.ip),
+                    "status": fivem_guard.is_server_running(server.ip),
                     "subscription_status": server.subscriptions.last(),
                 }
                 for server in servers.reverse()
@@ -707,3 +708,79 @@ def render_subscriptions(request: HttpRequest) -> HttpResponse:
     )
 
 
+async def render_players(request: HttpRequest) -> HttpResponse:
+    try:
+        target_server = await GameServer.objects.aget(
+            owner=request.user, id=3
+        )
+    except GameServer.DoesNotExist:
+        messages.error(request, "The selected server does not exists!")
+    else:
+        server = fivem_guard.get_server_by_ip(target_server.ip)
+        if server:
+            await server.request_status()
+
+    players = [
+        {
+            "id": f"{i+1}",
+            "name": f"Adem{i+1}",
+            "ping": f"{i+110}",
+            "steamid": f"{i}"*10,
+            "discordid": f"{i}"*10,
+            "license": f"{i}"*10,
+            "license2": f"{i}"*10,
+            "fivem": f"{i}"*10,
+        }
+        for i in range(500)
+    ]
+
+    current_page = int(request.GET.get("page", 1)) - 1
+
+    searched_players = []
+    search_text = request.GET.get("search", "").strip()
+    if len(search_text):
+        for index in range(len(players) - 1, -1, -1):
+            player = players[index]
+            if (
+                search_text.lower() in player["name"].lower()
+                or search_text in player["id"]
+            ):
+                searched_players.append(player)
+
+    if len(search_text.strip()):
+        players = searched_players
+
+    page_size = len(players) if len(players) < 35 else 35
+
+    max_pages = len(players) // page_size if len(players) > page_size else len(players)
+
+    if len(search_text):
+        current_page = 0
+
+    if current_page < 0:
+        current_page = 0
+    if current_page > max_pages:
+        current_page = max_pages
+
+    players_to_show = players[
+        page_size * current_page : (page_size * current_page) + page_size
+    ]
+
+    # Increment the current_page for the ui
+    current_page += 1
+
+    return await sync_to_async(render)(
+        request,
+        "pages/dashboard/players.jinja",
+        {
+            "players": players_to_show,
+            "pages": len(players_to_show),
+            "current_page": current_page,
+            "show_previous": current_page > 1,
+            "show_next": current_page < max_pages,
+            "current_page": current_page,
+            "page_range": range(1, max_pages + 1),
+            "max_pages": max_pages,
+            "message": "No Online Players to show" if not len(players_to_show) else ""
+        },
+    )

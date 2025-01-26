@@ -129,3 +129,18 @@ class _GuardManagerBase(object):
             if iter_engine.address[0] == scanner_ip:
                 return iter_engine
         return None  # Not Found
+
+    def get_server_by_ip(self, server_ip: str) -> Union[SafeServerConsumer, None]:
+        """
+        Retrieve a AtomicShield server by its IP address.
+
+        Args:
+            scanner_ip (str): The IP address of the server to retrieve.
+
+        Returns:
+            Union[SafeServerConsumer, None]: The server instance if found, otherwise None.
+        """
+        for server in self._safe_servers:
+            if server.address[0] == server_ip:
+                return server
+        return None  # Not Found

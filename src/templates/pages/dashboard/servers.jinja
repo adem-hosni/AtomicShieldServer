@@ -24,7 +24,9 @@
     </div>
   </div>
   <div class="w-full p-4 justify-end flex">
-    <button data-modal-target="add-server-modal" data-modal-toggle="add-server-modal" class="border-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 text-gray-200 border-gray-200 hover:bg-gray-200 hover:text-black">Add Server</button>
+    <button data-modal-target="add-server-modal" data-modal-toggle="add-server-modal" type="button" class="flex items-center justify-center self-stretch px-4 py-2 rounded-xl z-10 border text-white-gray border-[#91a6b633] hover:bg-[#00A7FD] hover:text-[#081017] hover:border-[#00A7FD] hover:drop-shadow-[0rem_0rem_1rem_#00A7FD] transition-all duration-300">
+      <div class="text-[0.9375rem] font-publicsans font-medium leading-[1.5rem]">Add Server</div>
+    </button>
   </div>
 
   <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
@@ -145,7 +147,9 @@
             </div>
             <div class="relative mx-auto">{{ form.server_type }}</div>
             <div class="relative mx-auto">{{ form.subscription }}</div>
-            <button type="submit" id="addserver-btn" onclick="this.disabled=true; this.form.submit();" class="w-full border-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 text-[#01e4f4] border-[#01e4f4] hover:bg-[#01e4f4] hover:text-black">Generate Key</button>
+            <button type="submit" onclick="this.disabled=true; this.form.submit();" id="addserver-btn" class="w-full flex items-center justify-center self-stretch px-4 py-2 rounded-xl z-10 border text-white-gray border-[#91a6b633] hover:bg-[#00A7FD] hover:text-[#081017] hover:border-[#00A7FD] hover:drop-shadow-[0rem_0rem_1rem_#00A7FD] transition-all duration-300">
+              <div class="text-[0.9375rem] font-publicsans font-medium leading-[1.5rem]">Generate Key</div>
+            </button>
           </form>
         </div>
       </div>
@@ -249,9 +253,11 @@
                 >
               </div>
             </div>
-            
 
-            <button type="submit" value="" onclick="this.disabled=true; this.form.submit();" class="w-full text-black border-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 border-[#01e4f4] bg-[#01e4f4] hover:bg-[#b37339]">Save</button>
+            
+            <button type="submit" onclick="this.disabled=true; this.form.submit();" class="w-full flex items-center justify-center self-stretch px-4 py-2 rounded-xl z-10 border text-white-gray border-[#91a6b633] hover:bg-[#00A7FD] hover:text-[#081017] hover:border-[#00A7FD] hover:drop-shadow-[0rem_0rem_1rem_#00A7FD] transition-all duration-300">
+              <div class="text-[0.9375rem] font-publicsans font-medium leading-[1.5rem]">Save</div>
+            </button>
           </form>
           <button data-modal-hide="edit-server-modal" onclick="this.disabled=true; this.form.submit();" class="w-full border-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 text-red-600 border-red-600 hover:bg-red-600 hover:text-black my-3">Cancel</button>
 
@@ -325,43 +331,6 @@
         }
       }
     
-      function checkServer() {
-        if (ipVerified && portVerified) {
-          const xhr = new XMLHttpRequest()
-          xhr.open('POST', '/dashboard/checkserver', true)
-          xhr.setRequestHeader('Content-Type', 'application/json')
-          xhr.setRequestHeader('X-CSRFToken', '{{ csrf_token }}')
-    
-          xhr.onload = function () {
-            if (xhr.readyState === XMLHttpRequest.DONE) {
-              let response = JSON.parse(xhr.responseText)
-              serverStatusDiv.style.display = 'block'
-    
-              setStatusColor(response['success'])
-    
-              if (response['success']) {
-                serverStatus.innerText = `Server Online!
-                  Server Name: ${response['servername']}
-                  Players: ${response['playercount']}/${response['maxplayers']}
-                  Game Type: ${response['gametype']}`
-              } else {
-                serverStatus.innerText = 'Server Offline'
-                return
-              }
-            }
-          }
-    
-          xhr.onerror = (err) => console.log(err)
-          xhr.send(
-            JSON.stringify({
-              ip: serverIp.value,
-              port: serverPort.value,
-              server_type: document.getElementById('server-type')?.value
-            })
-          )
-        }
-      }
-    
       serverIp.addEventListener('input', function (ev) {
         if (!ipRegex.test(serverIp.value)) {
           setStatusColor(false)
@@ -370,7 +339,6 @@
         } else {
           serverStatusDiv.style.display = 'none'
           ipVerified = true
-          checkServer()
         }
       })
     
@@ -384,7 +352,6 @@
         } else {
           serverStatusDiv.style.display = 'none'
           portVerified = true
-          checkServer()
         }
       })
     })

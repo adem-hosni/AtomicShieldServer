@@ -1,3 +1,5 @@
+import asyncio
+import asyncio
 import json
 import logging
 from shared.enums import SafeServerPacketID, WebSocketGroupNames
@@ -43,6 +45,8 @@ class SafeServerConsumer(AsyncWebsocketConsumer):
         self._group_name = ""
         self._owner: User = None
         self._game_server: GameServer = None
+        self._pending_responses = {}
+        self._pending_responses = {}
 
     async def connect(self):
         """
@@ -104,6 +108,8 @@ class SafeServerConsumer(AsyncWebsocketConsumer):
         the request based on its type. If the request type is not recognized, the
         connection is closed.
         """
+        await self.process_packet((text_data))
+        await self.process_packet((text_data))
         await self.process_packet(text_data)
     
     async def process_packet(self, packet: Union[str, bytes]):
@@ -127,6 +133,14 @@ class SafeServerConsumer(AsyncWebsocketConsumer):
         except ValueError:
             logger.warning(f"Undefined request type (given: {request_body['type']})")
             return await self.close()
+    
+        if request_body["type"] in self._pending_responses:
+            self._pending_responses[request_body["type"]].set_result(request_body)
+            del self._pending_responses[request_body["type"]]
+    
+        if request_body["type"] in self._pending_responses:
+            self._pending_responses[request_body["type"]].set_result(request_body)
+            del self._pending_responses[request_body["type"]]
 
         from ..handlers.safe_server import (
             handle_network_join,
@@ -254,6 +268,17 @@ class SafeServerConsumer(AsyncWebsocketConsumer):
             )
 
     async def request_status(self) -> Dict[str, Union[str, bool, int, float]]:
-        await self.send(SafeServerPacketID.REQUEST_STATUS)
-
-        response_event = await self.channel_layer.receive(self.channel_name)
+        response_future = asyncio.get_event_loop().create_future()
+        self._pending_responses[SafeServerPacketID.REQUEST_STATUS] = response_future
+        
+        await self.send(SafeServerPacketID.REQUEST_STATUS, {})
+        
+        response = await response_future
+        print(response)
+        response_future = asyncio.get_event_loop().create_future()
+        self._pending_responses[SafeServerPacketID.REQUEST_STATUS] = response_future
+        
+        await self.send(SafeServerPacketID.REQUEST_STATUS, {})
+        
+        response = await response_future
+        print(response)

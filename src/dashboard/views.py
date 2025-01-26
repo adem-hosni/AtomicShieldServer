@@ -709,30 +709,17 @@ def render_subscriptions(request: HttpRequest) -> HttpResponse:
 
 
 async def render_players(request: HttpRequest) -> HttpResponse:
+    players = []
     try:
         target_server = await GameServer.objects.aget(
-            owner=request.user, id=3
+            owner=request.user, id=await sync_to_async(request.session.get)("selected_server", -1)
         )
     except GameServer.DoesNotExist:
         messages.error(request, "The selected server does not exists!")
     else:
         server = fivem_guard.get_server_by_ip(target_server.ip)
         if server:
-            await server.request_status()
-
-    players = [
-        {
-            "id": f"{i+1}",
-            "name": f"Adem{i+1}",
-            "ping": f"{i+110}",
-            "steamid": f"{i}"*10,
-            "discordid": f"{i}"*10,
-            "license": f"{i}"*10,
-            "license2": f"{i}"*10,
-            "fivem": f"{i}"*10,
-        }
-        for i in range(500)
-    ]
+            players = (await server.request_status())["players"]
 
     current_page = int(request.GET.get("page", 1)) - 1
 

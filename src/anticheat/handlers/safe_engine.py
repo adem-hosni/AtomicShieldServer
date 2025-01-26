@@ -266,7 +266,7 @@ async def handle_cheat_detection(consumer: SafeEngineConsumer, request: Dict[str
     # Strict Detection ? Ban
     if not request["detection_type"] in unstrict_detection_types:
         logger.warning(
-            f"Strict Ban Cheating Behaviour detected on {consumer.hwid.username}'s computer!"
+            f"Strict Ban Cheating Behaviour {request['detection_type'].name} detected on {consumer.hwid.username}'s computer!"
         )
         await consumer.ban(
             detection_type=request["detection_type"],

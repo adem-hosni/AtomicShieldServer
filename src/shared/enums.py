@@ -53,4 +53,5 @@ unstrict_detection_types = [
     DetectionType.TEST_SIGNING_ENABLED,
     DetectionType.DEBUG_MODE_ENABLED,
     DetectionType.SECURE_BOOT_DISABLED,
+    DetectionType.DLL_FOUND,
 ]

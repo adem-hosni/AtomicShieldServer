@@ -11,9 +11,10 @@ from shared.enums import (
     SafeUploadType,
     DetectionType,
     unstrict_detection_types,
+    detection_messages
 )
 from shared.flags import Flag
-from utils import check_request_body_key, discord
+import utils
 from asgiref.sync import sync_to_async
 from django.db.models import Q
 from ..models import MaliciousSignatures, ClientHWID, ServerType, Warning
@@ -27,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, Any]):
     # Check if the hwid is received
-    if not check_request_body_key(request, "hwid", dict):
+    if not utils.check_request_body_key(request, "hwid", dict):
         await consumer.send(
             SafeEnginePacketID.NETWORK_JOIN,
             {"success": False, "message": "Unable to validate your machine!"},
@@ -35,7 +36,7 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
         logger.warning(f"Missing player HWID on {consumer.address}")
         return consumer.close()
 
-    if not check_request_body_key(request, "cache", dict):
+    if not utils.check_request_body_key(request, "cache", dict):
         await consumer.send(
             SafeEnginePacketID.NETWORK_JOIN,
             {"success": False, "message": "Unable to validate your machine!"},
@@ -55,7 +56,7 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
         )
         return consumer.close()
 
-    if not check_request_body_key(request_hwid, "extra", dict):
+    if not utils.check_request_body_key(request_hwid, "extra", dict):
         await consumer.send(
             SafeEnginePacketID.NETWORK_JOIN,
             {"success": False, "message": "Unable to validate your machine!"},
@@ -71,7 +72,7 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
         "computer_name",
         "pnp_device",
     ]:
-        if not check_request_body_key(request_hwid, key, str):
+        if not utils.check_request_body_key(request_hwid, key, str):
             await consumer.send(
                 SafeEnginePacketID.NETWORK_JOIN,
                 {
@@ -94,7 +95,7 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
             )
             return consumer.close()
 
-    if not check_request_body_key(request, "engine_type", int):
+    if not utils.check_request_body_key(request, "engine_type", int):
         logger.warning(f"Received unexpected engine type from {consumer.address}!")
         return consumer.close()
 
@@ -234,7 +235,7 @@ async def handle_scanner_disconnect(consumer: SafeEngineConsumer):
 
 async def handle_cheat_detection(consumer: SafeEngineConsumer, request: Dict[str, Any]):
     # Check all the request key's health
-    if not check_request_body_key(request, "detection_type", int):
+    if not utils.check_request_body_key(request, "detection_type", int):
         logger.warning(
             f"CHEATER REPORT, Missing detection type specified in the packet from {consumer.address}"
         )
@@ -247,13 +248,13 @@ async def handle_cheat_detection(consumer: SafeEngineConsumer, request: Dict[str
         return await consumer.close()
     request["detection_type"] = DetectionType(request["detection_type"])
 
-    if not check_request_body_key(request, "report", dict):
+    if not utils.check_request_body_key(request, "report", dict):
         logger.warning(
             f"CHEATER REPORT, Missing detection report in the packet from {consumer.address}"
         )
         return await consumer.close()
 
-    if not check_request_body_key(request, "ss", str):
+    if not utils.check_request_body_key(request, "ss", str):
         logger.warning(
             f"CHEATER REPORT, Missing detection screenshot in the packet from {consumer.address}"
         )
@@ -261,7 +262,8 @@ async def handle_cheat_detection(consumer: SafeEngineConsumer, request: Dict[str
 
     screenshot_buffer = base64.b64decode(request["ss"])
 
-    await consumer.flag_as(request["detection_type"], request["detection_type"].label)
+    kick_message = utils.format_string(detection_messages[request['detection_type']], request["report"])
+    await consumer.flag_as(request["detection_type"], kick_message)
 
     # Strict Detection ? Ban
     if not request["detection_type"] in unstrict_detection_types:
@@ -273,7 +275,7 @@ async def handle_cheat_detection(consumer: SafeEngineConsumer, request: Dict[str
             duration=timedelta(days=16),
             target_game_server=consumer.connected_server.game_server if consumer.connected_server else None,
             image_buffer=screenshot_buffer,
-            reason=request["detection_type"].label,
+            reason=f"You're Banned from AtomicShiled servers due to cheating \nReason: {kick_message}\nNote: if you think this an error, you can appeal your ban on discord",
             report=request["report"]
         )
 

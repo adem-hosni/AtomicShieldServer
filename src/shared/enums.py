@@ -48,6 +48,19 @@ class DetectionType(models.IntegerChoices):
     THREAD_SHELLCODE = 11, "Thread Shell Code"
 
 
+detection_messages = {
+    DetectionType.CUSTOM: "UnNormal Ban",
+    DetectionType.DLL_FOUND: "This server doesnt not allow FiveM Plugins ({plugin})",
+    DetectionType.SECURE_BOOT_DISABLED: "This server requires Secure Boot to be enabled on your machine.",
+    DetectionType.MALICIOUS_DRIVER: "Process Hacker is not Allowed on the connected server",
+    DetectionType.TEST_SIGNING_ENABLED: "This server requires Test Signing to be disabled on your machine.",
+    DetectionType.INJECTED_DLL: "Injected Windows DLL",
+    DetectionType.CHEAT_SIGNATURE_FOUND: "Cheat Detected",
+    DetectionType.MALICIOUS_PROCESS_HANDLE_OPEN: "Cheat Detected",
+    DetectionType.MALICIOUS_DRIVER: "Hacking Tools Found",
+    DetectionType.THREAD_SHELLCODE: "Injected Windows DLL",
+}
+
 unstrict_detection_types = [
     DetectionType.MALICIOUS_DRIVER,
     DetectionType.TEST_SIGNING_ENABLED,

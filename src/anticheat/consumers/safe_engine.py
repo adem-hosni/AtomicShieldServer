@@ -14,6 +14,7 @@ from shared.enums import (
     SafeServerPacketID,
     WebSocketGroupNames,
     DetectionType,
+    detection_messages
 )
 from shared.flags import Flag, DetectionType
 from .. import config_ids
@@ -446,9 +447,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                     processhacker_allowed = False
 
                 if not processhacker_allowed:
-                    await self.kick(
-                        "Process Hacker is not Allowed on the connected server"
-                    )
+                    await self.kick(detection_messages[detection])
                     return True
 
         # Check for Secure Boot is forced
@@ -462,9 +461,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             except AntiCheatConfigTemplates.DoesNotExist:
                 force_secureboot = False
             if force_secureboot:
-                await self.kick(
-                    "This server requires Secure Boot to be enabled on your machine."
-                )
+                await self.kick(detection_messages[detection])
                 return True
 
         # Check for Force Test Signing Disabled
@@ -479,9 +476,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                 testsigning_enabled = False
 
             if testsigning_enabled:
-                await self.kick(
-                    "This server requires Test Signing to be disabled on your machine."
-                )
+                await self.kick(detection_messages[detection])
                 return True
         
         # Check for Allowed Server Plugins
@@ -496,9 +491,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                 allowed_plugins = ""
 
             if report["plugin"].strip().lower() in allowed_plugins.lower():
-                await self.kick(
-                    f"This server doesnt not allow FiveM Plugins ({report['plugin']})"
-                )
+                await self.kick(utils.format_string(detection_messages[detection], report))
                 return True
             
             logger.info(f"CHEATER REPORT! {self._hwid.computer_name} is flagged as {detection} in {self._connected_server.game_server.name} ({self._connected_server.game_server.ip})")

@@ -709,6 +709,7 @@ def render_subscriptions(request: HttpRequest) -> HttpResponse:
 
 
 async def render_players(request: HttpRequest) -> HttpResponse:    
+    players = []
     try:
         target_server = await GameServer.objects.aget(
             owner=request.user, id=await sync_to_async(request.session.get)("selected_server", -1)
@@ -719,17 +720,6 @@ async def render_players(request: HttpRequest) -> HttpResponse:
         server = fivem_guard.get_server_by_ip(target_server.ip)
         if server:
             players = (await server.request_status())["players"]
-    
-    players = [
-            {
-                "name": "Hyper",
-                "id": "15",
-                "steamid": "JIUQSHDZAE",
-                "discordid": "7942495742197",
-                "license": "YTYUILREZRT",
-                "ip": "127.0.0.1"
-            }
-        ]
     
     if request.method == "POST":
         response = {"success": False, "message": ""}

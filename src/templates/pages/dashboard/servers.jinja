@@ -1,5 +1,5 @@
 {% extends 'bases/dashboard.jinja' %} {% load static %} {% block content %}
-  <div class="p-4 rounded-lg transition-all duration-300 bg-purple-200 dark:bg-[#081017]">
+  <div class="p-4 rounded-lg transition-all duration-300 bg-[#081017]">
     {% include 'components/dashboard/breadcrumb.jinja' with current_page='Servers' %}
   </div>
   
@@ -30,8 +30,8 @@
   </div>
 
   <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
-    <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
-      <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-[#081017] dark:text-gray-400">
+    <table class="w-full text-sm text-left rtl:text-right text-gray-400">
+      <thead class="text-xs uppercase bg-[#081017] text-gray-400">
         <tr>
           <th scope="col" class="px-6 py-3">Key</th>
           <th scope="col" class="pl-1 py-3">Name</th>
@@ -46,7 +46,7 @@
       <tbody>
         {% for server in servers %}
           <tr class="transition-all duration:300 border-b bg-[#0E1B23] border-gray-700 hover:bg-[#142733]">
-            <th scope="row" class="px-4 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-gray-400 dark:hover:text-white cursor-pointer" onclick="navigator.clipboard.writeText('{{ server.key }}').then(() => iziToast.success({title: 'SUCCESS', message: 'Successfuly key copied to clipboard!'}))">
+            <th scope="row" class="px-4 py-4 font-medium whitespace-nowrap text-gray-400 hover:text-white cursor-pointer" onclick="navigator.clipboard.writeText('{{ server.key }}').then(() => iziToast.success({title: 'SUCCESS', message: 'Successfuly key copied to clipboard!'}))">
               <span class="blur-sm hover:blur-0 transition duration-300">{{ server.key }}</span>
             </th>
             <td class="pl-1 py-4 whitespace-nowrap font-medium">{{ server.name }}</td>
@@ -62,12 +62,12 @@
             <td class="px-6 py-3">
               {% if server.status %}
                 <div class="flex items-center">
-                  <div class="block mr-3 outline rounded-full ml-1 h-1 w-1 bg-green-500 outline-green-200 dark:outline-green-500/20"></div>
+                  <div class="block mr-3 outline rounded-full ml-1 h-1 w-1 bg-green-500 outline-green-500/20"></div>
                   <span class="font-medium">Online</span>
                 </div>
               {% else %}
                 <div class="flex items-center">
-                  <div class="block mr-3 outline rounded-full ml-1 h-1 w-1 bg-red-500 outline-red-200 dark:outline-red-500/20"></div>
+                  <div class="block mr-3 outline rounded-full ml-1 h-1 w-1 bg-red-500 outline-red-500/20"></div>
                   <span class="font-medium">Offline</span>
                 </div>
               {% endif %}
@@ -83,10 +83,10 @@
                               document.getElementById('edit-server-name').value = '{{ server.name }}';
                               document.getElementById('edit-server-ip').value = '{{ server.ip }}';
                               document.getElementById('edit-server-port').value = '{{ server.port }}';"
-              data-modal-target="edit-server-modal" data-modal-toggle="edit-server-modal" data-tooltip-target="edit-server-tooltip-{{ server.id }}" data-tooltip-style="dark" class="font-medium text-blue-600 dark:text-blue-500 hover:underline"><i class="fa-solid fa-pen-to-square text-[#01e4f4] transition-all duration-300 hover:bg-[#01e4f4] hover:text-black rounded-full p-1"></i></button>
+              data-modal-target="edit-server-modal" data-modal-toggle="edit-server-modal" data-tooltip-target="edit-server-tooltip-{{ server.id }}" data-tooltip-style="dark" class="font-medium text-blue-500 hover:underline"><i class="fa-solid fa-pen-to-square text-[#01e4f4] transition-all duration-300 hover:bg-[#01e4f4] hover:text-black rounded-full p-1"></i></button>
   
 
-              <button onclick="document.getElementById('target-refresh-server').value = '{{ server.id }}'" data-modal-target="refresh-key-modal" data-modal-toggle="refresh-key-modal" data-tooltip-target="tooltip-refresh-{{ server.id }}" data-tooltip-style="dark" class="font-medium text-blue-600 dark:text-blue-500 hover:underline"><i class="fa-solid fa-arrows-rotate text-[#01e4f4] transition-all duration-300 hover:bg-[#01e4f4] hover:text-black rounded-full p-1"></i></button>
+              <button onclick="document.getElementById('target-refresh-server').value = '{{ server.id }}'" data-modal-target="refresh-key-modal" data-modal-toggle="refresh-key-modal" data-tooltip-target="tooltip-refresh-{{ server.id }}" data-tooltip-style="dark" class="font-medium text-blue-500 hover:underline"><i class="fa-solid fa-arrows-rotate text-[#01e4f4] transition-all duration-300 hover:bg-[#01e4f4] hover:text-black rounded-full p-1"></i></button>
 
               <div id="edit-server-tooltip-{{ server.id }}" role="tooltip" class="z-10 invisible inline-block px-3 py-2 text-sm font-medium text-black bg-[#01e4f4] rounded-lg shadow-sm opacity-0 tooltip transition-all duration-300">
                 Edit Server
@@ -103,7 +103,7 @@
     </table>
     {% if servers|length == 0 %}
         <div class="transition-all duration:300 border-b bg-[#0E1B23] border-gray-700 hover:bg-[#142733] flex text-center">
-          <div scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-gray-400 dark:hover:text-white w-full">0 Servers</div>
+          <div scope="row" class="px-6 py-4 font-medium whitespace-nowrap text-gray-400 hover:text-white w-full">0 Servers</div>
         </div>
       {% endif %}
   </div>
@@ -112,11 +112,11 @@
   <div id="add-server-modal" tabindex="-1" aria-hidden="true" class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
     <div class="relative p-4 w-full max-w-md max-h-full">
       <!-- Modal content -->
-      <div class="relative bg-white rounded-lg shadow dark:bg-[#081017]">
+      <div class="relative rounded-lg shadow bg-[#081017]">
         <!-- Modal header -->
-        <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
-          <h3 class="text-xl font-semibold text-gray-900 dark:text-white mx-auto">Add Server</h3>
-          <button type="button" class="end-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-purple-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-[#01e4f4] dark:hover:text-black" data-modal-hide="add-server-modal">
+        <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t border-gray-600">
+          <h3 class="text-xl font-semibold text-white mx-auto">Add Server</h3>
+          <button type="button" class="end-2.5 text-gray-400 bg-transparent rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center hover:bg-[#01e4f4] hover:text-black" data-modal-hide="add-server-modal">
             <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
               <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
             </svg>
@@ -159,11 +159,11 @@
   <div id="refresh-key-modal" tabindex="-1" aria-hidden="true" class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
     <div class="relative p-4 w-full max-w-md max-h-full">
       <!-- Modal content -->
-      <div class="relative bg-white rounded-lg shadow dark:bg-[#081017]">
+      <div class="relative rounded-lg shadow bg-[#081017]">
         <!-- Modal header -->
-        <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
-          <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Refresh Server Key</h3>
-          <button type="button" class="end-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-purple-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-[#01e4f4] dark:hover:text-black">
+        <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t border-gray-600">
+          <h3 class="text-xl font-semibold text-white">Refresh Server Key</h3>
+          <button type="button" class="end-2.5 text-gray-400 bg-transparent rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center hover:bg-[#01e4f4] hover:text-black">
             <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
               <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
             </svg>
@@ -190,11 +190,11 @@
   <div id="edit-server-modal" tabindex="-1" aria-hidden="true" class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
     <div class="relative p-4 w-full max-w-md max-h-full">
       <!-- Modal content -->
-      <div class="relative bg-white rounded-lg shadow dark:bg-[#081017]">
+      <div class="relative rounded-lg shadow bg-[#081017]">
         <!-- Modal header -->
-        <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
-          <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Edit <span id="target-edit-server-name"></span>'s Server</h3>
-          <button type="button" class="end-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-purple-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-[#01e4f4] dark:hover:text-black">
+        <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t border-gray-600">
+          <h3 class="text-xl font-semibold text-white">Edit <span id="target-edit-server-name"></span>'s Server</h3>
+          <button type="button" class="end-2.5 text-gray-400 bg-transparent rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center hover:bg-[#01e4f4] hover:text-black">
             <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
               <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
             </svg>

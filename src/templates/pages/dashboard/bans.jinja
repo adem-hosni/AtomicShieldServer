@@ -2,12 +2,12 @@
 {% block content %}
 
 <div
-  class="p-4 rounded-lg transition-all duration-300 bg-purple-200 dark:bg-[#081017]"
+  class="p-4 rounded-lg transition-all duration-300 bg-[#081017]"
 >
   {% include "components/dashboard/breadcrumb.jinja" with current_page="Bans" %}
 </div>
 <section
-    class="flex-1 px-4 rounded-lg transition-all duration-300 bg-purple-200 dark:bg-[#081017] grid grid-rows-[auto,1fr] my-4"
+    class="flex-1 px-4 rounded-lg transition-all duration-300 bg-[#081017] grid grid-rows-[auto,1fr] my-4"
   >
     <div class="flex flex-wrap w-full flex grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 justify-center py-6 text-center gap-6">
       <div class="bg-[#09121e] h-max p-6 flex gap-4 rounded-xl">
@@ -38,10 +38,10 @@
 
 <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
   <table
-    class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400"
+    class="w-full text-sm text-left rtl:text-right text-gray-400"
   >
     <thead
-      class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-[#081017] dark:text-gray-400"
+      class="text-xs uppercase bg-[#081017] text-gray-400"
     >
       <tr>
         <th scope="col" class="px-6 py-3">NAME</th>
@@ -81,7 +81,7 @@
               data-modal-toggle="change-ban-state"
               data-tooltip-target="bantooltip--{{ ban.id }}"
               data-tooltip-style="dark"
-              class="font-medium text-blue-600 dark:text-blue-500 hover:underline"
+              class="font-medium text-blue-500 hover:underline"
             >
               <i
                 class="fa-regular fa-circle-check text-[#01e4f4] transition-all duration-300 hover:bg-[#01e4f4] hover:text-black rounded-full p-1"
@@ -123,17 +123,17 @@
 >
   <div class="relative p-4 w-full max-w-md max-h-full">
     <!-- Modal content -->
-    <div class="relative bg-white rounded-lg shadow dark:bg-[#081017]">
+    <div class="relative rounded-lg shadow bg-[#081017]">
       <!-- Modal header -->
       <div
-        class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600"
+        class="flex items-center justify-between p-4 md:p-5 border-b rounded-t border-gray-600"
       >
-        <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
+        <h3 class="text-xl font-semibold text-white">
           Manage Ban
         </h3>
         <button
           type="button"
-          class="end-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-purple-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-[#01e4f4] dark:hover:text-black"
+          class="end-2.5 text-gray-400 bg-transparent rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center hover:bg-[#01e4f4] hover:text-black"
         >
           <svg
             class="w-3 h-3"

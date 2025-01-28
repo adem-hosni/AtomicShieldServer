@@ -1,6 +1,6 @@
 {% extends 'bases/dashboard.jinja' %} {% block content %}
 <div
-  class="p-4 rounded-lg transition-all duration-300 bg-purple-200 dark:bg-[#081017]"
+  class="p-4 rounded-lg transition-all duration-300 bg-[#081017]"
 >
   {% include 'components/dashboard/breadcrumb.jinja' with current_page='Players' %}
 </div>
@@ -143,10 +143,10 @@
 >
   <div class="relative p-4 w-full max-w-md max-h-full">
     <!-- Modal content -->
-    <div class="relative bg-white rounded-lg shadow dark:bg-[#081017]">
+    <div class="relative rounded-lg shadow bg-[#081017]">
       <!-- Modal header -->
       <div
-        class="flex items-center p-4 md:p-5 border-b rounded-t dark:border-gray-600"
+        class="flex items-center p-4 md:p-5 border-b rounded-t border-gray-600"
       >
         <span
           id="modal-player-id"
@@ -154,7 +154,7 @@
         ></span>
         <h3
           id="modal-player-name"
-          class="text-xl font-semibold text-gray-900 dark:text-white ml-2"
+          class="text-xl font-semibold text-white ml-2"
         ></h3>
       </div>
       <!-- Modal body -->

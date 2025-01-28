@@ -1,5 +1,5 @@
 {% extends 'bases/dashboard.jinja' %} {% load static %} {% block content %}
-  <div class="p-4 rounded-lg transition-all duration-300 bg-purple-200 dark:bg-[#081017]">
+  <div class="p-4 rounded-lg transition-all duration-300 bg-[#081017]">
     {% include 'components/dashboard/breadcrumb.jinja' with current_page='Subscriptions' %}
   </div>
   
@@ -62,8 +62,8 @@
   </div>
 
   <div class="relative overflow-x-auto shadow-md sm:rounded-lg mt-6">
-    <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
-      <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-[#081017] dark:text-gray-400">
+    <table class="w-full text-sm text-left rtl:text-right text-gray-400">
+      <thead class="text-xs uppercase bg-[#081017] text-gray-400">
         <tr>
           <th scope="col" class="pl-6 py-3">Type</th>
           <th scope="col" class="px-6 py-3">Name</th>
@@ -98,7 +98,7 @@
     </table>
     {% if subscriptions|length == 0 %}
     <div class="transition-all duration:300 border-b bg-[#0E1B23] border-gray-700 hover:bg-[#142733] flex text-center">
-          <div scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-gray-400 dark:hover:text-white w-full">0 subscriptions</div>
+          <div scope="row" class="px-6 py-4 font-medium whitespace-nowrap text-gray-400 hover:text-white w-full">0 subscriptions</div>
         </div>
       {% endif %}
   </div>

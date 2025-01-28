@@ -204,12 +204,12 @@
             <div class="text-[0.9375rem] font-publicsans font-medium leading-[1.5rem]">Take Screenshot</div>
           </button>
           <div class="w-full flex gap-2">
-            <button type="button" class="w-full flex items-center justify-center self-stretch px-4 py-2 rounded-xl z-10 border text-white-gray border-[#91a6b633] hover:bg-amber-600 hover:text-[#081017] hover:border-[#d97706] hover:drop-shadow-[0rem_0rem_1rem_#d97706] transition-all duration-300">
+            <button onclick="kickPlayer()" type="button" class="w-full flex items-center justify-center self-stretch px-4 py-2 rounded-xl z-10 border text-white-gray border-[#91a6b633] hover:bg-amber-600 hover:text-[#081017] hover:border-[#d97706] hover:drop-shadow-[0rem_0rem_1rem_#d97706] transition-all duration-300">
               <div class="text-[0.9375rem] font-publicsans font-medium leading-[1.5rem]">Kick</div>
             </button>
-            <button type="button" class="w-full flex items-center justify-center self-stretch px-4 py-2 rounded-xl z-10 border text-white-gray border-[#91a6b633] hover:bg-amber-600 hover:text-[#081017] hover:border-[#d97706] hover:drop-shadow-[0rem_0rem_1rem_#d97706] transition-all duration-300">
+            <!-- <button type="button" class="w-full flex items-center justify-center self-stretch px-4 py-2 rounded-xl z-10 border text-white-gray border-[#91a6b633] hover:bg-amber-600 hover:text-[#081017] hover:border-[#d97706] hover:drop-shadow-[0rem_0rem_1rem_#d97706] transition-all duration-300">
               <div class="text-[0.9375rem] font-publicsans font-medium leading-[1.5rem]">Ban</div>
-            </button>
+            </button> -->
           </div>
         </form>
         <button
@@ -243,9 +243,9 @@
     document.getElementsByName("target_player_id").value = playerInfo["id"];
   }
 
-  let isRequestPending = false;
+  let isScreenshotRequestPending = false;
   function takeScreenshot() {
-    if (isRequestPending) return;
+    if (isScreenshotRequestPending) return;
     const playerId = document.getElementsByName("target_player_id").value;
 
     const setScreenshot = (screenshotUrl) => {
@@ -256,7 +256,7 @@
       document.getElementById("screenshot-container").classList.remove("hidden");
     }
 
-    isRequestPending = true;
+    isScreenshotRequestPending = true;
   
     const xhr = new XMLHttpRequest();
     xhr.open('POST', "{% url 'players' %}", true);
@@ -281,19 +281,68 @@
           message: `Error requesting player screenshot: ${resp['message']}`,
         });
       }
-      isRequestPending = false;
+      isScreenshotRequestPending = false;
     };
     xhr.onerror = function () {
       iziToast.error({
         title: 'Error',
         message: 'Network Error',
       });
-      isRequestPending = false;
+      isScreenshotRequestPending = false;
     };
   
     const requestData = JSON.stringify({ playerid: playerId, type: "request_screenshot" });
     xhr.send(requestData);
   
+  }
+
+  let isKickRequestPending = false;
+  function kickPlayer() {
+    if (isKickRequestPending) return;
+
+
+
+    isKickRequestPending = true;
+  
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', "{% url 'players' %}", true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.setRequestHeader('X-CSRFToken', '{{ csrf_token }}')
+    xhr.onload = function () {
+      console.log(xhr.responseText);
+      const resp = JSON.parse(xhr.responseText);
+      if (xhr.status === 200) {
+        if (!resp["success"])
+        {
+          iziToast.error({
+            title: 'Error',
+            message: `Error kicking the player: ${resp['message']}`,
+          });
+          return;
+        }
+        iziToast.success({
+          title: 'Success',
+          message: `Kicked Successfuly`,
+        });
+      } else {
+        iziToast.error({
+          title: 'Error',
+          message: `Error kicking the player: ${resp['message']}`,
+        });
+      }
+      isKickRequestPending = false;
+    };
+    xhr.onerror = function () {
+      iziToast.error({
+        title: 'Error',
+        message: 'Network Error',
+      });
+      isKickRequestPending = false;
+    };
+
+    const playerId = document.getElementsByName("target_player_id").value;  
+    const requestData = JSON.stringify({ playerid: playerId, type: "kick" });
+    xhr.send(requestData);
   }
 </script>
 

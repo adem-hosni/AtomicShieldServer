@@ -285,13 +285,10 @@ async def handle_player_quit(consumer: SafeServerConsumer, request: Dict[str, An
     if not check_request_body_key(request, "name", str):
         return
 
-    if not check_request_body_key(request, "reason", str):
-        return
-
     player_engine = fivem_guard.get_scanner_by_ip(request["ip"])
     if not player_engine:
         logger.warning(
-            f"Unauthorized player engine disconnected due to {request['reason']}! (ip: {request['ip']}, name: {request['name']})"
+            f"Unauthorized player engine disconnected (ip: {request['ip']}, name: {request['name']})"
         )
         return await consumer.send(
             SafeServerPacketID.PLAYER_QUIT,
@@ -301,15 +298,7 @@ async def handle_player_quit(consumer: SafeServerConsumer, request: Dict[str, An
             },
         )
 
-    player_engine.connected_server = None
     logger.info(
-        f"\"{request['name']}\" engine disconnected from AtomicShield MTA:SA server due to \"{request['reason']}\"."
+        f"\"{request['name']}\" Disconnected from {player_engine.connected_server.game_server.name} ({player_engine.connected_server.game_server.ip})."
     )
-
-    return await consumer.send(
-        SafeServerPacketID.PLAYER_QUIT,
-        {
-            "success": True,
-            "message": "",
-        },
-    )
+    player_engine.connected_server = None

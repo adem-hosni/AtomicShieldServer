@@ -753,10 +753,10 @@ async def render_players(request: HttpRequest) -> HttpResponse:
                     player_ip = player["ip"]
                     break
             if player_ip:
-                match request_body.get("type"):
-                    case "request_screenshot":
-                        engine = fivem_guard.get_scanner_by_ip(player_ip)
-                        if engine:
+                engine = fivem_guard.get_scanner_by_ip(player_ip)
+                if engine:
+                    match request_body.get("type"):
+                        case "request_screenshot":
                             image_path = await engine.request_screenshot()
                             if image_path:
                                 logger.info(f"Successfuly screenshot requested from {engine.hwid.username}")
@@ -765,11 +765,16 @@ async def render_players(request: HttpRequest) -> HttpResponse:
                             else:
                                 response["message"] = "Cannot retreive screenshot from the target player!"
                                 # messages.error(request, "Cannot retreive screenshot from the target player!")
-                        else:
-                            response["message"] = "Cannot retreive the target player!"
-                            # messages.error(request, "Cannot retreive the target player!")
-                    case _:
-                        response["message"] = "Invalid data requested!"
+                        
+                        case "kick":
+                            if not (await engine.kick()):
+                                response["message"] = "Player is not connected to your server."
+                            
+                        case _:
+                            response["message"] = "Invalid data requested!"
+                else:
+                    response["message"] = "Cannot retreive the target player!"
+
             else:
                 response["message"] = "Cannot retreive the target player!"
         else:

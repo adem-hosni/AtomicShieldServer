@@ -78,7 +78,6 @@
         class="flex items-center gap-3 rounded-xl bg-[#09121e] hover:bg-[#019aa4] transition-all duration-300 w-56 px-4 py-2.5 md:flex cursor-pointer"
         data-modal-target="show-info-modal"
         data-modal-toggle="show-info-modal"
-        data-tooltip-target="edit-server-tooltip-{{ server.id }}"
         onclick="setPlayerInfo({{ player | safe }})"
       >
         <div class="flex flex-col w-full">
@@ -166,23 +165,42 @@
           <input type="hidden" name="target_player_id" value="" />
 
           <div class="space-y-1">
-            <div>
+            <div onclick="navigator.clipboard.writeText(document.getElementById('steamid').innerText).then(() => iziToast.success({title: 'SUCCESS', message: 'Successfuly copied to clipboard!'}))">
               <span class="font-semibold">Steam ID: </span>
-              <span class="text-[#01e4f4]" id="steamid"></span>
+              <span class="text-[#01e4f4] blur-sm hover:blur-0 transition duration-300" id="steamid"></span>
             </div>
-            <div>
+            <div onclick="navigator.clipboard.writeText(document.getElementById('discordid').innerText).then(() => iziToast.success({title: 'SUCCESS', message: 'Successfuly copied to clipboard!'}))">
               <span class="font-semibold">Discord ID: </span>
-              <span class="text-[#01e4f4]" id="discordid"></span>
+              <span class="text-[#01e4f4] blur-sm hover:blur-0 transition duration-300" id="discordid"></span>
             </div>
-            <div>
+            <div onclick="navigator.clipboard.writeText(document.getElementById('license').innerText).then(() => iziToast.success({title: 'SUCCESS', message: 'Successfuly copied to clipboard!'}))">
               <span class="font-semibold">License: </span>
-              <span class="text-[#01e4f4]" id="license"></span>
+              <span class="text-[#01e4f4] blur-sm hover:blur-0 transition duration-300" id="license"></span>
             </div>
           </div>
 
-          <h4 class="text-gray-400 text-xs">Player Actions:</h4>
+          <div id="screenshot-container" class="w-full h-46 bg-gray-200 overflow-hidden shadow-lg">
+            <img src=""
+            alt="Screenshot" class="hidden w-full h-full object-cover" id="player-screenshot">
+          </div>
 
-          <button type="button" class="w-full flex items-center justify-center self-stretch px-4 py-2 rounded-xl z-10 border text-white-gray border-[#91a6b633] hover:bg-[#00A7FD] hover:text-[#081017] hover:border-[#00A7FD] hover:drop-shadow-[0rem_0rem_1rem_#00A7FD] transition-all duration-300">
+          <div class="flex">
+            <h4 class="text-gray-400 text-xs">Player Actions:</h4>
+            <div id="download-tooltip" role="tooltip" class="z-10 invisible inline-block px-3 py-2 text-sm font-medium text-black bg-[#00A7FD] rounded-lg shadow-sm opacity-0 tooltip transition-all duration-300">
+              Download
+              <div class="tooltip-arrow" data-popper-arrow></div>
+            </div>
+
+
+            <a href="" download="Screenshot.png" id="download-btn" class="hidden ml-auto w-max flex items-center justify-center self-stretch px-4 py-2 rounded-xl z-10 border text-white-gray border-[#91a6b633] hover:bg-[#00A7FD] hover:text-[#081017] hover:border-[#00A7FD] hover:drop-shadow-[0rem_0rem_1rem_#00A7FD] transition-all duration-300 cursor-pointer"
+              data-tooltip-target="download-tooltip"
+            >
+              <div class="text-[0.9375rem] font-publicsans font-medium leading-[1.5rem]">
+                <i class="flex fa-solid fa-download"></i></div>
+            </a>
+          </div>
+
+          <button onclick="takeScreenshot()" type="button" class="w-full flex items-center justify-center self-stretch px-4 py-2 rounded-xl z-10 border text-white-gray border-[#91a6b633] hover:bg-[#00A7FD] hover:text-[#081017] hover:border-[#00A7FD] hover:drop-shadow-[0rem_0rem_1rem_#00A7FD] transition-all duration-300">
             <div class="text-[0.9375rem] font-publicsans font-medium leading-[1.5rem]">Take Screenshot</div>
           </button>
           <div class="w-full flex gap-2">
@@ -222,7 +240,60 @@
     document.getElementById("discordid").innerText = playerInfo["discordid"];
     document.getElementById("license").innerText = playerInfo["license"];
 
-    document.getElementById("target_player_id").value = playerInfo["id"];
+    document.getElementsByName("target_player_id").value = playerInfo["id"];
+  }
+
+  let isRequestPending = false;
+  function takeScreenshot() {
+    if (isRequestPending) return;
+    const playerId = document.getElementsByName("target_player_id").value;
+
+    const setScreenshot = (screenshotUrl) => {
+      document.getElementById("player-screenshot").src = screenshotUrl;
+      document.getElementById("download-btn").href = screenshotUrl;
+      document.getElementById("player-screenshot").classList.remove("hidden");
+      document.getElementById("download-btn").classList.remove("hidden");
+      document.getElementById("screenshot-container").classList.remove("hidden");
+    }
+
+    isRequestPending = true;
+  
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', "{% url 'players' %}", true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.setRequestHeader('X-CSRFToken', '{{ csrf_token }}')
+    xhr.onload = function () {
+      console.log(xhr.responseText);
+      const resp = JSON.parse(xhr.responseText);
+      if (xhr.status === 200) {
+        if (!resp["success"])
+        {
+          iziToast.error({
+            title: 'Error',
+            message: `Error requesting player screenshot: ${resp['message']}`,
+          });
+          return;
+        }
+        setScreenshot(resp["url"]);
+      } else {
+        iziToast.error({
+          title: 'Error',
+          message: `Error requesting player screenshot: ${resp['message']}`,
+        });
+      }
+      isRequestPending = false;
+    };
+    xhr.onerror = function () {
+      iziToast.error({
+        title: 'Error',
+        message: 'Network Error',
+      });
+      isRequestPending = false;
+    };
+  
+    const requestData = JSON.stringify({ playerid: playerId, type: "request_screenshot" });
+    xhr.send(requestData);
+  
   }
 </script>
 

@@ -21,6 +21,7 @@ class SafeEnginePacketID(Enum):
     SCANNER_DISCONNECT = 5
     REQUEST_UPLOAD = 6
     CHEAT_DETECTION = 7
+    REQUEST_SCREENSHOT = 8
 
 
 class WebSocketGroupNames(Enum):

@@ -7,7 +7,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.urls import reverse
 from django.db.models import Q
-from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, FileResponse
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, FileResponse, JsonResponse
 from django.contrib.auth.decorators import login_required
 from guards import fivem_guard
 from utils import check_request_body_key, represent_timedelta_string
@@ -708,8 +708,7 @@ def render_subscriptions(request: HttpRequest) -> HttpResponse:
     )
 
 
-async def render_players(request: HttpRequest) -> HttpResponse:
-    players = []
+async def render_players(request: HttpRequest) -> HttpResponse:    
     try:
         target_server = await GameServer.objects.aget(
             owner=request.user, id=await sync_to_async(request.session.get)("selected_server", -1)
@@ -720,7 +719,63 @@ async def render_players(request: HttpRequest) -> HttpResponse:
         server = fivem_guard.get_server_by_ip(target_server.ip)
         if server:
             players = (await server.request_status())["players"]
+    
+    players = [
+            {
+                "name": "Hyper",
+                "id": "15",
+                "steamid": "JIUQSHDZAE",
+                "discordid": "7942495742197",
+                "license": "YTYUILREZRT",
+                "ip": "127.0.0.1"
+            }
+        ]
+    
+    if request.method == "POST":
+        response = {"success": False, "message": ""}
+        request_body: Dict[str, Union[bool, str]] = request.body.decode()
 
+        # Check the request_body is a json
+        if request_body:
+            try:
+                request_body = json.loads(request.body.decode())
+            except Exception as err:
+                logger.error(
+                    f"Failed to parse request body\nrequest body: {request_body}\nException: {err}"
+                )
+                return HttpResponse(json.dumps({"success": False}))
+
+        player_id = request_body.get("playerid")
+        if player_id:
+            player_ip = None
+            for player in players:
+                if player["id"] == player_id:
+                    player_ip = player["ip"]
+                    break
+            if player_ip:
+                match request_body.get("type"):
+                    case "request_screenshot":
+                        engine = fivem_guard.get_scanner_by_ip(player_ip)
+                        if engine:
+                            image_path = await engine.request_screenshot()
+                            if image_path:
+                                logger.info(f"Successfuly screenshot requested from {engine.hwid.username}")
+                                response["success"] = True
+                                response["url"] = image_path
+                            else:
+                                response["message"] = "Cannot retreive screenshot from the target player!"
+                                # messages.error(request, "Cannot retreive screenshot from the target player!")
+                        else:
+                            response["message"] = "Cannot retreive the target player!"
+                            # messages.error(request, "Cannot retreive the target player!")
+                    case _:
+                        response["message"] = "Invalid data requested!"
+            else:
+                response["message"] = "Cannot retreive the target player!"
+        else:
+            response["message"] = "Invalid player!"
+        return JsonResponse(response)
+    
     current_page = int(request.GET.get("page", 1)) - 1
 
     searched_players = []

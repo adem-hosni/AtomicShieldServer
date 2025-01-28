@@ -1,4 +1,6 @@
+import asyncio
 import os
+import base64
 from anticheat.models import AntiCheatConfigTemplates
 from time import time
 from datetime import timedelta, datetime
@@ -54,6 +56,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         self._flagged: bool = False
         self._flags: List[Flag] = []
         self._type: ServerType = None
+        self._pending_responses = {}
 
     async def connect(self):
         """
@@ -180,6 +183,10 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         except ValueError:
             logger.warning(f"Undefined request type (given: {request_body['type']})")
             return await self.close()
+        
+        if request_body["type"] in self._pending_responses:
+            self._pending_responses[request_body["type"]].set_result(request_body)
+            del self._pending_responses[request_body["type"]]
 
         from ..handlers.safe_engine import (
             handle_network_join,
@@ -514,3 +521,33 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             logger.info(f"CHEATER REPORT! {self._hwid.computer_name} is flagged as {detection} in {self._connected_server.game_server.name} ({self._connected_server.game_server.ip})")
         
         return False
+
+    async def request_screenshot(self) -> str:
+        logger.info(f"Screenshot requested of {self._hwid.username} from {self._connected_server.game_server.name} ({self._connected_server.game_server.ip})...")
+        response_future = asyncio.get_event_loop().create_future()
+        self._pending_responses[SafeEnginePacketID.REQUEST_SCREENSHOT] = response_future
+        
+        await self.send(SafeEnginePacketID.REQUEST_SCREENSHOT, {})
+        response = await response_future
+        
+        if not response["success"]:
+            logger.warning(f"Failed to retreive screenshot from {self._hwid.username}. {response['message']}")
+            return None
+
+        image_buffer = base64.b64decode(response["buffer"])
+
+        image_path = None
+        if image_buffer:
+            screenshots_directory = os.path.join(
+                settings.MEDIA_ROOT, "screenshot"
+            )
+            os.makedirs(screenshots_directory, exist_ok=True)
+
+            image_path = os.path.join(
+                screenshots_directory,
+                f"{self._hwid.id}.png",
+            )
+            with open(image_path, "wb") as file:
+                file.write(image_buffer)
+
+        return f"{settings.MEDIA_URL}screenshot/{self._hwid.id}.png"

@@ -22,6 +22,7 @@ class SafeEnginePacketID(Enum):
     REQUEST_UPLOAD = 6
     CHEAT_DETECTION = 7
     REQUEST_SCREENSHOT = 8
+    MANAGE_ONLINE_PLAYER = 9
 
 
 class WebSocketGroupNames(Enum):

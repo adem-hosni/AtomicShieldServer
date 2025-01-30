@@ -14,9 +14,9 @@
 - ~~Add Reset Configurations button~~
 - ~~Add 404 Page Not Found Page~~
 - ~~Validate received HWID caches~~
-- Show online player
-- SSL Verification
-- Take player screenshot
+- ~~Show online player~~
+- ~~SSL Verification~~
+- ~~Take player screenshot~~
 - Show detection screenshot
 - Complete home page
 

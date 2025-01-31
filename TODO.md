@@ -17,8 +17,8 @@
 - ~~Show online player~~
 - ~~SSL Verification~~
 - ~~Take player screenshot~~
+- ~~Complete home page~~
 - Show detection screenshot
-- Complete home page
 
 # Fivem Server
 - ~~Check if the key if it's being used~~

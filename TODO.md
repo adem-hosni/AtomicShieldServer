@@ -24,9 +24,9 @@
 - ~~Check if the key if it's being used~~
 - ~~Check if the player is banned~~
 - ~~Implement server subscription duration (AtomicShield master server side)~~
-- Check for engine disconnect
-- Check if the player disconnected from Fivem server
-- Check AtomicShield server status
+- ~~Check for engine disconnect~~
+- ~~Check if the player disconnected from Fivem server~~
+- ~~Check AtomicShield server status~~
 - Implement HTTP communication encryption
 
 # AtomicShield Agent
@@ -36,8 +36,8 @@
 - ~~Check agent version~~
 - ~~Implement startup option~~
 - ~~Implement HTTP communication encryption~~
-- Inject engine dll into fivem's process
-- Add some security checks
+- ~~Inject engine dll into fivem's process~~
+- ~~Add some security checks~~
 
 # AtomicShield Engine
 - ~~HWID Checks~~
@@ -48,7 +48,7 @@
 - ~~HWID Caching~~
 - ~~Check server's response integrity~~
 - ~~Implement HTTP communication encryption~~
-- Fix imgui transparency issue
+- ~~Fix imgui transparency issue~~
 
 # Engine Integrity Checks
 - ~~Malicious Windows driver names verification~~
@@ -63,4 +63,4 @@
 - ~~Hide scan process~~
 - ~~Send screenshot with detection report~~
 - ~~Hook BaseThreadInitThunk~~
-- Send detection report for malicious strings
+- ~~Send detection report for malicious strings~~

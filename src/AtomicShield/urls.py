@@ -19,18 +19,28 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.contrib.sitemaps.views import sitemap
+from .sitemaps import StaticViewSitemap
 
 from .urlhandler import handler404
 
 import debug_toolbar.urls
 
+
+sitemaps = {
+    "static": StaticViewSitemap(),
+}
+
 urlpatterns = [
     path("secret-staff/", admin.site.urls),
     path("", include("home.urls")),
+    path("home/", include("home.urls")),
     path("auth/", include("authentication.urls")),
     path("anticheat/", include("anticheat.urls")),
     path("dashboard/", include("dashboard.urls")),
     path("resources/", include("resources.urls")),
+    path("sitemap.xml", sitemap, {"sitemaps": sitemaps}, name="sitemap"),
+
 ]
 
 if not settings.DEBUG:

@@ -407,7 +407,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             detection_report = DetectionReport(
                 hwid=self._hwid,
                 report=report,
-                screenshot=image_path,
+                screenshot=image_path.removeprefix(settings.BASE_DIR.name),
                 detection_type=detection_type,
             )
             await detection_report.asave()

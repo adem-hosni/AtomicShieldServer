@@ -87,6 +87,19 @@
                 class="fa-regular fa-circle-check text-[#01e4f4] transition-all duration-300 hover:bg-[#01e4f4] hover:text-black rounded-full p-1"
               ></i>
             </button>
+            
+            <button
+              data-modal-target="screenshot-modal"
+              data-modal-toggle="screenshot-modal"
+              data-tooltip-target="screenshot-tooltip--{{ ban.id }}"
+              data-tooltip-style="dark"
+              class="font-medium text-blue-500 hover:underline"
+              onclick="setScreenshot('{{ ban.username }}', '{{ ban.screenshot_url }}')"
+            >
+              <i
+                class="fa-solid fa-display text-[#01e4f4] transition-all duration-300 hover:bg-[#01e4f4] hover:text-black rounded-full p-1"
+              ></i>
+            </button>
 
             <div
               id="bantooltip--{{ ban.id }}"
@@ -98,6 +111,14 @@
               {% elif ban.status == 0%}
                 Ban
               {% endif %}
+              <div class="tooltip-arrow" data-popper-arrow></div>
+            </div>
+            <div
+              id="screenshot-tooltip--{{ ban.id }}"
+              role="tooltip"
+              class="z-10 invisible inline-block px-3 py-2 text-sm font-medium text-black bg-[#01e4f4] rounded-lg shadow-sm opacity-0 tooltip transition-all duration-300"
+            >
+              Screenshot Proof
               <div class="tooltip-arrow" data-popper-arrow></div>
             </div>
           </td>
@@ -189,4 +210,67 @@
     </div>
   </div>
 </div>
+
+<!-- Start Screenshot Modal -->
+<div
+id="screenshot-modal"
+tabindex="-1"
+aria-hidden="true"
+class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full"
+>
+<div class="relative p-4 w-full max-w-md max-h-full">
+  <!-- Modal content -->
+  <div class="relative rounded-lg shadow bg-[#081017]">
+    <!-- Modal header -->
+    <div
+      class="flex items-center p-4 md:p-5 border-b rounded-t border-gray-600"
+    >
+      <h3
+        id="modal-player-name"
+        class="text-xl font-semibold text-white ml-2"
+      >Screenshot</h3>
+    </div>
+    <!-- Modal body -->
+    <div class="p-4 md:p-5">
+        <div id="screenshot-container" class="w-full h-46 bg-gray-200 overflow-hidden shadow-lg">
+          <img src=""
+          alt="Screenshot" class="hidden w-full h-full object-cover" id="player-screenshot">
+        </div>
+
+        <div class="flex mt-4 ">
+          <div id="download-tooltip" role="tooltip" class="z-10 invisible inline-block px-3 py-2 text-sm font-medium text-black bg-[#00A7FD] rounded-lg shadow-sm opacity-0 tooltip transition-all duration-300">
+            Download
+            <div class="tooltip-arrow" data-popper-arrow></div>
+          </div>
+          <a href="" download="Screenshot.png" id="download-btn" class="hidden ml-auto w-max flex items-center justify-center self-stretch px-4 py-2 rounded-xl z-10 border text-white-gray border-[#91a6b633] hover:bg-[#00A7FD] hover:text-[#081017] hover:border-[#00A7FD] hover:drop-shadow-[0rem_0rem_1rem_#00A7FD] transition-all duration-300 cursor-pointer"
+            data-tooltip-target="download-tooltip"
+          >
+            <div class="text-[0.9375rem] font-publicsans font-medium leading-[1.5rem]">
+              <i class="flex fa-solid fa-download"></i></div>
+          </a>
+        </div>
+
+      <button
+        data-modal-hide="screenshot-modal"
+        class="w-full border-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 text-red-600 border-red-600 hover:bg-red-600 hover:text-black my-3"
+      >
+        Close
+      </button>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+  function setScreenshot(playerName, screenshotUrl) {
+    document.getElementById("modal-player-name").innerText = `${playerName}'s Screenshot`;
+    document.getElementById("player-screenshot").src = screenshotUrl;
+      document.getElementById("download-btn").href = screenshotUrl;
+      document.getElementById("player-screenshot").classList.remove("hidden");
+      document.getElementById("download-btn").classList.remove("hidden");
+      document.getElementById("screenshot-container").classList.remove("hidden");
+  }
+</script>
+
+<!-- End Screenshot Modal -->
 {% endblock content %}

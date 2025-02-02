@@ -166,6 +166,7 @@ def render_bans(request: HttpRequest) -> HttpResponse:
                         2 if ban.is_expired else int(ban.active)
                     ),  # 0: Disabled, 1: Banned, 2: Expired
                     "reason": ban.reason,
+                    "screenshot_url": ban.report.screenshot.url,
                 }
                 for ban in bans
             ],
@@ -235,7 +236,6 @@ def render_servers(request: HttpRequest) -> HttpResponse:
                     # Check if the server_type and the subscription_id are of type string
                     if isinstance(server_type, str) or isinstance(subscription_id, str):
                         if not server_type.isnumeric():
-                            print("ahhh")
                             messages.error(request, "Invalid server type")
                             return redirect(request.path)
 

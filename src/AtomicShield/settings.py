@@ -263,7 +263,7 @@ BOT_AVATAR_URL = "https://cdn.discordapp.com/icons/1164637086637371505/020e43323
 if DEBUG:
     DETECTIONS_WEBHOOK_URL = "https://discord.com/api/webhooks/1300813067138891828/N09MygqqoFn2FlSFH1ipxe1-c-oEboMUfM8UKIMHAJzWnNcHP-EmyCiQeEZPrBjOM86o"
 else:
-    DETECTIONS_WEBHOOK_URL = "https://discord.com/api/webhooks/1300458014465069178/8qiRmcUnCdS6LZfyrCqueHlTQCU5wNZxP_c4y1YgtKpcz9lCnTiIZUuRl3bK4YALtjkr"
+    DETECTIONS_WEBHOOK_URL = "https://discord.com/api/webhooks/1300813067138891828/N09MygqqoFn2FlSFH1ipxe1-c-oEboMUfM8UKIMHAJzWnNcHP-EmyCiQeEZPrBjOM86o"
 
 UNFOLD = {
     "SITE_HEADER": f"{ANTICHEAT_NAME} STAFF",

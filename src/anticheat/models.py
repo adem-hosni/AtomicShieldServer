@@ -164,7 +164,7 @@ class Ban(models.Model):
         "dashboard.GameServer", on_delete=models.CASCADE, null=True, blank=True
     )
     active = models.BooleanField(default=True)
-    reason = models.CharField(null=True, max_length=96)
+    reason = models.CharField(null=True, max_length=256)
     report = models.ForeignKey(DetectionReport, on_delete=models.CASCADE, null=True)
 
     @property

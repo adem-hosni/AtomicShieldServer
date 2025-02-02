@@ -1,4 +1,5 @@
 from anticheat.consumers.safe_server import SafeServerConsumer
+from anticheat.models import ClientHWID
 from anticheat.consumers.safe_engine import SafeEngineConsumer
 from shared.enums import WebSocketGroupNames
 from typing import List, Union, Any
@@ -127,6 +128,21 @@ class _GuardManagerBase(object):
         """
         for iter_engine in self._safe_engines:
             if iter_engine.address[0] == scanner_ip:
+                return iter_engine
+        return None  # Not Found
+    
+    def get_scanner_by_hwid(self, hwid: ClientHWID) -> Union[SafeEngineConsumer, None]:
+        """
+        Retrieve a AtomicShield scanner by its HWID.
+
+        Args:
+            scanner_ip (str): The IP address of the scanner to retrieve.
+
+        Returns:
+            Union[SafeEngineConsumer, None]: The scanner instance if found, otherwise None.
+        """
+        for iter_engine in self._safe_engines:
+            if iter_engine.hwid == hwid:
                 return iter_engine
         return None  # Not Found
 

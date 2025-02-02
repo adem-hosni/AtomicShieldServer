@@ -1,5 +1,6 @@
 from django.contrib import admin
 from unfold.admin import ModelAdmin
+from guards import fivem_guard
 from .models import (
     AntiCheatConfigTemplates,
     AntiCheatConfigurations,
@@ -14,16 +15,21 @@ from .models import (
 
 class ClientHWIDAdmin(ModelAdmin):
     list_display = [
-        "display_disks",
         "username",
+        "display_disks",
         "computer_name",
         "motherboard_serial",
         "bios_version",
+        "display_online",
     ]
 
     @admin.display(description="Disks")
     def display_disks(self, obj: ClientHWID):
         return "-".join(obj.disks)
+    
+    @admin.display(description="Online", boolean=True)
+    def display_online(self, obj: ClientHWID):
+        return bool(fivem_guard.get_scanner_by_hwid(obj))
 
 
 class AntiCheatConfigurationsAdmin(ModelAdmin):

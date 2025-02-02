@@ -113,7 +113,7 @@
 <script>
   function makeAnnouncementSeen(announcementId) {
     var xhr = new XMLHttpRequest();
-    xhr.open('POST', '{% url "main" %}', true);
+    xhr.open('POST', '{% url "dashboard" %}', true);
     xhr.setRequestHeader('X-CSRFToken', '{{ csrf_token }}')
     xhr.send(JSON.stringify({seenAnnouncement: announcementId}));
   }

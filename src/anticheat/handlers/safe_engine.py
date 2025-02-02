@@ -224,8 +224,8 @@ async def handle_signatures_sync(consumer: SafeEngineConsumer, request: Dict[str
     )
 
 
-async def handle_scanner_disconnect(consumer: SafeEngineConsumer):
-    logger.info(f"{consumer.hwid.username}'s scanner disconnected from network.")
+async def handle_scanner_disconnect(consumer: SafeEngineConsumer, code):
+    logger.info(f"{consumer.hwid.username}'s scanner disconnected from network. (code: {code})")
     fivem_guard.remove_safe_scanner(consumer)
     await consumer.kick(
         "AtomicShield AntiCheat Agent Not Running. To join this server, please ensure the AtomicShield AntiCheat Agent is open and active.",

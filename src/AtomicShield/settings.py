@@ -58,6 +58,8 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.sites",
+    "django.contrib.sitemaps",
     "django_recaptcha",
     "home",
     "authentication",
@@ -66,6 +68,8 @@ INSTALLED_APPS = [
     "resources",
 ]
 
+
+SITE_ID = 1
 
 ASGI_APPLICATION = "AtomicShield.asgi.application"
 

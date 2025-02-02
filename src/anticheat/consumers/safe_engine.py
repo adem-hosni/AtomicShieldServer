@@ -217,7 +217,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         if self._group_name == WebSocketGroupNames.SAFE_ENGINES.value:
             from ..handlers.safe_engine import handle_scanner_disconnect
 
-            await handle_scanner_disconnect(self)
+            await handle_scanner_disconnect(self, code)
 
         return await super().disconnect(code)
 
@@ -523,7 +523,10 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         return False
 
     async def request_screenshot(self) -> str:
-        logger.info(f"Screenshot requested of {self._hwid.username} from {self._connected_server.game_server.name} ({self._connected_server.game_server.ip})...")
+        if self._connected_server:
+            logger.info(f"Screenshot requested of {self._hwid.username} from {self._connected_server.game_server.name} ({self._connected_server.game_server.ip})...")
+        else:
+            logger.info(f"Screenshot requested of {self._hwid.username}")
         response_future = asyncio.get_event_loop().create_future()
         self._pending_responses[SafeEnginePacketID.REQUEST_SCREENSHOT] = response_future
         

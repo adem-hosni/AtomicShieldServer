@@ -93,20 +93,26 @@ class SafeServerConsumer(AsyncWebsocketConsumer):
 
         return await super().send(data, bytes_data, close)
 
-    async def receive(self, text_data=None, bytes_data=None):
-        """
-        Receives and processes incoming WebSocket messages.
+async def receive(self, text_data=None, bytes_data=None):
+    """
+    Receives and processes incoming WebSocket messages.
 
-        Args:
-        -----
-            text_data (str): Optional text data received from the WebSocket.
-            bytes_data (bytes): Optional bytes data received from the WebSocket.
+    Args:
+    -----
+        text_data (str): Optional text data received from the WebSocket.
+        bytes_data (bytes): Optional bytes data received from the WebSocket.
 
-        This method attempts to parse the incoming message as JSON and processes
-        the request based on its type. If the request type is not recognized, the
-        connection is closed.
-        """
-        await self.process_packet((text_data))
+    This method attempts to parse the incoming message as JSON and processes
+    the request based on its type. If the request type is not recognized, the
+    connection is closed.
+    """
+    if bytes_data is not None:
+        text_data = bytes_data.decode('utf-8')  
+    
+    print(text_data)
+    
+    await self.process_packet(atomic_core.decode(text_data))
+
     
     async def process_packet(self, packet: Union[str, bytes]):
         try:

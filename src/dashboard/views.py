@@ -170,7 +170,7 @@ def render_bans(request: HttpRequest) -> HttpResponse:
                 }
                 for ban in bans
             ],
-            "detections": 5,
+            "detections": DetectionReport.objects.count(),
         },
     )
 

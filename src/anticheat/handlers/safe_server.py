@@ -36,9 +36,6 @@ async def handle_network_join(
     if not check_request_body_key(request, "server_key", str):
         return await consumer.close()
 
-    if not check_request_body_key(request, "port", int):
-        return await consumer.close()
-
     if not check_request_body_key(request, "server_type", int):
         return await consumer.close()
 
@@ -79,18 +76,6 @@ async def handle_network_join(
             {
                 "success": False,
                 "message": "Server IP address mismatch",
-            },
-        )
-        return await consumer.close()
-
-    # Validate the port of the server
-    if server.port != request["port"]:
-        logger.warning(f"Server port mismatch ({server.port} != {request['port']})")
-        await consumer.send(
-            SafeServerPacketID.NETWORK_JOIN,
-            {
-                "success": False,
-                "message": "Server port mismatch",
             },
         )
         return await consumer.close()

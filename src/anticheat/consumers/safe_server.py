@@ -269,5 +269,4 @@ class SafeServerConsumer(AsyncWebsocketConsumer):
         await self.send(SafeServerPacketID.REQUEST_STATUS, {})
         
         response = await response_future
-        print(response)
         return response

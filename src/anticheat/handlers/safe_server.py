@@ -68,6 +68,7 @@ async def handle_network_join(
         )
         return await consumer.close()
 
+    print(consumer.address)
     # Validate the IP address of the server
     if server.ip != consumer.address[0]:
         logger.warning(f"Server IP address mismatch ({server.ip} != {request['ip']})")
@@ -93,6 +94,16 @@ async def handle_network_join(
 
     # Check subscription's health
     last_subscription = await server.subscriptions.alast()
+    if not last_subscription:
+        await consumer.send(
+            SafeServerPacketID.NETWORK_JOIN,
+            {
+                "success": False,
+                "message": "No subscription found for your server",
+            },
+        )
+        return await consumer.close()
+
     if not last_subscription.is_valid_for_now():
         await consumer.send(
             SafeServerPacketID.NETWORK_JOIN,
@@ -161,7 +172,7 @@ async def handle_request_player_join(
 
     # if not check_request_body_key(request, "steamid", str):
     #     return
-    
+
     unique_identifier_message = f"Steam ID: {request['steamid']}"
 
     logger.info(
@@ -183,7 +194,7 @@ async def handle_request_player_join(
             logger.info(
                 f'{engine.hwid.computer_name} Client is flagged: "{engine.flag_message}"'
             )
-            
+
             # Handle the strict flags (Unallowed by the server configuration)
             for flag in engine.get_flags():
                 if flag.type in unstrict_detection_types:
@@ -219,7 +230,7 @@ async def handle_request_player_join(
     if response["join"]:
         engine.connected_server = consumer
         logger.info(f"{request['ip']}'s Fivem server connection accepted successfuly!")
-    
+
     return await consumer.send(
         SafeServerPacketID.REQUEST_PLAYER_JOIN, {"ip": request["ip"], **response}
     )

@@ -68,10 +68,9 @@ async def handle_network_join(
         )
         return await consumer.close()
 
-    print(consumer.address)
     # Validate the IP address of the server
     if server.ip != consumer.address[0]:
-        logger.warning(f"Server IP address mismatch ({server.ip} != {request['ip']})")
+        logger.warning(f"Server IP address mismatch ({server.ip} != {consumer.address[0]})")
         await consumer.send(
             SafeServerPacketID.NETWORK_JOIN,
             {

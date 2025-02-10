@@ -30,6 +30,7 @@ def protected_admin_view(view, cacheable: bool = False):
     """
 
     def inner(request: HttpRequest, *args, **kwargs):
+        return view(request, *args, **kwargs)
         request_ip = request.META.get("HTTP_X_REAL_IP", request.META.get("REMOTE_ADDR"))
         with open(f"{settings.CONFIG_DIR}/admins.json", "r") as file:
             admins = json.load(file)
@@ -108,7 +109,7 @@ class PatchNotesAdmin(ModelAdmin):
 
 
 class ServerSubscriptionAdmin(ModelAdmin):
-    list_display = ["name", "owner", "type", "status"]
+    list_display = ["id", "name", "owner", "type", "status"]
 
     @admin.display(description="Name")
     def name(self, obj: ServerSubscription):

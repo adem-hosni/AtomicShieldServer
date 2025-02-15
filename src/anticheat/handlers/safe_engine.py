@@ -197,8 +197,24 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
         f"{consumer.address[0]}:{consumer.address[1]}'s engine joined network successfuly!"
     )
 
+    signatures = await sync_to_async(list)(
+        MaliciousSignatures.objects.filter(type=consumer.type).order_by("priority")
+    )
+
+    encrypted_signatures = {}
+    signature_count = 0
+    for signature in signatures:
+        encrypted_signatures[signature.name] = [
+            caesar_encrypt(sig, 3) for sig in signature.signatures
+        ]
+        signature_count += len(signature.signatures)
+
+    logger.info(
+        f"{consumer.address[0]}:{consumer.address[1]} {signature_count} Signatures Synced Successfuly!"
+    )
+
     return await consumer.send(
-        SafeEnginePacketID.NETWORK_JOIN, {"success": True, "message": ""}
+        SafeEnginePacketID.NETWORK_JOIN, {"success": True, "message": "", "signatures": encrypted_signatures}
     )
 
 
@@ -229,7 +245,6 @@ async def handle_scanner_disconnect(consumer: SafeEngineConsumer, code):
     fivem_guard.remove_safe_scanner(consumer)
     await consumer.kick(
         "AtomicShield AntiCheat Agent Not Running. To join this server, please ensure the AtomicShield AntiCheat Agent is open and active.",
-        True,
     )
 
 
@@ -263,19 +278,20 @@ async def handle_cheat_detection(consumer: SafeEngineConsumer, request: Dict[str
     screenshot_buffer = base64.b64decode(request["ss"])
 
     kick_message = utils.format_string(detection_messages[request['detection_type']], request["report"])
-    await consumer.flag_as(request["detection_type"], kick_message)
+    await consumer.flag_as(request["detection_type"], request["report"])
 
     # Strict Detection ? Ban
     if not request["detection_type"] in unstrict_detection_types:
         logger.warning(
             f"Strict Ban Cheating Behaviour {request['detection_type'].name} detected on {consumer.hwid.username}'s computer!"
         )
+        await consumer.kick(f"You're Banned from AtomicShiled servers due to cheating \nReason: {kick_message}\nNote: if you think this an error, you can appeal your ban on discord")
         await consumer.ban(
             detection_type=request["detection_type"],
-            duration=timedelta(days=16),
+            duration=timedelta(days=99),
             target_game_server=consumer.connected_server.game_server if consumer.connected_server else None,
             image_buffer=screenshot_buffer,
-            reason=f"You're Banned from AtomicShiled servers due to cheating \nReason: {kick_message}\nNote: if you think this an error, you can appeal your ban on discord",
+            reason=kick_message,
             report=request["report"]
         )
 
@@ -284,7 +300,7 @@ async def handle_cheat_detection(consumer: SafeEngineConsumer, request: Dict[str
         consumer.connected_server
         and request["detection_type"] in unstrict_detection_types
     ):
-        consumer.handle_basic_checks(request["detection_type"], request["report"])
+        await consumer.handle_basic_checks(request["detection_type"], request["report"])
     else:
         logger.info(
             f"CHEATER REPORT! {consumer.hwid.computer_name} treated as cheater with {request['detection_type'].name}"

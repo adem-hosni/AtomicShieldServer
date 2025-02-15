@@ -190,15 +190,12 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
 
         from ..handlers.safe_engine import (
             handle_network_join,
-            handle_signatures_sync,
             handle_cheat_detection,
         )
 
         match request_body["type"]:
             case SafeEnginePacketID.NETWORK_JOIN:
                 await handle_network_join(self, request_body)
-            case SafeEnginePacketID.SYNC_SIGNATURES:
-                await handle_signatures_sync(self, request_body)
             case SafeEnginePacketID.CHEAT_DETECTION:
                 await handle_cheat_detection(self, request_body)
 
@@ -324,14 +321,13 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             str: The flag message
         """
         if self.is_flagged:
-            return self._flags[0]._message
+            return self._flags[0].message
         return ""
 
     async def flag_as(
-        self, flag_type: DetectionType, message: str = "UnNormal Behaviour Detected"
+        self, flag_type: DetectionType, report: Dict[str, Any] = {}
     ):
-        self._flags.append(Flag(flag_type, message))
-        await self.kick(message, detection_type=flag_type)
+        self._flags.append(Flag(flag_type, report))
 
     def is_flagged_as(self, flag_type: DetectionType) -> bool:
         for flag in self._flags:
@@ -342,8 +338,6 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
     async def kick(
         self,
         reason: Optional[str] = "",
-        flag: Optional[bool] = False,
-        detection_type: DetectionType = DetectionType.CUSTOM
     ) -> bool:
         """
         Kicks a client by sending a PLAYER_KICK packet to the connected server.
@@ -356,14 +350,6 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         --------
             bool: True if the kick was successful, False otherwise.
         """
-        if flag and not self.is_flagged_as(detection_type):
-            self._flags.append(
-                Flag(
-                    detection_type,
-                    reason if len(reason) else "UnNormal behaviour detected",
-                )
-            )
-
         if self._connected_server:
             await self._connected_server.send(
                 SafeServerPacketID.PLAYER_KICK,
@@ -395,7 +381,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             with open(image_path, "wb") as file:
                 file.write(image_buffer)
 
-        await self.kick(reason, flag=True, detection_type=detection_type)
+        # await self.kick(reason, flag=True, detection_type=detection_type)
         ban = Ban(
             hwid=self._hwid,
             duration=duration,
@@ -457,8 +443,10 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
     
     async def handle_basic_checks(self, detection: DetectionType, report: Dict[str, Any]) -> bool:
         # Check if the malicious driver is about Process Hacker
+        print("report:")
+        print(report)
         if detection == DetectionType.MALICIOUS_DRIVER:
-            if str(report["BlackListed Driver"]).endswith(
+            if str(report["driver_name"]).endswith(
                 "kprocesshacker.sys"
             ):
                 try:
@@ -527,11 +515,16 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             logger.info(f"Screenshot requested of {self._hwid.username} from {self._connected_server.game_server.name} ({self._connected_server.game_server.ip})...")
         else:
             logger.info(f"Screenshot requested of {self._hwid.username}")
+        print("Creating response future")
         response_future = asyncio.get_event_loop().create_future()
+        print("Assiging")
         self._pending_responses[SafeEnginePacketID.REQUEST_SCREENSHOT] = response_future
         
+        print("Sending request")
         await self.send(SafeEnginePacketID.REQUEST_SCREENSHOT, {})
+        print("Sent")
         response = await response_future
+        print("Got Response")
         
         if not response["success"]:
             logger.warning(f"Failed to retreive screenshot from {self._hwid.username}. {response['message']}")

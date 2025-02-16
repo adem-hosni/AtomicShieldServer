@@ -70,7 +70,9 @@ async def handle_network_join(
 
     # Validate the IP address of the server
     if server.ip != consumer.address[0]:
-        logger.warning(f"Server IP address mismatch ({server.ip} != {consumer.address[0]})")
+        logger.warning(
+            f"Server IP address mismatch ({server.ip} != {consumer.address[0]})"
+        )
         await consumer.send(
             SafeServerPacketID.NETWORK_JOIN,
             {
@@ -104,6 +106,7 @@ async def handle_network_join(
         return await consumer.close()
 
     if not last_subscription.is_valid_for_now():
+        logger.info(f"\"{server.name}\" {consumer.address} try to join network with expired subscription")
         await consumer.send(
             SafeServerPacketID.NETWORK_JOIN,
             {
@@ -112,6 +115,8 @@ async def handle_network_join(
             },
         )
         return await consumer.close()
+    
+    await last_subscription.arefresh_from_db()
 
     # Successfully joined, add consumer to the WebSocket group and set it's game server
     consumer.group_name = WebSocketGroupNames.SAFE_SERVERS.value
@@ -218,13 +223,14 @@ async def handle_request_player_join(
             Ban.objects.filter(hwid=engine.hwid).order_by("banned_at")
         )
 
-        if len(bans):
-            target_ban = bans[0]
-            response["join"] = False
-            response["message"] = (
-                f"Banned by {settings.ANTICHEAT_NAME} AntiCheat: {target_ban.reason} "
-                f"(Timeleft: {represent_timedelta_string(target_ban.duration)})"
-            )
+        for ban in bans:
+            if not ban.is_expired:
+                if (await sync_to_async(lambda: ban.game_server)()) == consumer.game_server and ban.active:
+                    response["join"] = False
+                    response["message"] = (
+                        f"You're Banned from AtomicShiled servers due to cheating \nReason: {ban.reason}\nNote: if you think this an error, you can appeal your ban on discord"
+                    )
+                    break
 
     if response["join"]:
         engine.connected_server = consumer
@@ -291,8 +297,24 @@ async def handle_player_quit(consumer: SafeServerConsumer, request: Dict[str, An
                 "message": "Unauthorized player!",
             },
         )
+    else:
+        player_engine.connected_server = consumer
 
     logger.info(
         f"\"{request['name']}\" Disconnected from {player_engine.connected_server.game_server.name} ({player_engine.connected_server.game_server.ip})."
     )
     player_engine.connected_server = None
+
+async def handle_engine_check(consumer: SafeServerConsumer, request: Dict[str, Any]):
+    if not check_request_body_key(request, "players", list):
+        return
+
+    inactive_engines = []
+
+    for player_ip in request["players"]:
+        if not fivem_guard.get_scanner_by_ip(player_ip):
+            inactive_engines.append(player_ip)
+    
+    return await consumer.send(SafeServerPacketID.ENGINE_CHECK, {
+        "inactive_players": inactive_engines
+    })

@@ -218,28 +218,6 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
     )
 
 
-async def handle_signatures_sync(consumer: SafeEngineConsumer, request: Dict[str, Any]):
-    signatures = await sync_to_async(list)(
-        MaliciousSignatures.objects.filter(type=consumer.type).order_by("priority")
-    )
-
-    encrypted_signatures = {}
-    for signature in signatures:
-        encrypted_signatures[signature.name] = [
-            caesar_encrypt(sig, 3) for sig in signature.signatures
-        ]
-
-    await consumer.send(
-        SafeEnginePacketID.SYNC_SIGNATURES,
-        {
-            "signatures": encrypted_signatures,
-        },
-    )
-    logger.info(
-        f"{consumer.address[0]}:{consumer.address[1]} {len(signatures)} Signatures Synced Successfuly!"
-    )
-
-
 async def handle_scanner_disconnect(consumer: SafeEngineConsumer, code):
     logger.info(f"{consumer.hwid.username}'s scanner disconnected from network. (code: {code})")
     fivem_guard.remove_safe_scanner(consumer)

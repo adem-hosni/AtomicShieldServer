@@ -143,6 +143,7 @@ class SafeServerConsumer(AsyncWebsocketConsumer):
             handle_request_player_join,
             handle_load_anticheat_scripts,
             handle_player_quit,
+            handle_engine_check
         )
 
         # Handle the request based on its type
@@ -157,6 +158,8 @@ class SafeServerConsumer(AsyncWebsocketConsumer):
                 await handle_load_anticheat_scripts(self, request_body)
             case SafeServerPacketID.PLAYER_QUIT:
                 await handle_player_quit(self, request_body)
+            case SafeServerPacketID.ENGINE_CHECK:
+                await handle_engine_check(self, request_body)
 
     async def disconnect(self, code):
         if self._group_name == WebSocketGroupNames.SAFE_SERVERS.value:

@@ -50,7 +50,7 @@ CSRF_TRUSTED_ORIGINS = [
 # Application definition
 
 INSTALLED_APPS = [
-    "daphne",
+    "channels",
     "unfold",
     "django.contrib.admin",
     "django.contrib.auth",
@@ -195,6 +195,10 @@ LOGGING = {
             "format": "[{asctime}] {levelname} {message}",
             "style": "{",
         },
+        "uvicorn": {
+            "format": "[{asctime}] {levelname} {message}",
+            "style": "{",
+        },
     },
     "handlers": {
         "console": {
@@ -207,37 +211,7 @@ LOGGING = {
             "class": "logging.FileHandler",
             "filename": os.path.join(BASE_DIR, "../logs/console.log"),
             "formatter": "verbose",
-        },
-        "debug_file": {
-            "level": "DEBUG",
-            "class": "logging.FileHandler",
-            "filename": os.path.join(BASE_DIR, "../logs/debug.log"),
-            "formatter": "verbose",
-        },
-        "info_file": {
-            "level": "INFO",
-            "class": "logging.FileHandler",
-            "filename": os.path.join(BASE_DIR, "../logs/info.log"),
-            "formatter": "verbose",
-        },
-        "warning_file": {
-            "level": "WARNING",
-            "class": "logging.FileHandler",
-            "filename": os.path.join(BASE_DIR, "../logs/warning.log"),
-            "formatter": "verbose",
-        },
-        "error_file": {
-            "level": "ERROR",
-            "class": "logging.FileHandler",
-            "filename": os.path.join(BASE_DIR, "../logs/error.log"),
-            "formatter": "verbose",
-        },
-        "critical_file": {
-            "level": "CRITICAL",
-            "class": "logging.FileHandler",
-            "filename": os.path.join(BASE_DIR, "../logs/critical.log"),
-            "formatter": "verbose",
-        },
+        }
     },
     "root": {
         "handlers": ["alltypes", "console"],
@@ -245,7 +219,22 @@ LOGGING = {
     },
     "loggers": {
         "django": {
-            "handlers": ["console"],
+            "handlers": ["console", "alltypes"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "uvicorn": {
+            "handlers": ["console", "alltypes"],
+            "level": "INFO",
+            "propagate": False,  # Avoid duplicate logs
+        },
+        "uvicorn.error": {
+            "handlers": ["console", "alltypes"],
+            "level": "ERROR",
+            "propagate": False,
+        },
+        "uvicorn.access": {
+            "handlers": ["console", "alltypes"],
             "level": "INFO",
             "propagate": False,
         },
@@ -316,9 +305,11 @@ DEFAULT_FROM_EMAIL = "AtomicShield@localhost"
 EMAIL_SUBJECT_PREFIX = "[AtomicShield] "
 
 if not DEBUG:
-    # Redirect from http to https
+    # Redirect from http to httpsS
     SECURE_SSL_REDIRECT = True
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    
+    USE_X_FORWARDED_HOST = True
 
     SECURE_HSTS_PRELOAD = True
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True

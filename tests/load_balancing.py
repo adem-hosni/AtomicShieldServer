@@ -14,6 +14,10 @@ def signup(l):
 
 class UserTasks(TaskSet):
     @task
+    def index(l):
+        l.client.post("/")
+
+    @task
     def isconnected(l):
         l.client.post("/anticheat/status/isconnected")
     

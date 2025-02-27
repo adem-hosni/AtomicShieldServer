@@ -27,7 +27,7 @@ CONFIG_DIR = os.path.join(BASE_DIR.parent, "config")
 SECRET_KEY = "mr9y5jf)fp5^==jhccttp!d!9&hh@57@dbb+0-idp!-d!i0%r+"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 # Bin directory
 if DEBUG:
@@ -50,7 +50,7 @@ CSRF_TRUSTED_ORIGINS = [
 # Application definition
 
 INSTALLED_APPS = [
-    "channels",
+    "daphne",
     "unfold",
     "django.contrib.admin",
     "django.contrib.auth",
@@ -70,7 +70,6 @@ INSTALLED_APPS = [
 
 
 SITE_ID = 1
-
 ASGI_APPLICATION = "AtomicShield.asgi.application"
 
 MIDDLEWARE = [
@@ -153,6 +152,7 @@ AUTH_PASSWORD_VALIDATORS = [
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels.layers.InMemoryChannelLayer",
+        
     },
 }
 
@@ -199,6 +199,10 @@ LOGGING = {
             "format": "[{asctime}] {levelname} {message}",
             "style": "{",
         },
+        "daphne": {
+            "format": "[{asctime}] {levelname} {message}",
+            "style": "{",
+        },
     },
     "handlers": {
         "console": {
@@ -224,6 +228,11 @@ LOGGING = {
             "propagate": False,
         },
         "uvicorn": {
+            "handlers": ["console", "alltypes"],
+            "level": "INFO",
+            "propagate": False,  # Avoid duplicate logs
+        },
+        "daphne": {
             "handlers": ["console", "alltypes"],
             "level": "INFO",
             "propagate": False,  # Avoid duplicate logs

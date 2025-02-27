@@ -11,6 +11,8 @@ class SafeServerPacketID(Enum):
     OBFUSCATE_CLIENT_SCRIPT = 6
     SYNC_ANTICHEAT_COMPONENTS = 7
     PLAYER_QUIT = 8
+    MANAGE_ONLINE_PLAYER = 9
+    ENGINE_CHECK = 10
 
 
 class SafeEnginePacketID(Enum):
@@ -22,7 +24,7 @@ class SafeEnginePacketID(Enum):
     REQUEST_UPLOAD = 6
     CHEAT_DETECTION = 7
     REQUEST_SCREENSHOT = 8
-    MANAGE_ONLINE_PLAYER = 9
+    RUN_SCANNERS = 9
 
 
 class WebSocketGroupNames(Enum):

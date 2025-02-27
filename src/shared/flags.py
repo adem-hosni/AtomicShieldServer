@@ -1,16 +1,20 @@
-from typing import Any
-from .enums import DetectionType
-
+from typing import Dict, Any
+from .enums import DetectionType, detection_messages
+from utils import format_string
 
 class Flag:
-    def __init__(self, flag_type: DetectionType, message: str) -> None:
+    def __init__(self, flag_type: DetectionType, report: Dict[str, Any]) -> None:
         self._type = flag_type
-        self._message = message
+        self._report = report
 
     @property
     def type(self) -> DetectionType:
         return self._type
 
     @property
-    def value(self) -> Any:
-        return self._value
+    def message(self) -> str:
+        return format_string(detection_messages[self._type], self._report)
+
+    @property
+    def report(self) -> Dict[str, Any]:
+        return self._report

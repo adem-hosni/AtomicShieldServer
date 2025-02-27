@@ -1,3 +1,4 @@
+import logging
 from django.shortcuts import render, redirect
 from django.db.models import Q
 from django.http import HttpRequest, HttpResponse
@@ -7,6 +8,8 @@ from django.contrib import messages
 
 from .forms import SignInForm, SignUpForm
 
+
+logger = logging.getLogger(__name__)
 
 def render_signin(request: HttpRequest) -> HttpResponse:
     if request.user.is_authenticated:
@@ -28,6 +31,7 @@ def render_signin(request: HttpRequest) -> HttpResponse:
                 )
                 if user:
                     login(request, user)
+                    logger.info(f"\"{user.username}\" logged in")
                     return redirect("/dashboard/main")
                 else:
                     messages.error(request, "Password is incorrect")
@@ -63,6 +67,7 @@ def render_signup(request: HttpRequest) -> HttpResponse:
                     )
                     user = authenticate(username=username, password=password)
                     if user:
+                        logger.info(f"\"{user.username}\" signed up")
                         login(request, user)
                         return redirect("/dashboard/main")
     else:
@@ -73,4 +78,5 @@ def render_signup(request: HttpRequest) -> HttpResponse:
 
 def render_logout(request: HttpRequest) -> HttpResponse:
     logout(request)
+    logger.info(f"\"{user.username}\" logged out")
     return redirect("/")

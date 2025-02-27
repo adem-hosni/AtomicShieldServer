@@ -56,7 +56,7 @@ class SafeServerConsumer(AsyncWebsocketConsumer):
         await self.accept()
         self.address = tuple(self.scope["client"])
 
-        logger.info(f"{self.address[0]}:{self.address[1]} asking for connection...")
+        logger.info(f"FXSERVER CONNECTION ATTACHED FROM {self.address[0]}:{self.address[1]}")
 
     async def send(
         self,

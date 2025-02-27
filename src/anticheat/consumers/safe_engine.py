@@ -68,9 +68,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         """
         await self.accept()
         self.address = tuple(self.scope["client"])
-        logger.info(
-            f"{self.address[0]}:{self.address[1]} Agent asking for connection..."
-        )
+        logger.info(f"ENGINE CONNECTION ATTACHED FROM {self.address}")
 
     async def send(
         self,
@@ -152,12 +150,9 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         --------
             None
         """
-        await self.process_packet(atomic_core.decode(text_data))
-
-    async def process_packet(self, packet: Union[str, bytes]):
         try:
             # Attempt to parse the incoming message as JSON
-            request_body: Dict[str, Any] = json.loads(packet)
+            request_body: Dict[str, Any] = json.loads(atomic_core.decode(text_data))
         except json.decoder.JSONDecodeError:
             logger.warning(f"Failed to parse request. (request body: {request_body})")
             return await self.close()
@@ -170,13 +165,22 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
 
         # Check the request's unix timestamp for integrity
         unix_timestamp = int(request_body["ut"])
-        if (time() - unix_timestamp) >= 20:
+        diff = time() - unix_timestamp
+        if diff >= 120:
             # Request was tampered
+
+            # Optimize the logging
+            for key, value in request_body.items():
+                if (isinstance(value, str) or isinstance(value, bytes)) and len(value) > 40:
+                    del request_body[key]
+
             logger.warning(
-                f"Tampered request received from {self.address}, request: {request_body}"
+                f"Tampered request received from {self.address} ({diff}s), request: {request_body}"
             )
             return await self.close()
+        await self.process_packet(request_body)
 
+    async def process_packet(self, request_body: Dict[str, Any]):
         try:
             # Convert the 'type' field to a PacketID
             request_body["type"] = SafeEnginePacketID(request_body["type"])
@@ -185,9 +189,10 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             return await self.close()
         
         if request_body["type"] in self._pending_responses:
-            self._pending_responses[request_body["type"]].set_result(request_body)
+            if not self._pending_responses[request_body["type"]].cancelled():
+                self._pending_responses[request_body["type"]].set_result(request_body)
             del self._pending_responses[request_body["type"]]
-
+        
         from ..handlers.safe_engine import (
             handle_network_join,
             handle_cheat_detection,
@@ -195,9 +200,9 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
 
         match request_body["type"]:
             case SafeEnginePacketID.NETWORK_JOIN:
-                await handle_network_join(self, request_body)
+                asyncio.create_task(handle_network_join(self, request_body))
             case SafeEnginePacketID.CHEAT_DETECTION:
-                await handle_cheat_detection(self, request_body)
+                asyncio.create_task(handle_cheat_detection(self, request_body))
 
     async def disconnect(self, code):
         """
@@ -443,71 +448,72 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
     
     async def handle_basic_checks(self, detection: DetectionType, report: Dict[str, Any]) -> bool:
         # Check if the malicious driver is about Process Hacker
-        print("report:")
-        print(report)
-        if detection == DetectionType.MALICIOUS_DRIVER:
-            if str(report["driver_name"]).endswith(
-                "kprocesshacker.sys"
-            ):
+        try:
+            logger.info(report)
+            if detection == DetectionType.MALICIOUS_DRIVER:
+                if str(report["driver_name"]).endswith(
+                    "kprocesshacker.sys"
+                ):
+                    try:
+                        processhacker_allowed = (
+                            await self._connected_server.game_server.get_config_by_id(
+                                config_ids.ALLOW_PROCESS_HACKER
+                            )
+                        )
+                    except AntiCheatConfigTemplates.DoesNotExist:
+                        processhacker_allowed = False
+
+                    if not processhacker_allowed:
+                        await self.kick(detection_messages[detection])
+                        return True
+
+            # Check for Secure Boot is forced
+            if detection == DetectionType.SECURE_BOOT_DISABLED:
                 try:
-                    processhacker_allowed = (
+                    force_secureboot = (
                         await self._connected_server.game_server.get_config_by_id(
-                            config_ids.ALLOW_PROCESS_HACKER
+                            config_ids.FORCE_SECUREBOOT
                         )
                     )
                 except AntiCheatConfigTemplates.DoesNotExist:
-                    processhacker_allowed = False
-
-                if not processhacker_allowed:
+                    force_secureboot = False
+                if force_secureboot:
                     await self.kick(detection_messages[detection])
                     return True
 
-        # Check for Secure Boot is forced
-        if detection == DetectionType.SECURE_BOOT_DISABLED:
-            try:
-                force_secureboot = (
-                    await self._connected_server.game_server.get_config_by_id(
-                        config_ids.FORCE_SECUREBOOT
+            # Check for Force Test Signing Disabled
+            if detection == DetectionType.TEST_SIGNING_ENABLED:
+                try:
+                    testsigning_enabled = (
+                        await self._connected_server.game_server.get_config_by_id(
+                            config_ids.FORCE_TESTSIGNING
+                        )
                     )
-                )
-            except AntiCheatConfigTemplates.DoesNotExist:
-                force_secureboot = False
-            if force_secureboot:
-                await self.kick(detection_messages[detection])
-                return True
+                except AntiCheatConfigTemplates.DoesNotExist:
+                    testsigning_enabled = False
 
-        # Check for Force Test Signing Disabled
-        if detection == DetectionType.TEST_SIGNING_ENABLED:
-            try:
-                testsigning_enabled = (
-                    await self._connected_server.game_server.get_config_by_id(
-                        config_ids.FORCE_TESTSIGNING
-                    )
-                )
-            except AntiCheatConfigTemplates.DoesNotExist:
-                testsigning_enabled = False
-
-            if testsigning_enabled:
-                await self.kick(detection_messages[detection])
-                return True
-        
-        # Check for Allowed Server Plugins
-        if detection == DetectionType.DLL_FOUND:
-            try:
-                allowed_plugins = (
-                    await self._connected_server.game_server.get_config_by_id(
-                        config_ids.ALLOWED_FIVEM_PLUGINS
-                    )
-                )
-            except AntiCheatConfigTemplates.DoesNotExist:
-                allowed_plugins = ""
-
-            if report["plugin"].strip().lower() in allowed_plugins.lower():
-                await self.kick(utils.format_string(detection_messages[detection], report))
-                return True
+                if testsigning_enabled:
+                    await self.kick(detection_messages[detection])
+                    return True
             
-            logger.info(f"CHEATER REPORT! {self._hwid.computer_name} is flagged as {detection} in {self._connected_server.game_server.name} ({self._connected_server.game_server.ip})")
-        
+            # Check for Allowed Server Plugins
+            if detection == DetectionType.DLL_FOUND:
+                try:
+                    allowed_plugins = (
+                        await self._connected_server.game_server.get_config_by_id(
+                            config_ids.ALLOWED_FIVEM_PLUGINS
+                        )
+                    )
+                except AntiCheatConfigTemplates.DoesNotExist:
+                    allowed_plugins = ""
+
+                if report["plugin"].strip().lower() in allowed_plugins.lower():
+                    await self.kick(utils.format_string(detection_messages[detection], report))
+                    return True
+                
+                logger.info(f"CHEATER REPORT! {self._hwid.computer_name} is flagged as {detection} in {self._connected_server.game_server.name} ({self._connected_server.game_server.ip})")
+        except Exception as err:
+            logger.error(f"Unable to handle basic checks: {err}")
         return False
 
     async def request_screenshot(self) -> str:
@@ -547,3 +553,17 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                 file.write(image_buffer)
 
         return f"{settings.MEDIA_URL}screenshot/{self._hwid.id}.png"
+    
+    async def run_scanners(self, run: bool) -> bool:
+        response_future = asyncio.get_event_loop().create_future()
+        self._pending_responses[SafeEnginePacketID.RUN_SCANNERS] = response_future        
+
+        await self.send(SafeEnginePacketID.RUN_SCANNERS, {"run": run})
+
+        try:
+            response = await asyncio.wait_for(response_future, 12)
+        except asyncio.TimeoutError:
+            logger.error(f"Failed to {'start' if run else 'shutdown'} engine scanners of {self._hwid.username} {self.address}!")
+            response_future.cancel()
+            return False
+        return response["success"]        

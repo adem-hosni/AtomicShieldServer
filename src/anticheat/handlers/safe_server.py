@@ -121,11 +121,11 @@ async def handle_network_join(
     # Successfully joined, add consumer to the WebSocket group and set it's game server
     consumer.group_name = WebSocketGroupNames.SAFE_SERVERS.value
     consumer.game_server = server
-    consumer.channel_layer.group_add(consumer.group_name, consumer.channel_name)
+    await consumer.channel_layer.group_add(consumer.group_name, consumer.channel_name)
     consumer.type = ServerType(request["server_type"])
     fivem_guard.add_safe_server(consumer)
     logger.info(
-        f"{consumer.address[0]}:{consumer.address[1]} joined AtomicShield Servers Network!"
+        f"\"{consumer.game_server.name}\" {consumer.address} joined AtomicShield Servers Network!"
     )
 
     return await consumer.send(
@@ -180,7 +180,7 @@ async def handle_request_player_join(
     unique_identifier_message = f"Steam ID: {request['steamid']}"
 
     logger.info(
-        f'"{request["name"]}" (IP: {request["ip"]}, {unique_identifier_message}) wants to join {consumer.address[0]}:{consumer.address[1]}'
+        f'"{request["name"]}" (IP: {request["ip"]}, {unique_identifier_message}) wants to join {consumer.game_server.name} {consumer.address[0]}:{consumer.address[1]}'
     )
 
     response = {"join": False, "message": ""}
@@ -225,16 +225,23 @@ async def handle_request_player_join(
 
         for ban in bans:
             if not ban.is_expired:
-                if (await sync_to_async(lambda: ban.game_server)()) == consumer.game_server and ban.active:
+                if (await sync_to_async(lambda: ban.gamerver)()) == consumer.game_server and ban.active:
                     response["join"] = False
                     response["message"] = (
                         f"You're Banned from AtomicShiled servers due to cheating \nReason: {ban.reason}\nNote: if you think this an error, you can appeal your ban on discord"
                     )
+                    
                     break
 
+    # Is the player available to join the FxServer ? then start the scanners
     if response["join"]:
-        engine.connected_server = consumer
-        logger.info(f"{request['ip']}'s Fivem server connection accepted successfuly!")
+        if engine.run_scanners(True):
+            engine.connected_server = consumer
+            logger.info(f"\"{request["name"]}\" ({request['ip']}) is connected to \"{consumer.game_server.name}\"")
+        else:
+            response["join"] = False
+            response["message"] = "Unable to scan your computer from cheats!"
+            logger.info(f"\"{request["name"]}\" ({request['ip']}) is unable to connect to \"{consumer.game_server.name}\"!")
 
     return await consumer.send(
         SafeServerPacketID.REQUEST_PLAYER_JOIN, {"ip": request["ip"], **response}
@@ -301,9 +308,11 @@ async def handle_player_quit(consumer: SafeServerConsumer, request: Dict[str, An
         player_engine.connected_server = consumer
 
     logger.info(
-        f"\"{request['name']}\" Disconnected from {player_engine.connected_server.game_server.name} ({player_engine.connected_server.game_server.ip})."
+        f"\"{request['name']}\" ({player_engine.address}) Disconnected from \"{player_engine.connected_server.game_server.name}\" ({player_engine.connected_server.game_server.ip})."
     )
     player_engine.connected_server = None
+    player_engine.run_scanners(False)
+
 
 async def handle_engine_check(consumer: SafeServerConsumer, request: Dict[str, Any]):
     if not check_request_body_key(request, "players", list):

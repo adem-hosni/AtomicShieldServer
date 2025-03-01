@@ -225,7 +225,7 @@ async def handle_request_player_join(
 
         for ban in bans:
             if not ban.is_expired:
-                if (await sync_to_async(lambda: ban.gamerver)()) == consumer.game_server and ban.active:
+                if (await sync_to_async(lambda: ban.game_server)()) == consumer.game_server and ban.active:
                     response["join"] = False
                     response["message"] = (
                         f"You're Banned from AtomicShiled servers due to cheating \nReason: {ban.reason}\nNote: if you think this an error, you can appeal your ban on discord"
@@ -235,7 +235,7 @@ async def handle_request_player_join(
 
     # Is the player available to join the FxServer ? then start the scanners
     if response["join"]:
-        if engine.run_scanners(True):
+        if await engine.run_scanners(True):
             engine.connected_server = consumer
             logger.info(f"\"{request["name"]}\" ({request['ip']}) is connected to \"{consumer.game_server.name}\"")
         else:
@@ -311,7 +311,7 @@ async def handle_player_quit(consumer: SafeServerConsumer, request: Dict[str, An
         f"\"{request['name']}\" ({player_engine.address}) Disconnected from \"{player_engine.connected_server.game_server.name}\" ({player_engine.connected_server.game_server.ip})."
     )
     player_engine.connected_server = None
-    player_engine.run_scanners(False)
+    await player_engine.run_scanners(False)
 
 
 async def handle_engine_check(consumer: SafeServerConsumer, request: Dict[str, Any]):

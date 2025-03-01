@@ -109,7 +109,10 @@ class SafeServerConsumer(AsyncWebsocketConsumer):
         if bytes_data is not None:
             text_data = bytes_data.decode('utf-8')  
         
-        await self.process_packet(text_data)
+        try:
+            await self.process_packet(text_data)
+        except Exception as err:
+            logger.error(f"Error handling packet {request_body['type']} from FxServer, {err}")
     
     async def process_packet(self, packet: Union[str, bytes]):
         try:

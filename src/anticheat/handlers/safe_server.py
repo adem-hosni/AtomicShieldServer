@@ -77,7 +77,7 @@ async def handle_network_join(
             SafeServerPacketID.NETWORK_JOIN,
             {
                 "success": False,
-                "message": "Server IP address mismatch",
+                "message": f"Server ip address mismatch. Please update it to \"{consumer.address[0]}\" from https://atomic-shield.com/dashboard/servers",
             },
         )
         return await consumer.close()

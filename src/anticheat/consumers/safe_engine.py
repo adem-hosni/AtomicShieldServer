@@ -178,7 +178,12 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                 f"Tampered request received from {self.address} ({diff}s), request: {request_body}"
             )
             return await self.close()
-        await self.process_packet(request_body)
+
+        try:
+            await self.process_packet(request_body)
+        except Exception as err:
+            logger.error(f"Error handling packet {request_body['type']} from Engine, {err}")
+
 
     async def process_packet(self, request_body: Dict[str, Any]):
         try:

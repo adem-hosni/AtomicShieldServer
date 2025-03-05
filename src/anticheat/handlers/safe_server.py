@@ -170,17 +170,22 @@ async def handle_request_player_join(
 ):
     if not check_request_body_key(request, "ip", str):
         return
-
+    
     if not check_request_body_key(request, "name", str):
         return
 
-    # if not check_request_body_key(request, "steamid", str):
-    #     return
-
-    unique_identifier_message = f"Steam ID: {request['steamid']}"
+    for item in [
+        "steam",
+        "license",
+        "token",
+        "discord"
+    ]:
+        if not item in request.keys():
+            logger.warning(f"Missing '{item}' in request player join for \"{consumer.game_server.name}\"")
+            return
 
     logger.info(
-        f'"{request["name"]}" (IP: {request["ip"]}, {unique_identifier_message}) wants to join {consumer.game_server.name} {consumer.address[0]}:{consumer.address[1]}'
+        f'"{request["name"]}" (IP: {request["ip"]}  wants to join {consumer.game_server.name} {consumer.address[0]}:{consumer.address[1]}'
     )
 
     response = {"join": False, "message": ""}
@@ -242,6 +247,17 @@ async def handle_request_player_join(
             response["join"] = False
             response["message"] = "Unable to scan your computer from cheats!"
             logger.info(f"\"{request["name"]}\" ({request['ip']}) is unable to connect to \"{consumer.game_server.name}\"!")
+
+        # Store the given data from the FxServer
+        engine.hwid.fivem_license = request["license"]
+        engine.hwid.steam = request["steam"]
+        engine.hwid.discord_id = request["discord"]
+        
+        for token in request["token"]:
+            if not token in engine.hwid.fivem_token:
+                engine.hwid.fivem_token.append(token)
+        
+        await engine.hwid.asave()
 
     return await consumer.send(
         SafeServerPacketID.REQUEST_PLAYER_JOIN, {"ip": request["ip"], **response}

@@ -44,22 +44,29 @@
       class="text-xs uppercase bg-[#081017] text-gray-400"
     >
       <tr>
-        <th scope="col" class="px-6 py-3">NAME</th>
-        <th scope="col" class="px-3 py-3">BANNED AT</th>
+        <th scope="col" class="px-3 py-3">NAME</th>
+        <th scope="col" class="pl-3 py-3">BANNED AT</th>
+        <th scope="col" class="pl-3 py-3">LICENSE</th>
+        <th scope="col" class="pl-3 py-3">STEAM</th>
+        <th scope="col" class="pl-3 py-3">DISCORD ID</th>
         <th scope="col" class="pl-3 py-3">DURATION</th>
-        <th scope="col" class="pl-6 py-3">STATUS</th>
-        <th scope="col" class="pl-6 py-3">REASON</th>
-        <th scope="col" class="px-6 py-3">Actions</th>
+        <th scope="col" class="pl-3 py-3">STATUS</th>
+        <th scope="col" class="pl-3 py-3">REASON</th>
+        <th scope="col" class="pl-3 py-3">Actions</th>
       </tr>
     </thead>
     <tbody>
+
       {% for ban in bans %}
       <tr class="transition-all duration:300 border-b bg-[#0E1B23] border-gray-700 hover:bg-[#142733]">
         <td class="px-6 py-4 font-medium">{{ ban.username }}</td>
         
         <td class="px-1 py-4">{{ ban.banned_at }}</td>
-        <td class="px-3 py-4">{{ ban.duration }}</td>
-        <td class="px-6 py-4">
+        <td class="px-1 py-4">{{ ban.license }}</td>
+        <td class="px-1 py-4">{{ ban.steam }}</td>
+        <td class="px-1 py-4">{{ ban.discord_id }}</td>
+        <td class="pl-3 py-4">Permanent</td>
+        <td class="pl-6 py-4">
           {% if ban.status == 2 %}
             <span class="px-2 border font-medium border-zinc-300 rounded p-1 text-zinc-300 transition-all duration-300 hover:bg-zinc-300 hover:text-black select-none">EXPIRED</span>
           {% elif ban.status == 1 %}
@@ -68,9 +75,9 @@
             <span class="px-2 border font-medium border-yellow-600 rounded p-1 text-yellow-600 transition-all duration-300 hover:bg-yellow-600 hover:text-black select-none">UNBANNED</span>
           {% endif %}
         </td>
-        <td class="px-6 py-4 font-bold">{{ ban.reason }}</td>
+        <td class="pl-6 py-4 font-bold">{{ ban.reason }}</td>
         {% if ban.status != 2 %}
-          <td class="px-6 py-4 flex">
+          <td class="pl-6 py-4 flex">
             <button
               onclick="document.getElementById('target-ban').value = '{{ ban.id }}'; 
               document.getElementById('target-ban-modal-name').textContent = '{{ ban.username }}';
@@ -190,13 +197,8 @@
             name="target-ban"
             value=""
           />
-          <button
-            type="submit"
-            value=""
-            onclick="this.disabled=true; this.form.submit();"
-            class="w-full text-black border-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 border-[#01e4f4] bg-[#01e4f4] hover:bg-[#b37339]"
-          >
-            Yes
+          <button type="submit" value="" onclick="this.disabled=true; this.form.submit();" class="w-full flex items-center justify-center self-stretch px-4 py-2 rounded-xl z-10 border text-white-gray border-[#91a6b633] hover:bg-[#00A7FD] hover:text-[#081017] hover:border-[#00A7FD] hover:drop-shadow-[0rem_0rem_1rem_#00A7FD] transition-all duration-300">
+            <div class="text-[0.9375rem] font-publicsans font-medium leading-[1.5rem]">Yes</div>
           </button>
         </form>
         <button

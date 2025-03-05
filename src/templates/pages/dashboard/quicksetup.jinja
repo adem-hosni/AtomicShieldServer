@@ -25,12 +25,8 @@
   <form method="post">
     {% csrf_token %}
     <div class="w-full flex gap-4">
-      <select name="selected-dist" id="select-dist" class="ml-auto cursor-pointer text-center rounded-lg text-gray-300 font-medium bg-[#081017] border p-2">
-        {% for dist in dists %}
-          <option value="{{ dist }}">{{ dist }}</option>
-        {% endfor %}
-      </select>
-      <input type="submit" value="Download" class="border border-2 border-white px-3 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-white hover:text-black cursor-pointer">
+      <input type="hidden" name="selected-dist" value="windows"/>
+      <input type="submit" value="Download" class="ml-auto border border-2 border-white px-3 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-white hover:text-black cursor-pointer">
     </div>
   </form>
 </div>

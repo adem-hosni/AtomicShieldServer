@@ -59,8 +59,8 @@ detection_messages = {
     DetectionType.MALICIOUS_DRIVER: "Process Hacker is not Allowed on the connected server",
     DetectionType.TEST_SIGNING_ENABLED: "This server requires Test Signing to be disabled on your machine.",
     DetectionType.INJECTED_DLL: "Injected Windows DLL",
-    DetectionType.CHEAT_SIGNATURE_FOUND: "Cheat Detected",
-    DetectionType.MALICIOUS_PROCESS_HANDLE_OPEN: "Cheat Detected",
+    DetectionType.CHEAT_SIGNATURE_FOUND: "Internal Cheat Detected",
+    DetectionType.MALICIOUS_PROCESS_HANDLE_OPEN: "External Cheat Detected",
     DetectionType.MALICIOUS_DRIVER: "Hacking Tools Found",
     DetectionType.THREAD_SHELLCODE: "Injected Windows DLL",
 }

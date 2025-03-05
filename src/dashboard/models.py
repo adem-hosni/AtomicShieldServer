@@ -1,6 +1,7 @@
 from django.db import models
 from time import time
-from datetime import datetime
+from datetime import datetime, timedelta
+from utils import represent_timedelta_string
 from django.contrib.auth.models import User
 from asgiref.sync import sync_to_async
 from anticheat.models import AntiCheatConfigurations, AntiCheatConfigTemplates
@@ -18,19 +19,38 @@ class ServerSubscription(models.Model):
     class SubscriptionStatus(models.IntegerChoices):
         ACTIVE = 0, "Active"
         INACTIVE = 1, "Inactive"
+    
+    class Plans(models.IntegerChoices):
+        BASIC = 1, "Basic"
+        PRO = 2, "Pro"
+        ENTREPRISE = 3, "Entreprise"
 
-    name = models.TextField(null=True)
+    # name = models.TextField(null=True)
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
-    started_at = models.DateTimeField(null=True)
-    expires_at = models.DurationField(null=False)  # Started At + Expires At
+    started_at = models.DateTimeField(null=True, auto_now_add=True)
+    # expires_at = models.DurationField(null=False)  # Started At + Expires At
+    plan = models.IntegerField(choices=Plans, null=False)
     type = models.IntegerField(choices=ServerType, null=True)
     status = models.IntegerField(
-        choices=SubscriptionStatus, default=SubscriptionStatus.INACTIVE
+        choices=SubscriptionStatus, default=SubscriptionStatus.ACTIVE
     )
 
     class Meta:
         db_table = "subscriptions"
         verbose_name_plural = "subscriptions"
+    
+    @property
+    def expires_at(self):
+        return timedelta(days=(30 if self.plan == 1 else 3))
+
+    @property
+    def name(self):
+        return f"{ServerType(self.type).label} - {self.Plans(self.plan).label} {represent_timedelta_string(self.expires_at)}"
+
+    @property
+    def remaining(self) -> int:
+        left_duration = datetime.timestamp(self.started_at) + self.expires_at.total_seconds() - time()
+        return represent_timedelta_string(timedelta(seconds=left_duration)) if left_duration > 0 else "Expired"
 
     def is_valid_for_now(self) -> bool:
         return (

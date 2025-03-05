@@ -109,7 +109,7 @@ class PatchNotesAdmin(ModelAdmin):
 
 
 class ServerSubscriptionAdmin(ModelAdmin):
-    list_display = ["id", "name", "owner", "type", "status"]
+    list_display = ["id", "name", "owner", "plan", "remaining", "status"]
 
     @admin.display(description="Name")
     def name(self, obj: ServerSubscription):
@@ -118,10 +118,6 @@ class ServerSubscriptionAdmin(ModelAdmin):
     @admin.display(description="Owner")
     def owner(self, obj: ServerSubscription):
         return obj.owner.username
-
-    @admin.display(description="Type")
-    def type(self, obj: ServerSubscription):
-        return obj.type
 
     @admin.display(description="Status")
     def status(self, obj: ServerSubscription):

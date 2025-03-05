@@ -380,7 +380,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         image_path = ""
         if image_buffer:
             screenshots_directory = os.path.join(
-                settings.MEDIA_ROOT, "detections", "proofs"
+                settings.MEDIA_URL, "detections", "proofs"
             )
             os.makedirs(screenshots_directory, exist_ok=True)
 
@@ -410,9 +410,8 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             ban.report = detection_report
 
         await ban.asave()
-        
-        embed_title = "Banned Player"
 
+        embed_title = "Banned Player"
         try:
             await utils.discord.send_discord_embed(
                 settings.DETECTIONS_WEBHOOK_URL,
@@ -435,13 +434,30 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                         embed_title = await self._connected_server.game_server.get_config_by_id(config_id=config_ids.DISCORD_EMBED_TITLE)
                         embed_title = utils.format_string(embed_title, {"name": self._hwid.username})
                         allow_send_screenshot = bool(await self._connected_server.game_server.get_config_by_id(config_id=config_ids.ALLOW_SEND_SCREENSHOT_ALERT))
-                        
+
+
+                        author_title = "Atomic Shield - FiveM AntiCheat©"
+                        embed_title = "**A cheater has been Banned by AtomicShield**"
+                        avatar_url = "https://media.discordapp.net/attachments/944710024670879804/1346134230106636418/atomic.png"
+                        current_time = datetime.now().strftime("%a %B %d %Y %H:%M:%S GMT %z")
+                        embed_description = f"""
+                **Name:** {self._hwid.username}
+                **Reason:** {reason}
+                **Steam:** {self._hwid.steam}
+                **License:** {self._hwid.fivem_license}
+                **Discord:** {self._hwid.discord_id}
+                **Was this a false positive? Open a ticket in our Discord.**\ndiscord.gg/atomic-shield - <https://atomic-shield.com/>
+                """
+                        footer_text = f"AtomicShield - {current_time}"
                         await utils.discord.send_discord_embed(
                             webhook_url,
                             embed_title,
-                            f"""
-                            **{self._hwid.username}** banned due to ```{reason}```
-                            """,
+                            embed_description,
+                            author= author_title,
+                            footer=footer_text,
+                            footer_icon_url=avatar_url,
+                            author_icon_url= avatar_url,
+                            avatar_url=avatar_url,
                             image_buffer=image_buffer if allow_send_screenshot else None,
                         )
 

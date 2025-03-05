@@ -107,6 +107,10 @@ class ClientHWID(models.Model):
     motherboard_serial = models.CharField(max_length=64)
     bios_version = models.CharField(max_length=32)
     pnp_device = models.CharField(max_length=512)
+    fivem_license = models.CharField(max_length=64, null=True)
+    fivem_token = models.JSONField(blank=True, default=list)
+    steam = models.CharField(max_length=64, null=True)
+    discord_id = models.CharField(max_length=64, null=True)
 
     class Meta:
         db_table = "hwids"

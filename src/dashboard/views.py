@@ -167,6 +167,9 @@ def render_bans(request: HttpRequest) -> HttpResponse:
                     ),  # 0: Disabled, 1: Banned, 2: Expired
                     "reason": ban.reason,
                     "screenshot_url": ban.report.screenshot.url,
+                    "license": ban.hwid.fivem_license,
+                    "steam": ban.hwid.steam,
+                    "discord_id": ban.hwid.discord_id,
                 }
                 for ban in bans
             ],
@@ -228,7 +231,7 @@ def render_servers(request: HttpRequest) -> HttpResponse:
                 add_form = AddServerForm(request_body, user=request.user)
                 if add_form.is_valid():
                     ip = add_form.cleaned_data["ip"]
-                    port = add_form.cleaned_data["port"]
+                    port = "80"
                     name = str(add_form.cleaned_data["server_name"])
                     server_type = add_form.cleaned_data["server_type"]
                     subscription_id = add_form.cleaned_data["subscription"]

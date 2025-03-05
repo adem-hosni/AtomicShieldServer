@@ -112,7 +112,7 @@ class SafeServerConsumer(AsyncWebsocketConsumer):
         try:
             await self.process_packet(text_data)
         except Exception as err:
-            logger.error(f"Error handling packet {request_body['type']} from FxServer, {err}")
+            logger.error(f"Error handling packet from FxServer, {err}")
     
     async def process_packet(self, packet: Union[str, bytes]):
         try:

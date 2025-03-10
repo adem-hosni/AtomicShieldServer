@@ -185,7 +185,8 @@ async def handle_request_player_join(
             return
 
     logger.info(
-        f'"{request["name"]}" (IP: {request["ip"]}  wants to join {consumer.game_server.name} {consumer.address[0]}:{consumer.address[1]}'
+        f'"{request["name"]}" wants to join \"{consumer.game_server.name}\" {consumer.address}\n\t(IP: \"{request["ip"]}\" Steam: \"{request["steam"]}\" '
+        f'license: \"{request["license"]}\" Discord: \"{request["discord"]}\"'
     )
 
     response = {"join": False, "message": ""}
@@ -197,8 +198,22 @@ async def handle_request_player_join(
         response["message"] = (
             "Protected Server with AtomicShield: Open AtomicShield AntiCheat agent to join this server.\nDownload Link: https://atomic-shield.com"
         )
-        logger.info('Connection refused: "AtomicShield Agent Not Connected"')
+        logger.info('Connection refused: "AtomicShield Agent is Not Connected"')
     else:
+        if len(request["steam"]) and request["steam"] != "Unknown":
+            engine.hwid.steam = request["steam"]
+        if len(request["license"]) and request["license"] != "Unknown":
+            engine.hwid.fivem_license = request["license"]
+        if len(request["discord"]) and request["discord"] != "Unknown":
+            engine.hwid.discord_id = request["discord"]
+        for token in request["token"]:
+            if token not in engine.hwid.fivem_token:
+                fivem.hwid.fivem_token.append(token)
+        changes = await engine.hwid.get_changes()
+        if changes:
+            await engine.hwid.asave()
+            logger.info(f"Updating fivem identifiers for \"{engine.hwid.username}\"")
+
         if engine.is_flagged:
             logger.info(
                 f'{engine.hwid.computer_name} Client is flagged: "{engine.flag_message}"'

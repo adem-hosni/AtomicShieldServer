@@ -70,3 +70,24 @@ def version_check(request: HttpRequest) -> HttpResponse:
             }
         )
     )
+
+@csrf_exempt
+def engine_interaction(request: HttpRequest) -> HttpResponse:
+    response = None
+    try:
+        request_body = json.loads(atomic_core.decode(request.body))
+        if not check_request_body_key(request_body, "type", str):
+            response = {"success": False}
+        else:
+            match request_body["type"]:
+                case "report_ss":
+                    if check_request_body_key(request_body, "buffer", str):
+                        screenshot_buffer = request_body["buffer"]
+                    else:
+                        response = {"success": False}
+
+
+    except Exception:
+        return HttpResponse()
+
+    return HttpResponse(atomic_core.encode(response or ""))

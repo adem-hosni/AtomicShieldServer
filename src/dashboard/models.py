@@ -41,11 +41,11 @@ class ServerSubscription(models.Model):
     
     @property
     def expires_at(self):
-        return timedelta(days=(30 if self.plan == 1 else 3))
+        return timedelta(days=(30 if self.plan == 1 else 90))
 
     @property
     def name(self):
-        return f"{ServerType(self.type).label} - {self.Plans(self.plan).label} {represent_timedelta_string(self.expires_at)}"
+        return f"{ServerType(self.type).label} - {self.Plans(self.plan).label} {represent_timedelta_string(self.expires_at)} {'- Expired' if not self.is_valid_for_now() else ''}"
 
     @property
     def remaining(self) -> int:
@@ -71,7 +71,7 @@ class GameServer(models.Model):
     name = models.CharField(max_length=32)
     owner = models.ForeignKey(User, on_delete=models.CASCADE, default=None)
     key = models.CharField(
-        max_length=16, null=False, default="UNREGISTRED", unique=True
+        max_length=32, null=False, default="UNREGISTRED", unique=True
     )
     subscriptions = models.ManyToManyField(
         ServerSubscription, related_name="game_servers"

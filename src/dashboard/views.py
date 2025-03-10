@@ -736,6 +736,7 @@ def render_subscriptions(request: HttpRequest) -> HttpResponse:
                     "type": subscription.type,
                     "started_at": subscription.started_at,
                     "expires_at": subscription.started_at + subscription.expires_at,
+                    "remaining": subscription.remaining,
                     "name": subscription.name,
                     "status": (
                         2
@@ -745,7 +746,7 @@ def render_subscriptions(request: HttpRequest) -> HttpResponse:
                 }
                 for subscription in ServerSubscription.objects.filter(
                     owner=request.user
-                )
+                ).order_by("-started_at")
             ]
         },
     )

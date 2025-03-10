@@ -108,11 +108,10 @@ class SafeServerConsumer(AsyncWebsocketConsumer):
         """
         if bytes_data is not None:
             text_data = bytes_data.decode('utf-8')  
-        
         try:
             await self.process_packet(text_data)
         except Exception as err:
-            logger.error(f"Error handling packet from FxServer, {err}")
+            logger.error(f"Error handling packet from FxServer, {err}", exc_info=True)
     
     async def process_packet(self, packet: Union[str, bytes]):
         try:
@@ -271,7 +270,6 @@ class SafeServerConsumer(AsyncWebsocketConsumer):
     async def request_status(self) -> Dict[str, Union[str, bool, int, float]]:
         response_future = asyncio.get_event_loop().create_future()
         self._pending_responses[SafeServerPacketID.REQUEST_STATUS] = response_future
-        
         await self.send(SafeServerPacketID.REQUEST_STATUS, {})
         
         response = await response_future

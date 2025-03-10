@@ -69,6 +69,7 @@
           <th scope="col" class="px-6 py-3">Name</th>
           <th scope="col" class="px-6 py-3">Started At</th>
           <th scope="col" class="px-6 py-3">Expires At</th>
+          <th scope="col" class="px-6 py-3">Remaining</th>
           <th scope="col" class="px-6 py-3">Status</th>
         </tr>
       </thead>
@@ -85,6 +86,7 @@
             <td class="px-6 py-4">{{ subscription.name }}</td>
             <td class="px-6 py-4">{{ subscription.started_at }}</td>
             <td class="px-6 py-4">{{ subscription.expires_at }}</td>
+            <td class="px-6 py-4">{{ subscription.remaining }}</td>
             {% if subscription.status == 0 %}
                 <td class="px-6 py-4"><span class="px-2 border font-medium border-green-500 rounded p-1 text-green-500 transition-all duration-300 hover:bg-green-500 hover:text-black select-none">Active</span></td>
             {% elif subscription.status == 1 %}

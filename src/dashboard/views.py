@@ -230,9 +230,9 @@ def render_servers(request: HttpRequest) -> HttpResponse:
             case "add":
                 add_form = AddServerForm(request_body, user=request.user)
                 if add_form.is_valid():
-                    ip = add_form.cleaned_data["ip"]
+                    ip = add_form.cleaned_data["ip"].strip()
                     port = "80"
-                    name = str(add_form.cleaned_data["server_name"])
+                    name = str(add_form.cleaned_data["server_name"]).strip()
                     server_type = add_form.cleaned_data["server_type"]
                     subscription_id = add_form.cleaned_data["subscription"]
 
@@ -365,9 +365,9 @@ def render_servers(request: HttpRequest) -> HttpResponse:
                     messages.error(request, "Unexpected error!")
                     return redirect(request.path)
 
-                new_name = request_body["server-name"]
-                new_ip = request_body["server-ip"]
-                new_port = int(request_body["server-port"])
+                new_name = request_body["server-name"].strip()
+                new_ip = request_body["server-ip"].strip()
+                new_port = 80
 
                 if not utils.isvalid_ip(new_ip):
                     messages.error(request, "Invalid port")
@@ -392,6 +392,35 @@ def render_servers(request: HttpRequest) -> HttpResponse:
 
                 target_server.save()
                 messages.success(request, f"{target_server.name} Saved Successfuly!")
+            case "renew":
+                if (
+                    not "server" in request_body.keys()
+                    or not "subscription" in request_body.keys()
+                ):
+                    messages.error(request, "Unexpected error!")
+                    return redirect(request.path)
+                
+                try:
+                    target_server = GameServer.objects.get(
+                        id=int(request_body["server"]), owner=request.user
+                    )
+                except GameServer.DoesNotExist:
+                    messages.error(request, "Selected Server Does Not Exists!")
+                    return redirect(request.path)
+
+                try:
+                    selected_subscription = ServerSubscription.objects.get(id=int(request_body.get("subscription", -1)), owner=request.user)
+                except ServerSubscription.DoesNotExists:
+                    messages.error(request, "The Selected Subscription does not exists!")
+                    return redirect(request.path)
+                
+                if not selected_subscription.is_valid_for_now():
+                    messages.error(request, "Expired Subscription!")
+                    return redirect(request.path)
+                
+                target_server.subscriptions.add(selected_subscription)
+                target_server.save()
+                messages.success(request, "Successfuly Subscription Renewed!")
 
     else:
         add_form = AddServerForm(user=request.user)
@@ -413,8 +442,19 @@ def render_servers(request: HttpRequest) -> HttpResponse:
                     "type": server.type,
                     "status": fivem_guard.is_server_running(server.ip),
                     "subscription_status": server.subscriptions.last(),
+                    "expired": not server.subscriptions.last().is_valid_for_now(),
                 }
                 for server in servers.reverse()
+            ],
+            "subscriptions": [
+                (
+                    {
+                    "name": subscription.name,
+                    "id": subscription.id
+                    }
+                )
+                for subscription in ServerSubscription.objects.filter(owner=request.user)
+                if subscription.is_valid_for_now() and not subscription.game_servers.count()
             ],
             "active": request.session.get("selected_server", -1),
         },
@@ -713,6 +753,7 @@ def render_subscriptions(request: HttpRequest) -> HttpResponse:
 
 async def render_players(request: HttpRequest) -> HttpResponse:    
     players = []
+    message = ""
     try:
         target_server = await GameServer.objects.aget(
             owner=request.user, id=await sync_to_async(request.session.get)("selected_server", -1)
@@ -723,6 +764,8 @@ async def render_players(request: HttpRequest) -> HttpResponse:
         server = fivem_guard.get_server_by_ip(target_server.ip)
         if server:
             players = (await server.request_status())["players"]
+        else:
+            message = "Server is offline"
     
     if request.method == "POST":
         response = {"success": False, "message": ""}
@@ -821,6 +864,6 @@ async def render_players(request: HttpRequest) -> HttpResponse:
             "current_page": current_page,
             "page_range": range(1, max_pages + 1),
             "max_pages": max_pages,
-            "message": "No Online Players to show" if not len(players_to_show) else ""
+            "message": "No Online Players to show" if not len(players_to_show) and not len(message) else message
         },
     )

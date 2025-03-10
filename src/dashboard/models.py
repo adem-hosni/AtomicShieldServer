@@ -24,6 +24,7 @@ class ServerSubscription(models.Model):
         BASIC = 1, "Basic"
         PRO = 2, "Pro"
         ENTREPRISE = 3, "Entreprise"
+        FREE = 4, "Free"
 
     # name = models.TextField(null=True)
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -41,6 +42,8 @@ class ServerSubscription(models.Model):
     
     @property
     def expires_at(self):
+        if self.plan == 4:
+            return timedelta(days=7)
         return timedelta(days=(30 if self.plan == 1 else 90))
 
     @property

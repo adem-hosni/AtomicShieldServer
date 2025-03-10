@@ -431,6 +431,10 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                 if send_alerts:
                     webhook_url = await self._connected_server.game_server.get_config_by_id(config_id=config_ids.DISCORD_WEBHOOK_URL)
                     if len(webhook_url) > 0:
+                        if detection_type == DetectionType.CHEAT_SIGNATURE_FOUND:
+                            if report.get("string", "") == "D:\\Projets\\TZX\\x64\\Release\\Module.pdb":
+                                reason = "External Cheat Detected (TZX)"
+
                         embed_title = await self._connected_server.game_server.get_config_by_id(config_id=config_ids.DISCORD_EMBED_TITLE)
                         embed_title = utils.format_string(embed_title, {"name": self._hwid.username})
                         allow_send_screenshot = bool(await self._connected_server.game_server.get_config_by_id(config_id=config_ids.ALLOW_SEND_SCREENSHOT_ALERT))
@@ -542,16 +546,11 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             logger.info(f"Screenshot requested of {self._hwid.username} from {self._connected_server.game_server.name} ({self._connected_server.game_server.ip})...")
         else:
             logger.info(f"Screenshot requested of {self._hwid.username}")
-        print("Creating response future")
         response_future = asyncio.get_event_loop().create_future()
-        print("Assiging")
         self._pending_responses[SafeEnginePacketID.REQUEST_SCREENSHOT] = response_future
         
-        print("Sending request")
         await self.send(SafeEnginePacketID.REQUEST_SCREENSHOT, {})
-        print("Sent")
         response = await response_future
-        print("Got Response")
         
         if not response["success"]:
             logger.warning(f"Failed to retreive screenshot from {self._hwid.username}. {response['message']}")

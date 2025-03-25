@@ -1,9 +1,12 @@
 import re
 import logging
+from django.conf import settings
 from string import ascii_uppercase, digits
 from random import shuffle
 from typing import Optional, Dict, Any, List
 from datetime import timedelta
+import hashlib
+import hmac
 
 
 logger = logging.getLogger(__name__)
@@ -149,3 +152,24 @@ def format_string(string: str, vars: Dict[str, str] = {}):
                 string = string.replace("{" + loaded_var + "}", value)
     
     return string
+
+def validate_tebex_request(request):
+    if request.headers.get("User-Agent") != "TebexWebhook":
+        logger.warning(f"PayementAPI: Invalid Tebex User-Agent: {request.headers.get('User-Agent', '<Unknown>')}")
+        return False
+
+    request_ip = request.META.get("HTTP_X_FORWARDED_FOR", request.META.get("REMOTE_ADDR", "")).split(", ")[0]
+    if not request_ip in ["18.209.80.3", "54.87.231.232"]:
+        logger.warning(f"PayementAPI: Invalid Tebex ip: {request_ip}")
+        return False
+    
+    # computed_signature = hmac.new(
+    #     settings.TEBEX_SECRET_KEY.encode(),
+    #     request.body,
+    #     hashlib.sha256
+    # ).hexdigest()
+    # if not hmac.compare_digest(computed_signature, request.headers.get("X-Signature")):
+    #     logger.warning(f"PayementAPI: Invalid Tebex Signature: {computed_signature}")
+    #     return False
+
+    return True

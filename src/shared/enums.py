@@ -45,7 +45,7 @@ class DetectionType(models.IntegerChoices):
     SECURE_BOOT_DISABLED = 4, "Secure Boot Disabled"
     DEBUG_MODE_ENABLED = 5, "Debug Mode Enabled"
     TEST_SIGNING_ENABLED = 6, "Test Signing Enabled"
-    INJECTED_DLL = 7, "Inject Dll"
+    INJECTED_DLL = 7, "Injected DLL"
     CHEAT_SIGNATURE_FOUND = 8, "Cheat Signature Found"
     MALICIOUS_PROCESS_HANDLE_OPEN = 9, "Malicious Process opened FiveM handle"
     MALICIOUS_DRIVER = 10, "Malicious Driver Found"

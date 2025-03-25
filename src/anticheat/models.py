@@ -21,8 +21,8 @@ class AntiCheatConfigurationCategories(models.Model):
 
     class Meta:
         db_table = "anticheat_configuration_categories"
-        verbose_name = "AntiCheat Config Category"
-        verbose_name_plural = "AntiCheat Config Categories"
+        verbose_name = "Configuration Category"
+        verbose_name_plural = "Configuration Categories"
 
     def __str__(self) -> str:
         return self.name
@@ -50,8 +50,8 @@ class AntiCheatConfigTemplates(models.Model):
 
     class Meta:
         db_table = "anticheat_config_templates"
-        verbose_name = "AntiCheat Config Template"
-        verbose_name_plural = "AntiCheat Config Templates"
+        verbose_name = "Configuration"
+        verbose_name_plural = "Configurations"
 
     def get_default_value(self) -> Union[bool, str, int]:
         """Convert `default_value` to the correct type based on `config_type`."""
@@ -73,11 +73,11 @@ class AntiCheatConfigurations(models.Model):
 
     class Meta:
         db_table = "anticheat_configurations"
-        verbose_name = "AntiCheat Configuration"
-        verbose_name_plural = "AntiCheat Configurations"
+        verbose_name = "Server Configuration"
+        verbose_name_plural = "Server Configurations"
 
     def __str__(self) -> str:
-        return f"AntiCheat Configuration ({self.id})"
+        return f"Server Configuration ({self.id}) - {self.game_servers.first().name if self.game_servers.first() else "No Server"}"
 
 
 class MaliciousSignatures(models.Model):
@@ -114,8 +114,8 @@ class ClientHWID(models.Model):
 
     class Meta:
         db_table = "hwids"
-        verbose_name = "Client HWID"
-        verbose_name_plural = "Client HWIDS"
+        verbose_name = "HWID"
+        verbose_name_plural = "HWIDs"
 
     async def get_changes(self) -> int:
         """Check if any fields have changed compared to the database.
@@ -169,11 +169,14 @@ class Ban(models.Model):
     )
     active = models.BooleanField(default=True)
     reason = models.CharField(null=True, max_length=256)
-    report = models.ForeignKey(DetectionReport, on_delete=models.CASCADE, null=True)
+    report = models.ForeignKey(DetectionReport, on_delete=models.CASCADE, null=True, related_name="bans")
 
     @property
     def is_expired(self) -> bool:
-        return self.banned_at.timestamp() + self.duration.total_seconds() < datetime.now().timestamp()
+        return (
+            self.banned_at.timestamp() + self.duration.total_seconds()
+            < datetime.now().timestamp()
+        )
 
     class Meta:
         db_table = "bans"

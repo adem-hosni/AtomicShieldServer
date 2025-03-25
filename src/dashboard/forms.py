@@ -1,6 +1,7 @@
 from django import forms
 from .models import ServerSubscription
 from shared.models import ServerType
+from unfold.widgets import UnfoldAdminIntegerFieldWidget
 
 supported_dists = [
     (1, "Windows"),
@@ -99,3 +100,15 @@ class QuickSetupForm(forms.Form):
             }
         ),
     )
+
+
+class SubscriptionCustomForm(forms.ModelForm):
+    count = forms.IntegerField(required=False,
+        label="Count",
+        initial=1,
+        widget=UnfoldAdminIntegerFieldWidget()
+    )
+
+    class Meta:
+        model = ServerSubscription
+        fields = "__all__"

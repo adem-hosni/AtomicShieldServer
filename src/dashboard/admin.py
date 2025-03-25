@@ -7,14 +7,19 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_protect
 from django.conf import settings
 from django.contrib.auth.models import User, Group
+from django.contrib.admin import SimpleListFilter
+from django.utils.translation import gettext_lazy as _
+from django.db.models import QuerySet
 from django.contrib.auth.admin import (
     UserAdmin as BaseUserAdmin,
     GroupAdmin as BaseGroupAdmin,
 )
+from .forms import SubscriptionCustomForm
 from .models import GameServer, Announcements, PatchNotes, ServerSubscription
 
 from unfold.admin import ModelAdmin
 from unfold.forms import AdminPasswordChangeForm, UserChangeForm, UserCreationForm
+from guards import fivem_guard
 
 
 admin.site.unregister(User)
@@ -24,40 +29,17 @@ admin.site.unregister(Group)
 logger = getLogger(__name__)
 
 
-def protected_admin_view(view, cacheable: bool = False):
-    """
-    Overwrite the default admin view to return 404 for the users that doesnt have permissions.
-    """
-
-    def inner(request: HttpRequest, *args, **kwargs):
-        return view(request, *args, **kwargs)
-        request_ip = request.META.get("HTTP_X_REAL_IP", request.META.get("REMOTE_ADDR"))
-        with open(f"{settings.CONFIG_DIR}/admins.json", "r") as file:
-            admins = json.load(file)
-        if not request_ip in admins:
-            logger.warning(f"{request_ip} trying to view admin dashboard. Unauthorized access!")
-            raise Http404()
-        return view(request, *args, **kwargs)
-
-    if not cacheable:
-        inner = never_cache(inner)
-
-    # We add csrf_protect here so this function can be used as a utility
-    # function for any view, without having to repeat 'csrf_protect'.
-    if not getattr(view, "csrf_exempt", False):
-        inner = csrf_protect(inner)
-
-    return update_wrapper(inner, view)
-
-
-admin.site.admin_view = protected_admin_view
-
-
 @admin.register(User)
 class UserAdmin(BaseUserAdmin, ModelAdmin):
     form = UserChangeForm
     add_form = UserCreationForm
     change_password_form = AdminPasswordChangeForm
+
+    ordering = ('-date_joined',)
+    list_display = ("username", "email", "date_joined", "last_login", "is_staff")
+
+    def has_delete_permission(self, request, obj = ...):
+        return False
 
 
 @admin.register(Group)
@@ -65,7 +47,43 @@ class GroupAdmin(BaseGroupAdmin, ModelAdmin): ...
 
 
 class GameServerAdmin(ModelAdmin):
-    list_display = ["name", "address", "owner", "type"]
+    class OnlineFilter(SimpleListFilter):
+        title = _("Online")
+        parameter_name = "online"
+
+        def lookups(self, request, model_admin):
+            return (
+                ("online", _("Online")),
+                ("offline", _("Offline")),
+            )
+
+        def queryset(self, request, queryset: QuerySet[GameServer]):
+            filter_value = self.value()
+            if filter_value == "online":
+                queryset = queryset.filter(
+                    id__in=[
+                        record.id
+                        for record in queryset
+                        if fivem_guard.get_server_by_ip(record.ip)
+                    ]
+                )
+            elif filter_value == "offline":
+                queryset = queryset.filter(
+                    id__in=[
+                        record.id
+                        for record in queryset
+                        if not fivem_guard.get_server_by_ip(record.ip)
+                    ]
+                )
+            return queryset
+
+
+    list_display = ["name", "address", "owner", "remaining",  "type", "display_online"]
+    list_display_links = list_display
+    search_fields = list_display
+    exclude = ("port",)
+
+    list_filter = [OnlineFilter, "type"]
 
     @admin.display(description="Address")
     def address(self, obj: GameServer):
@@ -75,21 +93,32 @@ class GameServerAdmin(ModelAdmin):
     def owner(self, obj: GameServer):
         return f"{obj.owner.username}"
 
+    @admin.display(description="Remaining")
+    def remaining(self, obj: GameServer):
+        return obj.subscriptions.last() if obj.subscriptions.count() else "Expired"
+
     @admin.display(description="Type")
     def type(self, obj: GameServer):
         return f"{obj.type}"
 
+    @admin.display(description="Online", boolean=True)
+    def display_online(self, obj: GameServer):
+        return bool(fivem_guard.get_server_by_ip(obj.ip))
+
+
 
 class AnnouncementAdmin(ModelAdmin):
     list_display = ["title", "author", "description"]
-
-    @admin.display(description="Author")
-    def announcement(self, obj: Announcements):
-        return obj.author
+    list_display_links = list_display
+    search_fields = list_display
 
     @admin.display(description="Description")
     def description(self, obj: Announcements):
-        return obj.announcement
+        return (
+            obj.announcement[:128] + "..."
+            if len(obj.announcement) > 128
+            else obj.announcement
+        )
 
 
 class PatchNotesAdmin(ModelAdmin):
@@ -100,16 +129,27 @@ class PatchNotesAdmin(ModelAdmin):
         return obj.title
 
     @admin.display(description="Author")
-    def announcement(self, obj: PatchNotes):
+    def author(self, obj: PatchNotes):
         return obj.author
 
     @admin.display(description="Description")
     def description(self, obj: PatchNotes):
-        return obj.patchnotes
+        return (
+            obj.patchnotes[:128] + "..."
+            if len(obj.patchnotes) > 128
+            else obj.patchnotes
+        )
 
 
 class ServerSubscriptionAdmin(ModelAdmin):
-    list_display = ["id", "name", "owner", "plan", "remaining", "status"]
+    form = SubscriptionCustomForm
+    list_display = ["id", "name", "key", "owner", "plan", "remaining", "status"]
+    list_display_links = list_display
+    search_fields = list_display
+
+    list_filter = ("plan", "status", "type")
+
+    readonly_fields = ("key",)
 
     @admin.display(description="Name")
     def name(self, obj: ServerSubscription):
@@ -123,6 +163,20 @@ class ServerSubscriptionAdmin(ModelAdmin):
     def status(self, obj: ServerSubscription):
         return obj.status
 
+    def save_model(self, request: HttpRequest, obj: ServerSubscription, form, change):
+        plan = form.cleaned_data.get("plan", ServerSubscription.Plans.BASIC)
+        count = form.cleaned_data.get("count", 1)
+        logger.info(f"\"{request.user.username}\" generated {count} {ServerSubscription.Plans(plan).label} subscription(s)")
+        if count <= 0 or count < 150 and count != 1:
+            for i in range(count):
+                ServerSubscription.objects.create(
+                    owner=None,
+                    started_at=None,
+                    type=form.cleaned_data.get("type"),
+                    plan=plan,
+                    status=form.cleaned_data.get("status", ServerSubscription.SubscriptionStatus.ACTIVE),
+                )
+        super().save_model(request, obj, form, change)
 
 admin.site.register(GameServer, GameServerAdmin)
 admin.site.register(Announcements, AnnouncementAdmin)

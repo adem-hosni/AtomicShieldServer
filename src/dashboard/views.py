@@ -4,13 +4,26 @@ import json
 from asgiref.sync import sync_to_async
 from django.shortcuts import render, redirect
 from django.conf import settings
-from django.contrib import messages
 from django.urls import reverse
 from django.db.models import Q
-from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, FileResponse, JsonResponse
+from django.http import (
+    HttpRequest,
+    HttpResponse,
+    HttpResponseRedirect,
+    FileResponse,
+    JsonResponse,
+)
+from django.utils.timezone import now
+from django.utils.translation import gettext_lazy as _
+from django.utils.safestring import mark_safe
+from datetime import timedelta
+from django.contrib import messages
+from django.contrib.humanize.templatetags.humanize import intcomma
 from django.contrib.auth.decorators import login_required
 from guards import fivem_guard
 from utils import check_request_body_key, represent_timedelta_string
+from anticheat.models import Ban, DetectionReport
+from shared.enums import DetectionType
 from .models import (
     Announcements,
     PatchNotes,
@@ -28,11 +41,98 @@ from anticheat.models import (
 )
 from .forms import AddServerForm
 import utils
-from typing import Dict, Union
+from typing import Dict, Union, Any
 from utils.aseclient import ASEQueryClient, ASEParser
 
 
 logger = logging.getLogger(__name__)
+
+
+def dashboard_callback(request: HttpRequest, context: Dict[str, Any]):
+    WEEKDAYS = [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri",
+        "Sat",
+        "Sun",
+    ]
+
+    # 27 because today is included
+    twenty_eight_days_ago = now().date() - timedelta(days=27)
+    bans_per_day = []
+
+    all_bans = Ban.objects.all()
+
+    for day in range(28):
+        current_day = twenty_eight_days_ago + timedelta(days=day)
+        next_day = current_day + timedelta(days=1)
+        ban_count = all_bans.filter(
+            banned_at__gte=current_day, banned_at__lt=next_day
+        ).count()
+
+        bans_per_day.append(ban_count)
+
+    detections_stats = []
+    all_detections = DetectionReport.objects.all()
+    for detection_type, label in DetectionType.choices:
+        count = all_detections.filter(detection_type=detection_type).count()
+        detections_stats.append(
+            {
+                "title": label,
+                "description": intcomma(str(count)),
+                "value": (count / all_detections.count()) * 100,
+            }
+        )
+
+    seven_days_ago = now() - timedelta(days=7)
+    total_subscriptions = ServerSubscription.objects.count()
+    total_bans = all_bans.count()
+    
+    bans_last_7_days = all_bans.filter(banned_at__gte=seven_days_ago).count()
+    subscriptions_last_7_days = ServerSubscription.objects.filter(started_at__gte=seven_days_ago).count()
+
+    last_week_subs = (subscriptions_last_7_days / total_subscriptions) * 100 if total_subscriptions else 0
+    last_week_bans = (bans_last_7_days / total_bans) * 100 if total_bans else 0
+
+
+    context.update(
+        {
+            "chart": json.dumps(
+                {
+                    "labels": [WEEKDAYS[day % 7] for day in range(1, 28)],
+                    "datasets": [
+                        {
+                            "label": "Week 3",
+                            "type": "line",
+                            "data": bans_per_day,
+                            "borderColor": "var(--color-primary-500)",
+                        },
+                    ],
+                }
+            ),
+            "progress": sorted(detections_stats, key=lambda x: x["value"], reverse=True),
+            "detection_count": all_detections.count(),
+            "stats": [
+                {
+                    "title": "Total Subscriptions",
+                    "metric": total_subscriptions,
+                    "footer": mark_safe(
+                        f'<strong class="text-green-700 font-semibold dark:text-green-400">+{intcomma(f"{last_week_subs:.02f}")}%</strong>&nbsp;progress from last 7 days'
+                    ),
+                },
+                {
+                    "title": "Total Bans",
+                    "metric": total_bans,
+                    "footer": mark_safe(
+                        f'<strong class="text-green-700 font-semibold dark:text-green-400">+{intcomma(f"{last_week_bans:.02f}")}%</strong>&nbsp;progress from last 7 days'
+                    ),
+                },
+            ]
+        }
+    )
+    return context
 
 
 @login_required
@@ -328,7 +428,7 @@ def render_servers(request: HttpRequest) -> HttpResponse:
                     license_key = utils.generate_key(4)
 
                     # Check if key already exists, regenerate it
-                    if GameServer.objects.filter(key=license_key).exists():
+                    if ServerSubscription.objects.filter(key=license_key).exists():
                         license_key = utils.generate_key(4)
 
                     # Create the server configs
@@ -344,7 +444,6 @@ def render_servers(request: HttpRequest) -> HttpResponse:
                         port=port,
                         name=name,
                         owner=request.user,
-                        key=license_key,
                         configurations=configurations,
                         type=server_type,
                         status=ServerStatus.online,
@@ -370,7 +469,7 @@ def render_servers(request: HttpRequest) -> HttpResponse:
                 new_port = 80
 
                 if not utils.isvalid_ip(new_ip):
-                    messages.error(request, "Invalid port")
+                    messages.error(request, "Invalid ip address")
                     return HttpResponseRedirect(request.path)
 
                 # Check port range (1 -> 65535)
@@ -399,7 +498,7 @@ def render_servers(request: HttpRequest) -> HttpResponse:
                 ):
                     messages.error(request, "Unexpected error!")
                     return redirect(request.path)
-                
+
                 try:
                     target_server = GameServer.objects.get(
                         id=int(request_body["server"]), owner=request.user
@@ -409,15 +508,26 @@ def render_servers(request: HttpRequest) -> HttpResponse:
                     return redirect(request.path)
 
                 try:
-                    selected_subscription = ServerSubscription.objects.get(id=int(request_body.get("subscription", -1)), owner=request.user)
-                except ServerSubscription.DoesNotExists:
-                    messages.error(request, "The Selected Subscription does not exists!")
+                    selected_subscription = ServerSubscription.objects.get(
+                        id=int(request_body.get("subscription", -1)), owner=request.user
+                    )
+                except ServerSubscription.DoesNotExist:
+                    messages.error(
+                        request, "The Selected Subscription does not exists!"
+                    )
                     return redirect(request.path)
-                
+
+                if selected_subscription.type != target_server.type:
+                    messages.error(
+                        request,
+                        "The Selected Subscription doesn't match the server type!",
+                    )
+                    return redirect(request.path)
+
                 if not selected_subscription.is_valid_for_now():
                     messages.error(request, "Expired Subscription!")
                     return redirect(request.path)
-                
+
                 target_server.subscriptions.add(selected_subscription)
                 target_server.save()
                 messages.success(request, "Successfuly Subscription Renewed!")
@@ -441,20 +551,22 @@ def render_servers(request: HttpRequest) -> HttpResponse:
                     "name": server.name,
                     "type": server.type,
                     "status": fivem_guard.is_server_running(server.ip),
-                    "subscription_status": server.subscriptions.last(),
-                    "expired": not server.subscriptions.last().is_valid_for_now(),
+                    "subscription_status": server.subscriptions.last() or "Not Found",
+                    "expired": (
+                        not server.subscriptions.last().is_valid_for_now()
+                        if server.subscriptions.last()
+                        else False
+                    ),
                 }
                 for server in servers.reverse()
             ],
             "subscriptions": [
-                (
-                    {
-                    "name": subscription.name,
-                    "id": subscription.id
-                    }
+                ({"name": subscription.name, "id": subscription.id})
+                for subscription in ServerSubscription.objects.filter(
+                    owner=request.user
                 )
-                for subscription in ServerSubscription.objects.filter(owner=request.user)
-                if subscription.is_valid_for_now() and not subscription.game_servers.count()
+                if subscription.is_valid_for_now()
+                and not subscription.game_servers.count()
             ],
             "active": request.session.get("selected_server", -1),
         },
@@ -600,15 +712,15 @@ def refresh_server_key(request: HttpRequest) -> HttpResponse:
         except GameServer.DoesNotExist:
             return HttpResponse(json.dumps({"success": False}))
 
-        new_key = utils.generate_key(4)
+        new_key = utils.generate_key(5)
         if new_key == target_server.key:
-            new_key = utils.generate_key(4)
+            new_key = utils.generate_key(5)
         target_server.key = new_key
-        target_server.save()
 
         logger.info(
-            f'"{request.user.username}" has refreshed his server {target_server.ip}:{target_server.port}\'s key'
+            f'"{request.user.username}" has refreshed his server "{target_server.name}" key'
         )
+        messages.success(request, "Key refreshed Successfuly!")
 
         return redirect(reverse("servers"))
 
@@ -727,6 +839,52 @@ def render_quicksetup(request: HttpRequest) -> HttpResponse:
 
 @login_required
 def render_subscriptions(request: HttpRequest) -> HttpResponse:
+    if request.method == "POST":
+        subscription_key = request.POST.get("key", "").strip()
+        if not len(subscription_key):
+            messages.error(request, "Empty Subscription Key")
+            return redirect(request.path)
+
+        try:
+            subscription = ServerSubscription.objects.get(key=subscription_key)
+        except ServerSubscription.DoesNotExist:
+            logger.warning(
+                f'"{request.user.username}" trying to redeem incorrect subscription key!'
+            )
+            messages.error(request, "Invalid Redeemed Key.")
+            return redirect(request.path)
+
+        if subscription.owner:
+            logger.warning(
+                f'"{request.user.username}" trying to redeem a subscription key used by "{subscription.owner.username}"'
+            )
+            messages.error(request, "Subscription Key already redeemed")
+            return redirect(request.path)
+
+        if not subscription.is_valid_for_now():
+            logger.warning(
+                f'"{request.user.username}" trying to redeem expired subscription key!'
+            )
+            messages.error(request, "Expired Subscription")
+            return redirect(request.path)
+
+        if subscription.game_servers.count():
+            logger.warning(
+                f'"{request.user.username}" trying to redeem used subscription key!'
+            )
+            messages.error(request, "This Subscription is already in-use.")
+            return redirect(request.path)
+
+        logger.info(
+            f'"{request.user.username}" reedemed "{subscription.name}" key ({subscription_key})'
+        )
+
+        subscription.owner = request.user
+        subscription.started_at = now()
+        subscription.save()
+
+        messages.success(request, "Key Reedemed Successfuly!")
+
     return render(
         request,
         "pages/dashboard/subscriptions.jinja",
@@ -752,12 +910,13 @@ def render_subscriptions(request: HttpRequest) -> HttpResponse:
     )
 
 
-async def render_players(request: HttpRequest) -> HttpResponse:    
+async def render_players(request: HttpRequest) -> HttpResponse:
     players = []
     message = ""
     try:
         target_server = await GameServer.objects.aget(
-            owner=request.user, id=await sync_to_async(request.session.get)("selected_server", -1)
+            owner=request.user,
+            id=await sync_to_async(request.session.get)("selected_server", -1),
         )
     except GameServer.DoesNotExist:
         messages.error(request, "The selected server does not exists!")
@@ -767,7 +926,7 @@ async def render_players(request: HttpRequest) -> HttpResponse:
             players = (await server.request_status())["players"]
         else:
             message = "Server is offline"
-    
+
     if request.method == "POST":
         response = {"success": False, "message": ""}
         request_body: Dict[str, Union[bool, str]] = request.body.decode()
@@ -796,17 +955,23 @@ async def render_players(request: HttpRequest) -> HttpResponse:
                         case "request_screenshot":
                             image_path = await engine.request_screenshot()
                             if image_path:
-                                logger.info(f"Successfuly screenshot requested from {engine.hwid.username}")
+                                logger.info(
+                                    f"Successfuly screenshot requested from {engine.hwid.username}"
+                                )
                                 response["success"] = True
                                 response["url"] = image_path
                             else:
-                                response["message"] = "Cannot retreive screenshot from the target player!"
+                                response["message"] = (
+                                    "Cannot retreive screenshot from the target player!"
+                                )
                                 # messages.error(request, "Cannot retreive screenshot from the target player!")
-                        
+
                         case "kick":
                             if not (await engine.kick()):
-                                response["message"] = "Player is not connected to your server."
-                            
+                                response["message"] = (
+                                    "Player is not connected to your server."
+                                )
+
                         case _:
                             response["message"] = "Invalid data requested!"
                 else:
@@ -817,7 +982,7 @@ async def render_players(request: HttpRequest) -> HttpResponse:
         else:
             response["message"] = "Invalid player!"
         return JsonResponse(response)
-    
+
     current_page = int(request.GET.get("page", 1)) - 1
 
     searched_players = []
@@ -865,6 +1030,10 @@ async def render_players(request: HttpRequest) -> HttpResponse:
             "current_page": current_page,
             "page_range": range(1, max_pages + 1),
             "max_pages": max_pages,
-            "message": "No Online Players to show" if not len(players_to_show) and not len(message) else message
+            "message": (
+                "No Online Players to show"
+                if not len(players_to_show) and not len(message)
+                else message
+            ),
         },
     )

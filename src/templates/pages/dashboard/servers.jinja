@@ -30,7 +30,7 @@
   </div>
 
   <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
-    <table class="w-full text-sm text-left rtl:text-right text-gray-400">
+    <table class="w-full text-sm text-left rtl:text-right text-gray-400 overflow-x-hidden">
       <thead class="text-xs uppercase bg-[#081017] text-gray-400">
         <tr>
           <th scope="col" class="px-6 py-3">Key</th>
@@ -46,6 +46,7 @@
       <tbody>
         {% for server in servers %}
           <tr class="transition-all duration:300 border-b bg-[#0E1B23] border-gray-700 hover:bg-[#142733]">
+          
             <th scope="row" class="px-4 py-4 font-medium whitespace-nowrap text-gray-400 hover:text-white cursor-pointer" onclick="navigator.clipboard.writeText('{{ server.key }}').then(() => iziToast.success({title: 'SUCCESS', message: 'Successfuly key copied to clipboard!'}))">
               <span class="blur-sm hover:blur-0 transition duration-300">{{ server.key }}</span>
             </th>
@@ -81,7 +82,7 @@
             {% else %}
               <td class="px-6 py-4"><button onclick="select('{{ server.id }}', false)" class="border py-1 px-2 rounded font-medium text-blue-500 border-blue-500 transition-all duration-300 hover:text-black hover:bg-blue-500 w-20">Select</button></td>
             {% endif %}
-            <td class="px-6 py-4">
+            <td class="px-6 py-4 text-center">
               <button onclick="document.getElementById('target-edit-server').value = '{{ server.id }}';
                               document.getElementById('target-edit-server-name').textContent = '{{ server.name }}';
                               document.getElementById('edit-server-name').value = '{{ server.name }}';

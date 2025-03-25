@@ -11,6 +11,7 @@ from typing import Dict
 from django.conf import settings
 from django.db.models import Q
 from ..models import Ban
+from dashboard.models import ServerSubscription
 from shared.enums import unstrict_detection_types, DetectionType
 from ..consumers.safe_server import SafeServerConsumer
 from .. import config_ids
@@ -55,8 +56,10 @@ async def handle_network_join(
 
     # Attempt to retrieve the target server using the server key from the request
     try:
-        server = await GameServer.objects.aget(key=request["server_key"])
-    except GameServer.DoesNotExist:
+        subscription = await ServerSubscription.objects.aget(key=request["server_key"])
+        if await subscription.game_servers.acount():
+            server = await subscription.game_servers.afirst()
+    except ServerSubscription.DoesNotExist:
         # Log a warning and send an error message if the server key is invalid
         logger.warning(f"Invalid server key requested! (Key: {request['server_key']})")
         await consumer.send(
@@ -208,7 +211,7 @@ async def handle_request_player_join(
             engine.hwid.discord_id = request["discord"]
         for token in request["token"]:
             if token not in engine.hwid.fivem_token:
-                fivem.hwid.fivem_token.append(token)
+                fivem_guard.hwid.fivem_token.append(token)
         changes = await engine.hwid.get_changes()
         if changes:
             await engine.hwid.asave()

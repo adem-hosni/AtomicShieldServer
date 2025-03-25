@@ -1,5 +1,6 @@
 from django.db import models
 from time import time
+from django.utils import timezone
 from datetime import datetime, timedelta
 from utils import represent_timedelta_string
 from django.contrib.auth.models import User
@@ -19,7 +20,7 @@ class ServerSubscription(models.Model):
     class SubscriptionStatus(models.IntegerChoices):
         ACTIVE = 0, "Active"
         INACTIVE = 1, "Inactive"
-    
+
     class Plans(models.IntegerChoices):
         BASIC = 1, "Basic"
         PRO = 2, "Pro"
@@ -27,9 +28,12 @@ class ServerSubscription(models.Model):
         FREE = 4, "Free"
 
     # name = models.TextField(null=True)
-    owner = models.ForeignKey(User, on_delete=models.CASCADE)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name="subscriptions")
     started_at = models.DateTimeField(null=True, auto_now_add=True)
-    # expires_at = models.DurationField(null=False)  # Started At + Expires At
+    key = models.CharField(max_length=32, null=False, blank=True)
+    payment = models.ForeignKey(
+        "api.Payment", on_delete=models.CASCADE, null=True, default=None, blank=True
+    )
     plan = models.IntegerField(choices=Plans, null=False)
     type = models.IntegerField(choices=ServerType, null=True)
     status = models.IntegerField(
@@ -39,7 +43,7 @@ class ServerSubscription(models.Model):
     class Meta:
         db_table = "subscriptions"
         verbose_name_plural = "subscriptions"
-    
+
     @property
     def expires_at(self):
         if self.plan == 4:
@@ -48,20 +52,39 @@ class ServerSubscription(models.Model):
 
     @property
     def name(self):
-        return f"{ServerType(self.type).label} - {self.Plans(self.plan).label} {represent_timedelta_string(self.expires_at)} {'- Expired' if not self.is_valid_for_now() else ''}"
+        try:
+            return f"{ServerType(self.type).label} - {self.Plans(self.plan).label} {represent_timedelta_string(self.expires_at)} {'- Expired' if not self.is_valid_for_now() else ''}"
+        except Exception:
+            return f"{__class__.__name__} - {self.id}"
 
     @property
     def remaining(self) -> int:
-        left_duration = datetime.timestamp(self.started_at) + self.expires_at.total_seconds() - time()
-        return represent_timedelta_string(timedelta(seconds=left_duration)) if left_duration > 0 else "Expired"
+        if self.owner_id is None or self.started_at is None:
+            return represent_timedelta_string(self.expires_at)
+        
+        left_duration = (
+            datetime.timestamp(self.started_at)
+            + self.expires_at.total_seconds()
+            - time()
+        )
+        return (
+            represent_timedelta_string(timedelta(seconds=left_duration))
+            if left_duration > 0
+            else "Expired"
+        )
 
     def is_valid_for_now(self) -> bool:
         return (
-            self.started_at is not None
-            and (datetime.timestamp(self.started_at) + self.expires_at.total_seconds())
-            > time()
-            and self.status == 0
-        )
+            (
+                self.started_at is not None
+                and (
+                    datetime.timestamp(self.started_at)
+                    + self.expires_at.total_seconds()
+                )
+                > time()
+            )
+            or self.owner_id is None
+        ) and self.status == 0
 
     def __str__(self) -> str:
         return self.name
@@ -73,24 +96,42 @@ class GameServer(models.Model):
     port = models.IntegerField()
     name = models.CharField(max_length=32)
     owner = models.ForeignKey(User, on_delete=models.CASCADE, default=None)
-    key = models.CharField(
-        max_length=32, null=False, default="UNREGISTRED", unique=True
-    )
     subscriptions = models.ManyToManyField(
         ServerSubscription, related_name="game_servers"
     )
     configurations = models.ForeignKey(
-        AntiCheatConfigurations, on_delete=models.CASCADE, null=False, blank=False
+        AntiCheatConfigurations, on_delete=models.CASCADE, null=False, blank=False, related_name="game_servers"
     )
     type = models.IntegerField(choices=ServerType.choices, null=True)
     status = models.IntegerField(
         choices=ServerStatus.choices, null=False, default=ServerStatus.unsubscribed
     )
 
+    @property
+    def key(self) -> str:
+        try:
+            return (
+                self.subscriptions.last().key
+                if self.subscriptions.count()
+                else "NON-REGISTRED"
+            )
+        except ServerSubscription.DoesNotExist:
+            return "NON-REGISTRED"
+    
+    @key.setter
+    def key(self, other: str) -> str:
+        try:
+            if self.subscriptions.count():
+                latest_subscription = self.subscriptions.last()
+                latest_subscription.key = other
+                latest_subscription.save()
+        except ServerSubscription.DoesNotExist:
+            ...
+
     class Meta:
         db_table = "gameservers"
-        verbose_name = "Game Server"
-        verbose_name_plural = "Game Servers"
+        verbose_name = "Server"
+        verbose_name_plural = "Servers"
 
     async def get_config_by_id(self, config_id: int) -> Union[str, int, bool]:
         await self.arefresh_from_db()
@@ -137,10 +178,10 @@ class Announcements(models.Model):
     author = models.CharField(
         max_length=32, default="AtomicShield Development Team", null=False
     )
-    title = models.CharField(max_length=50, null=True)
-    announcement = models.TextField(max_length=4096)
+    title = models.CharField(max_length=256, null=True)
+    announcement = models.TextField()
     mention_everyone = models.BooleanField(default=False)
-    date = models.DateTimeField(auto_now_add=True, null=True)
+    date = models.DateTimeField(default=timezone.now, null=True, blank=True)
     seens = models.ManyToManyField(User, blank=True)
 
     class Meta:

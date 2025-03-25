@@ -1,7 +1,9 @@
 import asyncio
 import json
 import logging
+from time import time
 from shared.enums import SafeServerPacketID, WebSocketGroupNames
+from utils import check_request_body_key
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.contrib.auth.models import User
 from dashboard.models import GameServer
@@ -88,10 +90,14 @@ class SafeServerConsumer(AsyncWebsocketConsumer):
             data = data.decode()
 
         data["type"] = packet_id.value
+        data["ut"] = int(time())  # Compress the timestamp from float to int
 
         data = json.dumps(data)
 
-        return await super().send(data, bytes_data, close)
+        try:
+            await super().send(atomic_core.encode(data).decode(), bytes_data, close)
+        except Exception as err:
+            logger.error(f"Failed to send packet {packet_id}, {err}")
 
     async def receive(self, text_data=None, bytes_data=None):
         """
@@ -109,10 +115,10 @@ class SafeServerConsumer(AsyncWebsocketConsumer):
         if bytes_data is not None:
             text_data = bytes_data.decode('utf-8')  
         try:
-            await self.process_packet(text_data)
+            await self.process_packet(atomic_core.decode(text_data))
         except Exception as err:
-            logger.error(f"Error handling packet from FxServer, {err}", exc_info=True)
-    
+            logger.error(f"Error handling packet from FxServer, {err.__class__.__name__}: {err}", exc_info=True)
+
     async def process_packet(self, packet: Union[str, bytes]):
         try:
             # Attempt to parse the incoming message as JSON
@@ -128,6 +134,25 @@ class SafeServerConsumer(AsyncWebsocketConsumer):
             )
             return await self.close()
 
+        if not check_request_body_key(request_body, "ut", int):
+            return await self.close()
+
+        # Check the request's unix timestamp for integrity
+        unix_timestamp = int(request_body["ut"])
+        diff = time() - unix_timestamp
+        if diff >= 120:
+            # Request was tampered
+            # Optimize the logging
+            for key, value in request_body.items():
+                if (isinstance(value, str) or isinstance(value, bytes)) and len(value) > 40:
+                    del request_body[key]
+
+            logger.warning(
+                f"Tampered request received from {self.address} ({diff}s), request: {request_body}"
+            )
+            return await self.close()
+    
+        
         try:
             # Convert the 'type' field to a PacketID
             request_body["type"] = SafeServerPacketID(request_body["type"])

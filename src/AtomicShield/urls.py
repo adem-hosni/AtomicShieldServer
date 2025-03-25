@@ -20,9 +20,11 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.sitemaps.views import sitemap
+from django.views.generic import TemplateView
 from .sitemaps import StaticViewSitemap
 
-from .urlhandler import handler404
+# auto-import from django
+from .urlhandler import handler404, handler500
 
 import debug_toolbar.urls
 
@@ -34,13 +36,15 @@ sitemaps = {
 urlpatterns = [
     path("secret-staff/", admin.site.urls),
     path("", include("home.urls")),
+    path("api/", include("api.urls")),
     path("home/", include("home.urls")),
     path("auth/", include("authentication.urls")),
     path("anticheat/", include("anticheat.urls")),
     path("dashboard/", include("dashboard.urls")),
     path("resources/", include("resources.urls")),
-    path("sitemap.xml", sitemap, {"sitemaps": sitemaps}, name="sitemap"),
 
+    path("sitemap.xml/", sitemap, {"sitemaps": sitemaps}, name="sitemap"),
+    path("robots.txt/", TemplateView.as_view(template_name="meta/robots.txt", content_type="text/plain")),
 ]
 
 if not settings.DEBUG:

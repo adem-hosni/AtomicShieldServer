@@ -61,6 +61,8 @@ def render_signup(request: HttpRequest) -> HttpResponse:
             else:
                 if User.objects.filter(username=username).exists():
                     messages.error(request, "Username already exists")
+                elif User.objects.filter(email=email).exists():
+                    messages.error(request, "Email already exists")
                 else:
                     user = User.objects.create_user(
                         username=username, email=email, password=password
@@ -78,5 +80,5 @@ def render_signup(request: HttpRequest) -> HttpResponse:
 
 def render_logout(request: HttpRequest) -> HttpResponse:
     logout(request)
-    logger.info(f"\"{user.username}\" logged out")
+    logger.info(f"\"{request.user.username}\" logged out")
     return redirect("/")

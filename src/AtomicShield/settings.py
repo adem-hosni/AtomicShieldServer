@@ -11,7 +11,8 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
 from pathlib import Path
-
+from django.utils.translation import gettext_lazy as _
+from django.templatetags.static import static
 import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -40,7 +41,11 @@ ALLOWED_HOSTS = [
     "www.atomic-shield.com",
     "127.0.0.1",
     "157.173.212.241",
+    "*",
+    ".atomic-shield.com",
 ]
+
+APPEND_SLASH = True
 
 CSRF_TRUSTED_ORIGINS = [
     "https://atomic-shield.com",
@@ -61,6 +66,9 @@ INSTALLED_APPS = [
     "django.contrib.sites",
     "django.contrib.sitemaps",
     "django_recaptcha",
+    "django_hosts",
+    "unfold.contrib.forms",
+    "api",
     "home",
     "authentication",
     "dashboard",
@@ -73,6 +81,7 @@ SITE_ID = 1
 ASGI_APPLICATION = "AtomicShield.asgi.application"
 
 MIDDLEWARE = [
+    "django_hosts.middleware.HostsRequestMiddleware",
     "django_browser_reload.middleware.BrowserReloadMiddleware",  # Debug
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -81,6 +90,9 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "AtomicShield.middleware.ExceptionHandlerMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
+    "django_hosts.middleware.HostsResponseMiddleware",
 ]
 
 if DEBUG:
@@ -94,6 +106,10 @@ if DEBUG:
     ]
 
 ROOT_URLCONF = "AtomicShield.urls"
+
+# Domain Settings
+ROOT_HOSTCONF = "AtomicShield.hosts"
+DEFAULT_HOST = "www"
 
 TEMPLATES = [
     {
@@ -127,6 +143,9 @@ DATABASES = {
         "USER": "root",
         "PASSWORD": "",
         "HOST": "localhost",
+        "OPTIONS": {
+            "charset": "utf8mb4",
+        },
     }
 }
 
@@ -152,7 +171,6 @@ AUTH_PASSWORD_VALIDATORS = [
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels.layers.InMemoryChannelLayer",
-        
     },
 }
 
@@ -177,6 +195,7 @@ STATICFILES_DIRS = [
 
 STATIC_URL = "static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # Media Configurations
 MEDIA_URL = "/media/"
@@ -215,7 +234,7 @@ LOGGING = {
             "class": "logging.FileHandler",
             "filename": os.path.join(BASE_DIR, "../logs/console.log"),
             "formatter": "verbose",
-        }
+        },
     },
     "root": {
         "handlers": ["alltypes", "console"],
@@ -264,28 +283,56 @@ else:
     DETECTIONS_WEBHOOK_URL = "https://discord.com/api/webhooks/1300813067138891828/N09MygqqoFn2FlSFH1ipxe1-c-oEboMUfM8UKIMHAJzWnNcHP-EmyCiQeEZPrBjOM86o"
 
 UNFOLD = {
+    "SITE_TITLE": f"{ANTICHEAT_NAME} STAFF",
     "SITE_HEADER": f"{ANTICHEAT_NAME} STAFF",
+    "SITE_SUBHEADER": _(f"{ANTICHEAT_NAME} AntiCheat"),
     "SITE_SYMBOL": "shield",
+    "SITE_ICON": {
+        "light": lambda request: static("/image/logo-ico.svg"),
+        "dark": lambda request: static("/image/logo-ico.svg"),
+    },
+    "SHOW_BACK_BUTTON": True,
     "SIDEBAR": {
         "show_search": True,
         "show_all_applications": True,
     },
+    "DASHBOARD_CALLBACK": "dashboard.views.dashboard_callback",
+    "SITE_FAVICONS": [
+        {
+            "rel": "icon",
+            "sizes": "32x32",
+            "type": "image/svg+xml",
+            "href": lambda request: static("/image/logo-ico.svg"),
+        },
+    ],
     "COLORS": {
+        "base": {
+            "50": "249 250 251",
+            "100": "243 244 246",
+            "200": "229 231 235",
+            "300": "209 213 219",
+            "400": "156 163 175",
+            "500": "107 114 128",
+            "600": "75 85 99",
+            "700": "55 65 81",
+            "800": "31 41 55",
+            "900": "17 24 39",
+            "950": "3 7 18",
+        },
         "primary": {
-            "50": "250 245 255",
-            "100": "243 232 255",
-            "200": "233 213 255",
-            "300": "216 180 254",
-            "400": "192 132 252",
-            "500": "168 85 247",
-            "600": "1 126 134",
-            "700": "126 34 206",
-            "800": "107 33 168",
-            "900": "88 28 135",
-            "950": "59 7 100",
+            "50": "236 250 255",
+            "100": "207 243 255",
+            "200": "179 235 255",
+            "300": "136 224 255",
+            "400": "82 208 255",
+            "500": "41 186 252",
+            "600": "0 165 245",
+            "700": "0 140 220",
+            "800": "0 115 190",
+            "900": "0 92 160",
+            "950": "0 72 128",
         },
     },
-    # Other configurations...
 }
 
 # Authentication Settings
@@ -294,6 +341,7 @@ LOGIN_REDIRECT_URL = "/dashboard/main/"
 PASSWORD_RESET_TIMEOUT = 60 * 60 * 24 * 1  # 1 Day
 
 # Sessions
+SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
 SESSION_COOKIE_AGE = (60 * 60 * 24) / 2  # 12h
 
 # Captcha Settings
@@ -313,11 +361,14 @@ ADMINS = [("Hyper", "hosniadem400@gmail.com")]
 DEFAULT_FROM_EMAIL = "AtomicShield@localhost"
 EMAIL_SUBJECT_PREFIX = "[AtomicShield] "
 
+# Tebex Configurations
+TEBEX_SECRET_KEY = "433788188a0ba1d3bb38b21fc39b2967"
+
 if not DEBUG:
     # Redirect from http to httpsS
     SECURE_SSL_REDIRECT = True
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-    
+
     USE_X_FORWARDED_HOST = True
 
     SECURE_HSTS_PRELOAD = True
@@ -330,4 +381,4 @@ if not DEBUG:
 
     CSRF_COOKIE_SECURE = True
     CSRF_COOKIE_HTTPONLY = True
-    CSRF_USE_SESSIONS = True
+    CSRF_USE_SESSIONS = False

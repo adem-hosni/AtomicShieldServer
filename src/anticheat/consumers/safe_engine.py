@@ -182,7 +182,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         try:
             await self.process_packet(request_body)
         except Exception as err:
-            logger.error(f"Error handling packet {request_body['type']} from Engine, {err}")
+            logger.error(f"Error handling packet {request_body['type']} from Engine, {err.__class__.__name__}: {err}")
 
 
     async def process_packet(self, request_body: Dict[str, Any]):
@@ -380,7 +380,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         image_path = ""
         if image_buffer:
             screenshots_directory = os.path.join(
-                settings.MEDIA_URL, "detections", "proofs"
+                settings.MEDIA_ROOT, "detections", "proofs"
             )
             os.makedirs(screenshots_directory, exist_ok=True)
 
@@ -403,7 +403,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             detection_report = DetectionReport(
                 hwid=self._hwid,
                 report=report,
-                screenshot=image_path.removeprefix(settings.BASE_DIR.name),
+                screenshot=image_path.removeprefix(settings.BASE_DIR.name).removeprefix(settings.MEDIA_URL),
                 detection_type=detection_type,
             )
             await detection_report.asave()

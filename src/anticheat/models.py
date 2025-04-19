@@ -3,7 +3,8 @@ from datetime import datetime
 from shared.enums import DetectionType
 from django.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator
-from typing import Union
+from simple_history.models import HistoricalRecords
+from typing import Union, Self, List, Tuple
 
 
 class AntiCheatConfigDataTypes(models.IntegerChoices):
@@ -92,8 +93,8 @@ class MaliciousSignatures(models.Model):
 
     class Meta:
         db_table = "malicious_signatures"
-        verbose_name = "Malicious Signature"
-        verbose_name_plural = "Malicious Signatures"
+        verbose_name = "Signature"
+        verbose_name_plural = "Signatures"
 
     def __str__(self) -> str:
         return f"{self.name} ({self.id})"
@@ -111,13 +112,14 @@ class ClientHWID(models.Model):
     fivem_token = models.JSONField(blank=True, default=list)
     steam = models.CharField(max_length=64, null=True)
     discord_id = models.CharField(max_length=64, null=True)
+    history = HistoricalRecords(custom_model_name="hwids_logs")
 
     class Meta:
         db_table = "hwids"
         verbose_name = "HWID"
         verbose_name_plural = "HWIDs"
 
-    async def get_changes(self) -> int:
+    async def get_changes(self) -> List[Tuple[str, str]]:
         """Check if any fields have changed compared to the database.
 
         Returns:
@@ -129,11 +131,11 @@ class ClientHWID(models.Model):
 
         original = await type(self).objects.aget(pk=self.pk)
 
-        changes = 0
+        changes = []
         fields_to_check = [field.name for field in original._meta.fields]
         for field in fields_to_check:
             if getattr(self, field) != getattr(original, field):
-                changes += 1
+                changes.append((getattr(original, field), getattr(self, field)))
 
         return changes
 
@@ -169,7 +171,9 @@ class Ban(models.Model):
     )
     active = models.BooleanField(default=True)
     reason = models.CharField(null=True, max_length=256)
-    report = models.ForeignKey(DetectionReport, on_delete=models.CASCADE, null=True, related_name="bans")
+    report = models.ForeignKey(
+        DetectionReport, on_delete=models.CASCADE, null=True, related_name="bans"
+    )
 
     @property
     def is_expired(self) -> bool:
@@ -220,3 +224,65 @@ class Warning(models.Model):
 
     def __str__(self) -> str:
         return f"{self.hwid.username} - {self.warns}"
+
+
+class AntiCheatVersion(models.Model):
+    class VersionType(models.IntegerChoices):
+        DEPRECATED = 3, "Deprecated"
+        BETA = 2, "Beta"
+        STABLE = 0, "Stable"
+
+    class EntityType(models.IntegerChoices):
+        FXSERVER = 1, "FxServer"
+        AGENT = 2, "Agent"
+        ENGINE = 3, "Engine"
+
+    major = models.IntegerField(null=False)
+    minor = models.IntegerField(null=False, default=0)
+    patch = models.IntegerField(null=False, default=0)
+    type = models.IntegerField(null=False, choices=VersionType)
+    entity = models.IntegerField(null=False, choices=EntityType)
+
+    is_current_version = models.BooleanField(default=False)
+
+    @classmethod
+    def get_current_version(self, entity) -> Self:
+        version = AntiCheatVersion(
+            major=1, minor=0, patch=0, type=AntiCheatVersion.VersionType.STABLE
+        )
+        try:
+            version = AntiCheatVersion.objects.get(is_current_version=True)
+        except AntiCheatVersion.DoesNotExist:
+            version = (
+                AntiCheatVersion.objects.annotate(
+                    total=models.F("major") + models.F("minor") + models.F("patch"),
+                    custom_order=models.Case(
+                        models.When(type=AntiCheatVersion.VersionType.STABLE, then=0),
+                        models.When(type=AntiCheatVersion.VersionType.BETA, then=1),
+                        models.When(
+                            type=AntiCheatVersion.VersionType.DEPRECATED, then=2
+                        ),
+                        default=3,
+                        output_field=models.IntegerField(),
+                    ),
+                )
+                .order_by("custom_order", "-total")
+                .first()
+            )
+        return version
+
+    def __str__(self):
+        return (
+            f"{self.major}.{self.minor}.{self.patch}"
+            + (f"-b" if self.type == AntiCheatVersion.VersionType.BETA else "")
+            + (
+                " deprecated"
+                if self.type == AntiCheatVersion.VersionType.DEPRECATED
+                else ""
+            )
+        )
+
+    class Meta:
+        db_table = "versions"
+        verbose_name = "Version"
+        verbose_name_plural = "Versions"

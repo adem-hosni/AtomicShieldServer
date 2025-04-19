@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.http import HttpRequest
 from unfold.admin import ModelAdmin
 from django.contrib.admin import SimpleListFilter
 from django.utils.translation import gettext_lazy as _
@@ -12,6 +13,7 @@ from .models import (
     Ban,
     Warning,
     DetectionReport,
+    AntiCheatVersion,
 )
 from guards import fivem_guard
 
@@ -48,11 +50,13 @@ class ClientHWIDAdmin(ModelAdmin):
             return queryset
 
     list_display = [
+        "id",
         "username",
         "display_disks",
         "computer_name",
         "motherboard_serial",
         "bios_version",
+        "display_discord_id",
         "display_online",
     ]
 
@@ -68,9 +72,16 @@ class ClientHWIDAdmin(ModelAdmin):
     def display_disks(self, obj: ClientHWID):
         return "-".join(obj.disks)
 
+    @admin.display(description="Discord ID")
+    def display_discord_id(self, obj: ClientHWID):
+        return obj.discord_id or "Not Linked"
+    
     @admin.display(description="Online", boolean=True)
     def display_online(self, obj: ClientHWID):
         return bool(fivem_guard.get_scanner_by_hwid(obj))
+    
+    class Meta:
+        model = ClientHWID
 
 
 class AntiCheatConfigurationsAdmin(ModelAdmin):
@@ -89,7 +100,7 @@ class AntiCheatConfigurationsAdmin(ModelAdmin):
 
 
 class ServerAntiCheatConfiguration(ModelAdmin):
-    list_display = ["id", "display_server_name"]
+    list_display = ["id", "display_server_name", "display_owner"]
     search_fields = list_display
     list_display_links = list_display
     list_filter = []
@@ -98,6 +109,11 @@ class ServerAntiCheatConfiguration(ModelAdmin):
     def display_server_name(self, obj: AntiCheatConfigurations):
         game_server = obj.game_servers.first()
         return game_server.name if game_server else "No Server Found"
+
+    @admin.display(description="Owner")
+    def display_owner(self, obj: AntiCheatConfigurations):
+        game_server = obj.game_servers.first()
+        return game_server.owner if game_server else "No Owner Found"
 
 
 class AntiCheatConfigurationsCategoriesAdmin(ModelAdmin):
@@ -113,7 +129,9 @@ class AntiCheatConfigurationsCategoriesAdmin(ModelAdmin):
 
 
 class MaliciousSignaturesAdmin(ModelAdmin):
-    list_display = ["name", "signatures_count", "type", "priority"]
+    list_display = ["name", "signatures_count", "type", "ban_message"]
+    list_display_links = list_display
+    search_fields = list_display
 
     @admin.display(description="Name")
     def name(self, obj: MaliciousSignatures):
@@ -133,7 +151,14 @@ class MaliciousSignaturesAdmin(ModelAdmin):
 
 
 class BanAdminModel(ModelAdmin):
-    list_display = ["username", "display_server", "banned_at", "duration", "state", "reason"]
+    list_display = [
+        "username",
+        "display_server",
+        "banned_at",
+        "duration",
+        "state",
+        "reason",
+    ]
     search_fields = list_display
     list_display_links = list_display
     list_filter = ["active"]
@@ -150,8 +175,11 @@ class BanAdminModel(ModelAdmin):
     def display_server(self, obj: Ban):
         return obj.game_server.name if obj.game_server else "No Server"
 
+
 class WarningAdminModel(ModelAdmin):
     list_display = ["username", "warns"]
+    list_display_links = list_display
+    search_fields = list_display
 
     @admin.display(description="Username")
     def username(self, obj: Warning):
@@ -168,15 +196,20 @@ class DetectionReportAdminModel(ModelAdmin):
 
     def screenshot_preview(self, obj: DetectionReport):
         if obj.screenshot:  # Assuming 'screenshot' is the ImageField
-            return mark_safe(f'<a target="_blank" href="{obj.screenshot.url}"><img src="{obj.screenshot.url}" width="150" alt="Screenshot" class="block rounded" /></a>')
+            return mark_safe(
+                f'<a target="_blank" href="{obj.screenshot.url}"><img src="{obj.screenshot.url}" width="1000" alt="Screenshot" class="block rounded" /></a>'
+            )
         return "No Screenshot"
-
 
     def has_add_permission(self, request):
         return False
 
     def get_readonly_fields(self, request, obj=None):
-        return [field.name for field in self.model._meta.fields if field.name != "screenshot"] + ["screenshot_preview"]
+        return [
+            field.name
+            for field in self.model._meta.fields
+            if field.name != "screenshot"
+        ] + ["screenshot_preview"]
 
     @admin.display(description="Username")
     def username(self, obj: DetectionReport):
@@ -191,6 +224,57 @@ class DetectionReportAdminModel(ModelAdmin):
         )
 
 
+class AntiCheatVersionTypeAdminModel(ModelAdmin):
+    list_display = ["display_version", "major", "minor", "patch", "type"]
+    list_display_links = list_display
+    search_fields = list_display
+
+    list_filter = ("type",)
+
+    @admin.display(description="Version")
+    def display_version(self, obj: AntiCheatVersion):
+        return str(obj)
+
+    def save_model(self, request: HttpRequest, obj: AntiCheatVersion, form, change):
+        if obj.is_current_version and obj.type != AntiCheatVersion.VersionType.STABLE:
+            self.message_user(
+                request,
+                f"Can only set the current version STABLE ({str(obj)})",
+                "error",
+            )
+            return
+
+        if obj.is_current_version:
+            try:
+                current_version = AntiCheatVersion.objects.get(is_current_version=True)
+            except AntiCheatVersion.DoesNotExist:
+                ...
+            else:
+                self.message_user(
+                    request,
+                    f"Cannot set the current version {str(obj)}, the version {str(current_version)} is the current",
+                    "error",
+                )
+                return
+
+        try:
+            same_version = AntiCheatVersion.objects.get(
+                major=obj.major,
+                minor=obj.minor,
+                patch=obj.patch,
+            )
+        except AntiCheatVersion.DoesNotExist:
+            ...
+        else:
+            if same_version:
+                self.message_user(
+                    request, f"A Same version found {str(same_version)}", "error"
+                )
+                return
+
+        return super().save_model(request, obj, form, change)
+
+
 admin.site.register(
     AntiCheatConfigurationCategories, AntiCheatConfigurationsCategoriesAdmin
 )
@@ -201,3 +285,4 @@ admin.site.register(ClientHWID, ClientHWIDAdmin)
 admin.site.register(Ban, BanAdminModel)
 admin.site.register(Warning, WarningAdminModel)
 admin.site.register(DetectionReport, DetectionReportAdminModel)
+admin.site.register(AntiCheatVersion, AntiCheatVersionTypeAdminModel)

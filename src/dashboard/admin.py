@@ -1,15 +1,14 @@
-import json
+from django.db import models
+from django.db.models import Q
 from logging import getLogger
-from functools import update_wrapper
 from django.contrib import admin
-from django.http import HttpRequest, Http404
-from django.views.decorators.cache import never_cache
-from django.views.decorators.csrf import csrf_protect
-from django.conf import settings
+from django.http import HttpRequest
+from django.utils.safestring import mark_safe
 from django.contrib.auth.models import User, Group
 from django.contrib.admin import SimpleListFilter
 from django.utils.translation import gettext_lazy as _
 from django.db.models import QuerySet
+from unfold.contrib.forms.widgets import WysiwygWidget
 from django.contrib.auth.admin import (
     UserAdmin as BaseUserAdmin,
     GroupAdmin as BaseGroupAdmin,
@@ -95,7 +94,7 @@ class GameServerAdmin(ModelAdmin):
 
     @admin.display(description="Remaining")
     def remaining(self, obj: GameServer):
-        return obj.subscriptions.last() if obj.subscriptions.count() else "Expired"
+        return obj.subscriptions.last().remaining if obj.subscriptions.count() else "Expired"
 
     @admin.display(description="Type")
     def type(self, obj: GameServer):
@@ -105,24 +104,48 @@ class GameServerAdmin(ModelAdmin):
     def display_online(self, obj: GameServer):
         return bool(fivem_guard.get_server_by_ip(obj.ip))
 
+    # def formfield_for_manytomany(self, db_field, request, **kwargs):
+    #     if db_field.name == "subscriptions":
+    #         kwargs["queryset"] = ServerSubscription.objects.filter(
+    #             Q(owner=self.owner) | Q(owner__isnull=True)
+    #         )
+    #     return super().formfield_for_manytomany(db_field, request, **kwargs)
 
 
 class AnnouncementAdmin(ModelAdmin):
-    list_display = ["title", "author", "description"]
+    list_display = ["title", "author", "description", "display_views"]
     list_display_links = list_display
     search_fields = list_display
 
+    formfield_overrides = {
+        models.TextField: {
+            "widget": WysiwygWidget,
+        }
+    }
+
     @admin.display(description="Description")
     def description(self, obj: Announcements):
-        return (
+        return mark_safe(
             obj.announcement[:128] + "..."
             if len(obj.announcement) > 128
             else obj.announcement
         )
 
+    @admin.display(description="Viewed by")
+    def display_views(self, obj: Announcements):
+        return obj.seens.count()
+
 
 class PatchNotesAdmin(ModelAdmin):
-    list_display = ["patchnote", "author", "description"]
+    list_display = ["patchnote", "author", "description", "display_views"]
+    list_display_links = list_display
+    search_fields = list_display
+
+    formfield_overrides = {
+        models.TextField: {
+            "widget": WysiwygWidget,
+        }
+    }
 
     @admin.display(description="Patchnote")
     def patchnote(self, obj: PatchNotes):
@@ -134,11 +157,15 @@ class PatchNotesAdmin(ModelAdmin):
 
     @admin.display(description="Description")
     def description(self, obj: PatchNotes):
-        return (
+        return mark_safe(
             obj.patchnotes[:128] + "..."
             if len(obj.patchnotes) > 128
             else obj.patchnotes
         )
+    
+    @admin.display(description="Viewed by")
+    def display_views(self, obj: Announcements):
+        return obj.seens.count()
 
 
 class ServerSubscriptionAdmin(ModelAdmin):

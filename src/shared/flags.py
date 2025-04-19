@@ -6,6 +6,7 @@ class Flag:
     def __init__(self, flag_type: DetectionType, report: Dict[str, Any]) -> None:
         self._type = flag_type
         self._report = report
+        self.banned = False
 
     @property
     def type(self) -> DetectionType:

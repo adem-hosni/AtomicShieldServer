@@ -168,7 +168,6 @@ class SafeServerConsumer(AsyncWebsocketConsumer):
             handle_network_join,
             handle_sync_anticheat_configs,
             handle_request_player_join,
-            handle_load_anticheat_scripts,
             handle_player_quit,
             handle_engine_check
         )
@@ -181,8 +180,6 @@ class SafeServerConsumer(AsyncWebsocketConsumer):
                 await handle_sync_anticheat_configs(self, request_body)
             case SafeServerPacketID.REQUEST_PLAYER_JOIN:
                 await handle_request_player_join(self, request_body)
-            case SafeServerPacketID.SYNC_ANTICHEAT_COMPONENTS:
-                await handle_load_anticheat_scripts(self, request_body)
             case SafeServerPacketID.PLAYER_QUIT:
                 await handle_player_quit(self, request_body)
             case SafeServerPacketID.ENGINE_CHECK:
@@ -298,4 +295,5 @@ class SafeServerConsumer(AsyncWebsocketConsumer):
         await self.send(SafeServerPacketID.REQUEST_STATUS, {})
         
         response = await response_future
+        logger.info(response)
         return response

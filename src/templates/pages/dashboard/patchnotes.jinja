@@ -52,7 +52,7 @@
             <h1 class="text-black bg-[#01e4f4] rounded-full ml-auto w-4 h-4 text-center"></h1>
             {% endif %}
           </div>
-          <p class="text-sm text-gray-400">{{ patchnote.patchnotes|linebreaksbr }}</p>
+          <div class="text-sm text-gray-400">{{ patchnote.patchnotes|linebreaksbr }}</div>
 
           <p class="line-clamp-1 text-xs font-semibold text-[#01e4f4]">
               {{ patchnote.author }}. <span class="text-xs text-gray-400"> - {{ patchnote.date }}</span>

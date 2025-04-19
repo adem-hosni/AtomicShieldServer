@@ -28,7 +28,13 @@ class ServerSubscription(models.Model):
         FREE = 4, "Free"
 
     # name = models.TextField(null=True)
-    owner = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name="subscriptions")
+    owner = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="subscriptions",
+    )
     started_at = models.DateTimeField(null=True, auto_now_add=True)
     key = models.CharField(max_length=32, null=False, blank=True)
     payment = models.ForeignKey(
@@ -61,7 +67,7 @@ class ServerSubscription(models.Model):
     def remaining(self) -> int:
         if self.owner_id is None or self.started_at is None:
             return represent_timedelta_string(self.expires_at)
-        
+
         left_duration = (
             datetime.timestamp(self.started_at)
             + self.expires_at.total_seconds()
@@ -87,11 +93,10 @@ class ServerSubscription(models.Model):
         ) and self.status == 0
 
     def __str__(self) -> str:
-        return self.name
+        return self.name if not self.owner_id else f"{self.owner.username} - {self.name}"
 
 
 class GameServer(models.Model):
-
     ip = models.CharField(max_length=49)
     port = models.IntegerField()
     name = models.CharField(max_length=32)
@@ -100,7 +105,11 @@ class GameServer(models.Model):
         ServerSubscription, related_name="game_servers"
     )
     configurations = models.ForeignKey(
-        AntiCheatConfigurations, on_delete=models.CASCADE, null=False, blank=False, related_name="game_servers"
+        AntiCheatConfigurations,
+        on_delete=models.CASCADE,
+        null=False,
+        blank=False,
+        related_name="game_servers",
     )
     type = models.IntegerField(choices=ServerType.choices, null=True)
     status = models.IntegerField(
@@ -117,7 +126,7 @@ class GameServer(models.Model):
             )
         except ServerSubscription.DoesNotExist:
             return "NON-REGISTRED"
-    
+
     @key.setter
     def key(self, other: str) -> str:
         try:

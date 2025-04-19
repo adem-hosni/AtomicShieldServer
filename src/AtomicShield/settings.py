@@ -37,15 +37,9 @@ else:
     BIN_DIR = os.path.join(BASE_DIR.parent, "bin", "production")
 
 ALLOWED_HOSTS = [
-    "atomic-shield.com",
-    "www.atomic-shield.com",
-    "127.0.0.1",
-    "157.173.212.241",
     "*",
     ".atomic-shield.com",
 ]
-
-APPEND_SLASH = True
 
 CSRF_TRUSTED_ORIGINS = [
     "https://atomic-shield.com",
@@ -68,6 +62,7 @@ INSTALLED_APPS = [
     "django_recaptcha",
     "django_hosts",
     "unfold.contrib.forms",
+    "simple_history",
     "api",
     "home",
     "authentication",
@@ -81,15 +76,16 @@ SITE_ID = 1
 ASGI_APPLICATION = "AtomicShield.asgi.application"
 
 MIDDLEWARE = [
+    "django.middleware.common.CommonMiddleware",
     "django_hosts.middleware.HostsRequestMiddleware",
     "django_browser_reload.middleware.BrowserReloadMiddleware",  # Debug
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
-    "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "simple_history.middleware.HistoryRequestMiddleware",
     "AtomicShield.middleware.ExceptionHandlerMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django_hosts.middleware.HostsResponseMiddleware",
@@ -143,6 +139,7 @@ DATABASES = {
         "USER": "root",
         "PASSWORD": "",
         "HOST": "localhost",
+        "CONN_HEALTH_CHECKS": True,
         "OPTIONS": {
             "charset": "utf8mb4",
         },
@@ -276,7 +273,7 @@ ANTICHEAT_NAME_LONG = f"{ANTICHEAT_NAME} {ANTICHEAT_VERSION}"
 
 # Discord settings
 DISCORD_INVITE = "https://discord.gg/YFCRffsZKK"
-BOT_AVATAR_URL = "https://cdn.discordapp.com/icons/1164637086637371505/020e433238f8e8302c51276a0327b09d.png?size=1024"
+BOT_AVATAR_URL = "https://atomic-shield.com/static/assets/images/logo.png"
 if DEBUG:
     DETECTIONS_WEBHOOK_URL = "https://discord.com/api/webhooks/1300813067138891828/N09MygqqoFn2FlSFH1ipxe1-c-oEboMUfM8UKIMHAJzWnNcHP-EmyCiQeEZPrBjOM86o"
 else:
@@ -345,13 +342,9 @@ SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
 SESSION_COOKIE_AGE = (60 * 60 * 24) / 2  # 12h
 
 # Captcha Settings
-if DEBUG:
-    RECAPTCHA_PUBLIC_KEY = "6Ld5FS8qAAAAADYrdex9VsqXwRmEcbDonIBywDOZ"
-    RECAPTCHA_PRIVATE_KEY = "6Ld5FS8qAAAAAGq5JUx7rsAAL2rFOPHeV9WAwYA4"
-else:
-    RECAPTCHA_PUBLIC_KEY = ""
-    RECAPTCHA_PRIVATE_KEY = ""
-RECAPTCHA_REQUIRED_SCORE = 0.9
+RECAPTCHA_PUBLIC_KEY = "6Lee-LoqAAAAAO4gH6AC1DR0R-6V6lPpFzf2nYlx"
+RECAPTCHA_PRIVATE_KEY = "6Lee-LoqAAAAAIPaRqeCahr1sC8ABgaKeRU1tsE9"
+RECAPTCHA_REQUIRED_SCORE = 0.6
 
 
 # Admin Settings

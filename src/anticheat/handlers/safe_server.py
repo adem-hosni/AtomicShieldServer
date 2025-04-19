@@ -1,5 +1,6 @@
 import os
-import hashlib
+import base64
+from datetime import timedelta
 from asgiref.sync import sync_to_async
 from typing import Dict, Any
 from utils import check_request_body_key, represent_timedelta_string
@@ -80,7 +81,7 @@ async def handle_network_join(
             SafeServerPacketID.NETWORK_JOIN,
             {
                 "success": False,
-                "message": f"Server ip address mismatch. Please update it to \"{consumer.address[0]}\" from https://atomic-shield.com/dashboard/servers",
+                "message": f'Server ip address mismatch. Please update it to "{consumer.address[0]}" from https://atomic-shield.com/dashboard/servers',
             },
         )
         return await consumer.close()
@@ -109,7 +110,9 @@ async def handle_network_join(
         return await consumer.close()
 
     if not last_subscription.is_valid_for_now():
-        logger.info(f"\"{server.name}\" {consumer.address} try to join network with expired subscription")
+        logger.info(
+            f'"{server.name}" {consumer.address} try to join network with expired subscription'
+        )
         await consumer.send(
             SafeServerPacketID.NETWORK_JOIN,
             {
@@ -118,7 +121,7 @@ async def handle_network_join(
             },
         )
         return await consumer.close()
-    
+
     await last_subscription.arefresh_from_db()
 
     # Successfully joined, add consumer to the WebSocket group and set it's game server
@@ -128,7 +131,7 @@ async def handle_network_join(
     consumer.type = ServerType(request["server_type"])
     fivem_guard.add_safe_server(consumer)
     logger.info(
-        f"\"{consumer.game_server.name}\" {consumer.address} joined AtomicShield Servers Network!"
+        f'"{consumer.game_server.name}" {consumer.address} joined AtomicShield Servers Network!'
     )
 
     return await consumer.send(
@@ -173,23 +176,20 @@ async def handle_request_player_join(
 ):
     if not check_request_body_key(request, "ip", str):
         return
-    
+
     if not check_request_body_key(request, "name", str):
         return
 
-    for item in [
-        "steam",
-        "license",
-        "token",
-        "discord"
-    ]:
+    for item in ["steam", "license", "token", "discord"]:
         if not item in request.keys():
-            logger.warning(f"Missing '{item}' in request player join for \"{consumer.game_server.name}\"")
+            logger.warning(
+                f"Missing '{item}' in request player join for \"{consumer.game_server.name}\""
+            )
             return
 
     logger.info(
-        f'"{request["name"]}" wants to join \"{consumer.game_server.name}\" {consumer.address}\n\t(IP: \"{request["ip"]}\" Steam: \"{request["steam"]}\" '
-        f'license: \"{request["license"]}\" Discord: \"{request["discord"]}\"'
+        f'"{request["name"]}" wants to join "{consumer.game_server.name}" {consumer.address}\n\t(IP: "{request["ip"]}" Steam: "{request["steam"]}" '
+        f'license: "{request["license"]}" Discord: "{request["discord"]}"'
     )
 
     response = {"join": False, "message": ""}
@@ -215,7 +215,7 @@ async def handle_request_player_join(
         changes = await engine.hwid.get_changes()
         if changes:
             await engine.hwid.asave()
-            logger.info(f"Updating fivem identifiers for \"{engine.hwid.username}\"")
+            logger.info(f'Updating fivem identifiers for "{engine.hwid.username}"')
 
         if engine.is_flagged:
             logger.info(
@@ -233,13 +233,23 @@ async def handle_request_player_join(
                             f'Connection refused: Strict Basic Checks Found on {engine.hwid.username}: "{flag.type.label}"'
                         )
                         break
+                else:
+                    # Strict Detection ? Ban
+                    logger.warning(
+                        f"Cheating Behaviour {flag.type.name} detected on {engine.hwid.username}'s computer! {flag.report.get('kick_message', '<UNKNOWN>')}"
+                    )
+                    response["join"] = False
+                    response["message"] = flag.report.get('kick_message', '<UNKNOWN>')
 
-        if len(engine.detected_signatures) > 0:
-            logger.info(
-                f'Connection refused: Malicious signatures detected on the client: "{engine.detected_signatures[0].ban_message}"'
-            )
-            response["join"] = False
-            response["message"] = engine.detected_signatures[0].ban_message
+                    if not flag.banned:
+                        await engine.ban(
+                            detection_type=flag.type,
+                            duration=timedelta(days=99),
+                            target_game_server=consumer.game_server,
+                            image_buffer=b"" if flag.report.get("ss") else base64.b64decode(flag.report["ss"]),
+                            reason=flag.report.get("kick_message", "<None>"),
+                            report=flag.report
+                        )
 
         # Check if the player is banned
         bans = await sync_to_async(list)(
@@ -248,33 +258,38 @@ async def handle_request_player_join(
 
         for ban in bans:
             if not ban.is_expired:
-                if (await sync_to_async(lambda: ban.game_server)()) == consumer.game_server and ban.active:
+                if (
+                    await sync_to_async(lambda: ban.game_server)()
+                ) == consumer.game_server and ban.active:
                     response["join"] = False
                     response["message"] = (
                         f"You're Banned from AtomicShiled servers due to cheating \nReason: {ban.reason}\nNote: if you think this an error, you can appeal your ban on discord"
                     )
-                    
+
                     break
 
     # Is the player available to join the FxServer ? then start the scanners
     if response["join"]:
-        if await engine.run_scanners(True):
-            engine.connected_server = consumer
-            logger.info(f"\"{request["name"]}\" ({request['ip']}) is connected to \"{consumer.game_server.name}\"")
-        else:
-            response["join"] = False
-            response["message"] = "Unable to scan your computer from cheats!"
-            logger.info(f"\"{request["name"]}\" ({request['ip']}) is unable to connect to \"{consumer.game_server.name}\"!")
+        engine.connected_server = consumer
+        logger.info(
+            f"\"{request["name"]}\" ({request['ip']}) is connected to \"{consumer.game_server.name}\""
+        )
+
+        # if await engine.run_scanners(True):
+        # else:
+        #     response["join"] = False
+        #     response["message"] = "Unable to scan your computer from cheats! try to restart the agent"
+        #     logger.info(f"\"{request["name"]}\" ({request['ip']}) is unable to connect to \"{consumer.game_server.name}\"!")
 
         # Store the given data from the FxServer
         engine.hwid.fivem_license = request["license"]
         engine.hwid.steam = request["steam"]
         engine.hwid.discord_id = request["discord"]
-        
+
         for token in request["token"]:
             if not token in engine.hwid.fivem_token:
                 engine.hwid.fivem_token.append(token)
-        
+
         await engine.hwid.asave()
 
     return await consumer.send(
@@ -289,47 +304,18 @@ async def handle_server_disconnect(consumer: SafeServerConsumer):
     fivem_guard.remove_safe_server(consumer)
 
 
-async def handle_load_anticheat_scripts(
-    consumer: SafeServerConsumer, request: Dict[str, Any]
-):
-    components: Dict[str, str] = {}
-
-    # Iterate the components folder for components folders
-    for component in os.listdir("anticheat_scripts"):
-        component_path = os.path.join("anticheat_scripts", component)
-        # check if the component is a directory
-        if os.path.isdir(component_path):
-            # Iterate the component and find scripts
-            for script_component in os.listdir(component_path):
-                script_path = os.path.join(component_path, script_component)
-                # verify the script component is a file and have the lua extension
-                if os.path.isfile(script_path) and script_path.endswith(".lua"):
-                    # load the script component buffer
-                    with open(script_path, "r") as file:
-                        component_buffer = file.read()
-                    # make a sha256 hash for the buffer
-                    component_hash = hashlib.sha256(
-                        component_buffer.encode()
-                    ).hexdigest()
-                    components[component_hash] = component_buffer
-
-    logger.info(
-        f"Synced {len(components)} AntiCheat components for {consumer.address[0]}:{consumer.address[1]}"
-    )
-    return await consumer.send(SafeServerPacketID.SYNC_ANTICHEAT_COMPONENTS, components)
-
-
 async def handle_player_quit(consumer: SafeServerConsumer, request: Dict[str, Any]):
-    if not check_request_body_key(request, "ip", str):
+
+    if not check_request_body_key(request, "player_ip", str):
         return
 
     if not check_request_body_key(request, "name", str):
         return
 
-    player_engine = fivem_guard.get_scanner_by_ip(request["ip"])
+    player_engine = fivem_guard.get_scanner_by_ip(request["player_ip"])
     if not player_engine:
         logger.warning(
-            f"Unauthorized player engine disconnected (ip: {request['ip']}, name: {request['name']})"
+            f"Unauthorized player engine disconnected (ip: {request['player_ip']}, name: {request['name']})"
         )
         return await consumer.send(
             SafeServerPacketID.PLAYER_QUIT,
@@ -357,7 +343,7 @@ async def handle_engine_check(consumer: SafeServerConsumer, request: Dict[str, A
     for player_ip in request["players"]:
         if not fivem_guard.get_scanner_by_ip(player_ip):
             inactive_engines.append(player_ip)
-    
-    return await consumer.send(SafeServerPacketID.ENGINE_CHECK, {
-        "inactive_players": inactive_engines
-    })
+
+    return await consumer.send(
+        SafeServerPacketID.ENGINE_CHECK, {"inactive_players": inactive_engines}
+    )

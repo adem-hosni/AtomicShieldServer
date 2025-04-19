@@ -85,6 +85,8 @@
       <h4 class="text-gray-400 text-sm">Latest Anticheat news</h4>
     </div>
   </div>
+  
+  <div class="">
   {% for announcement in announcements %}
   <div class="mt-4 flex flex-col items-stretch">
     <div
@@ -100,13 +102,15 @@
             <h1 class="text-black bg-[#01e4f4] rounded-full ml-auto w-4 h-4 text-center"></h1>
             {% endif %}
         </div>
-        <p class="text-sm text-gray-400 p-1">{{ announcement.announcement }}</p>
+        <div class="text-sm text-gray-400 p-1 w-full">{{ announcement.announcement|safe }}</div>
         <p class="line-clamp-1 text-xs font-semibold text-[#01e4f4]">
             {{ announcement.author }}. <span class="text-xs text-gray-400"> - {{ announcement.date }}</span>
         </p>
       </div>
     </div>
     {% endfor %}
+  </div>
+
   </div>
 </div>
 

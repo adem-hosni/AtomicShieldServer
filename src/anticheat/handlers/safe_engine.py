@@ -4,11 +4,9 @@ import base64
 from datetime import timedelta
 from ..consumers.safe_engine import SafeEngineConsumer
 from guards import fivem_guard
-from django.conf import settings
 from shared.enums import (
     WebSocketGroupNames,
     SafeEnginePacketID,
-    SafeUploadType,
     DetectionType,
     unstrict_detection_types,
     detection_messages
@@ -18,8 +16,7 @@ import utils
 from asgiref.sync import sync_to_async
 from django.db.models import Q
 from ..models import MaliciousSignatures, ClientHWID, ServerType, Warning
-from .. import config_ids
-from typing import Dict, List, Any
+from typing import Dict, Any
 import logging
 
 
@@ -149,10 +146,11 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
 
             changes = await hwid.get_changes()
 
-            if changes:
+            if len(changes):
                 await hwid.asave()
+                changed_fields = (f'{field[0]} -> {field[1]}' for field in changes)
                 logger.info(
-                    f"{request_hwid['username']}'s engine HWID updated {changes} components, Spoofed HWID?"
+                    f"{request_hwid['username']}'s engine HWID updated {changes} components ({', '.join(changed_fields)}), Spoofed HWID?"
                 )
 
     # Create a HWID if it's does not exists
@@ -192,6 +190,7 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
     consumer.group_name = WebSocketGroupNames.SAFE_ENGINES.value
     consumer.channel_layer.group_add(consumer.group_name, consumer.channel_name)
     consumer.hwid = hwid
+
     fivem_guard.add_safe_scanner(consumer)
     
     logger.info(
@@ -199,7 +198,7 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
     )
 
     signatures = await sync_to_async(list)(
-        MaliciousSignatures.objects.filter(type=consumer.type).order_by("priority")
+        MaliciousSignatures.objects.filter(type=consumer.type)
     )
 
     encrypted_signatures = {}
@@ -253,34 +252,54 @@ async def handle_cheat_detection(consumer: SafeEngineConsumer, request: Dict[str
             f"CHEATER REPORT, Missing detection screenshot in the packet from {consumer.address}"
         )
         return await consumer.close()
+    
+    if not hasattr(consumer, "hwid"):
+        logger.warning(f"CHEATER REPORT RECEIVED WITHOUT A CONSUMER HWID!")
+        return
 
     screenshot_buffer = base64.b64decode(request["ss"])
+    request["report"]["ss"] = screenshot_buffer
 
-    kick_message = utils.format_string(detection_messages[request['detection_type']], request["report"])
-    await consumer.flag_as(request["detection_type"], request["report"])
+    if request['detection_type'] == DetectionType.CHEAT_SIGNATURE_FOUND:
+        try:
+            ban_message = (await MaliciousSignatures.objects.aget(signatures__contains=request["report"]["string"])).ban_message
+        except (MaliciousSignatures.DoesNotExist, Exception) as err:
+            logger.error(err)
+            ban_message = "Suspicious Behaviour"
+        kick_message = f"Internal Cheat Detected: {ban_message}"
+    else:    
+        kick_message = utils.format_string(detection_messages[request['detection_type']], request["report"])
+    
+    request["report"]["kick_message"] = kick_message
+    flag = await consumer.flag_as(request["detection_type"], request["report"])
 
     # Strict Detection ? Ban
     if not request["detection_type"] in unstrict_detection_types:
         logger.warning(
-            f"Strict Ban Cheating Behaviour {request['detection_type'].name} detected on {consumer.hwid.username}'s computer!"
+            f"Cheating Behaviour {request['detection_type'].name} detected on {consumer.hwid.username}'s computer! {kick_message}"
         )
-        await consumer.kick(f"You're Banned from AtomicShiled servers due to cheating \nReason: {kick_message}\nNote: if you think this an error, you can appeal your ban on discord")
-        await consumer.ban(
-            detection_type=request["detection_type"],
-            duration=timedelta(days=99),
-            target_game_server=consumer.connected_server.game_server if consumer.connected_server else None,
-            image_buffer=screenshot_buffer,
-            reason=kick_message,
-            report=request["report"]
-        )
+        
+        if consumer.connected_server:
+            await consumer.send_report(kick_message, request["report"], screenshot_buffer)
+            report = await consumer.save_report(request["detection_type"], screenshot_buffer, request["report"])
+            flag.banned = True
+            await consumer.ban(
+                detection_type=request["detection_type"],
+                duration=timedelta(days=99),
+                target_game_server=consumer.connected_server.game_server,
+                reason=kick_message,
+                report=report,
+                image_buffer=screenshot_buffer
+            )
+            logger.info(f"KICKING {consumer.hwid.username} from {consumer.connected_server.game_server.name} for {kick_message}")
+            await consumer.kick(f"You're Banned from AtomicShiled servers due to cheating \nReason: {kick_message}\nNote: if you think this an error, you can appeal your ban on discord")
+        else:
+            logger.warning(f"Unable to kick {consumer.hwid.username} ({consumer.address}) from the server, no connected server found.")
 
-    # Unstrict Detection, check server confis
+
+    # Unstrict Detection, check server configs
     if (
         consumer.connected_server
         and request["detection_type"] in unstrict_detection_types
     ):
         await consumer.handle_basic_checks(request["detection_type"], request["report"])
-    else:
-        logger.info(
-            f"CHEATER REPORT! {consumer.hwid.computer_name} treated as cheater with {request['detection_type'].name}"
-        )

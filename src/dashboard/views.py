@@ -170,7 +170,7 @@ def render_maindashboard(request: HttpRequest) -> HttpResponse:
                     "date": announcement.date,
                     "author": announcement.author,
                     "title": announcement.title,
-                    "announcement": announcement.announcement,
+                    "announcement": mark_safe(announcement.announcement),
                     "dataid": announcement.id,
                     "seen": announcement.seens.filter(id=request.user.id).exists(),
                 }
@@ -308,7 +308,7 @@ def render_patchnotes(request: HttpRequest) -> HttpResponse:
                     "date": patchnote.date,
                     "author": patchnote.author,
                     "title": patchnote.title,
-                    "patchnotes": patchnote.patchnotes,
+                    "patchnotes": mark_safe(patchnote.patchnotes),
                     "dataid": patchnote.id,
                     "seen": patchnote.seens.filter(id=request.user.id).exists(),
                 }
@@ -572,6 +572,50 @@ def render_servers(request: HttpRequest) -> HttpResponse:
         },
     )
 
+@login_required
+def select_server(request: HttpRequest) -> HttpResponse:
+    print(request.body)
+    request_body: Dict[str, Union[bool, str]] = request.POST
+
+    print(request_body)
+
+    # Check the request_body is a json
+    if not len(request_body):
+        return HttpResponse(json.dumps({"success": False}))
+
+    # Check the request_body keys
+    if not ("server_id" in request_body.keys() or "select" in request_body.keys()):
+        logger.error(f"Invalid request body, got {request_body}")
+        return HttpResponse(json.dumps({"success": False}))
+
+    # Check if the server_id has some character
+    if not request_body["server_id"].isnumeric():
+        return HttpResponse(json.dumps({"success": False, "message": "Invalid Server"}))
+
+    # Cast the server_id from str to int
+    request_body["server_id"] = int(request_body["server_id"])
+
+    if not isinstance(request_body["select"], bool):
+        logger.error(f"Invalid request body, got {request_body}")
+        return HttpResponse(json.dumps({"success": False}))
+
+    # Find the server in the owner servers
+    try:
+        target_server = GameServer.objects.get(
+            owner=request.user, id=request_body["server_id"]
+        )
+    except GameServer.DoesNotExist:
+        return HttpResponse(json.dumps({"success": False, "message": "Invalid Server"}))
+
+    if request.session.get("selected_server", -1) == target_server.id:
+        del request.session["selected_server"]
+        return HttpResponse(json.dumps({"success": True}))
+
+    request.session["selected_server"] = target_server.id
+
+    return HttpResponse(json.dumps({"success": True}))
+
+
 
 @login_required
 def check_server(request: HttpRequest) -> HttpResponse:
@@ -640,58 +684,6 @@ def check_server(request: HttpRequest) -> HttpResponse:
     }
 
     return HttpResponse(json.dumps(response_body))
-
-
-@login_required
-def select_server(request: HttpRequest) -> HttpResponse:
-    request_body: Dict[str, Union[bool, str]] = request.body.decode()
-
-    # Check the request_body is a json
-    if request_body:
-        try:
-            request_body = json.loads(request.body.decode())
-        except Exception as err:
-            logger.error(
-                f"Failed to parse request body\nrequest body: {request_body}\nException: {err}"
-            )
-            return HttpResponse(json.dumps({"success": False}))
-
-    # Check the request_body form
-    if len(request_body.keys()) != 2:
-        logger.error(f"Invalid request body, got {request_body}")
-        return HttpResponse(json.dumps({"success": False}))
-
-    # Check the request_body keys
-    if not ("server_id" in request_body.keys() or "select" in request_body.keys()):
-        logger.error(f"Invalid request body, got {request_body}")
-        return HttpResponse(json.dumps({"success": False}))
-
-    # Check if the server_id has some character
-    if not request_body["server_id"].isnumeric():
-        return HttpResponse(json.dumps({"success": False, "message": "Invalid Server"}))
-
-    # Cast the server_id from str to int
-    request_body["server_id"] = int(request_body["server_id"])
-
-    if not isinstance(request_body["select"], bool):
-        logger.error(f"Invalid request body, got {request_body}")
-        return HttpResponse(json.dumps({"success": False}))
-
-    # Find the server in the owner servers
-    try:
-        target_server = GameServer.objects.get(
-            owner=request.user, id=request_body["server_id"]
-        )
-    except GameServer.DoesNotExist:
-        return HttpResponse(json.dumps({"success": False, "message": "Invalid Server"}))
-
-    if request.session.get("selected_server", -1) == target_server.id:
-        del request.session["selected_server"]
-        return HttpResponse(json.dumps({"success": True}))
-
-    request.session["selected_server"] = target_server.id
-
-    return HttpResponse(json.dumps({"success": True}))
 
 
 @login_required
@@ -909,14 +901,15 @@ def render_subscriptions(request: HttpRequest) -> HttpResponse:
         },
     )
 
-
+@login_required
 async def render_players(request: HttpRequest) -> HttpResponse:
     players = []
     message = ""
     try:
+        server_id = await sync_to_async(request.session.get)("selected_server", -1)
         target_server = await GameServer.objects.aget(
             owner=request.user,
-            id=await sync_to_async(request.session.get)("selected_server", -1),
+            id=server_id,
         )
     except GameServer.DoesNotExist:
         messages.error(request, "The selected server does not exists!")

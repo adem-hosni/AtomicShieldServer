@@ -22,6 +22,10 @@ class _GuardManagerBase(object):
     def engines(self) -> List[SafeEngineConsumer]:
         return self._safe_engines
 
+    @property
+    def servers(self) -> List[SafeServerConsumer]:
+        return self._safe_servers
+
     def add_safe_server(self, server: Union[SafeServerConsumer, Any]) -> bool:
         """
         Add a AtomicShield server to the manager if it belongs to the correct WebSocket group.

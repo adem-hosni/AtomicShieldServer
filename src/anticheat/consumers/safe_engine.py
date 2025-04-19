@@ -336,8 +336,11 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
 
     async def flag_as(
         self, flag_type: DetectionType, report: Dict[str, Any] = {}
-    ):
-        self._flags.append(Flag(flag_type, report))
+    ) -> Flag:
+        
+        flag = Flag(flag_type, report)
+        self._flags.append(flag)
+        return flag
 
     def is_flagged_as(self, flag_type: DetectionType) -> bool:
         for flag in self._flags:
@@ -368,15 +371,21 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             return True
         return False
 
-    async def ban(
-        self,
-        reason: str,
-        duration: timedelta,
-        target_game_server=None,
-        detection_type: DetectionType = DetectionType.CUSTOM,
-        report: Dict[str, Any] = {},
-        image_buffer: bytes = None,
-    ):
+    async def send_report(self, reason, report, image_buffer):
+        await utils.discord.send_discord_embed(
+            settings.DETECTIONS_WEBHOOK_URL,
+            "CHEAT DETECTION",
+            f"""
+            **{self._hwid.username}** banned due to ```{reason}```
+            """,
+            fields=[
+                (f"{key.replace("_", " ").title()}:", f"```{value}```", False)
+                for key, value in report.items()
+            ],
+            image_buffer=image_buffer,
+        )
+    
+    async def save_report(self, detection_type: DetectionType, image_buffer: bytes, report: Dict[str, Any]) -> DetectionReport:
         image_path = ""
         if image_buffer:
             screenshots_directory = os.path.join(
@@ -390,41 +399,39 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             )
             with open(image_path, "wb") as file:
                 file.write(image_buffer)
+        
+        if len(report) or image_buffer:
+            detection_report = DetectionReport(
+                hwid=self._hwid,
+                report=report,
+                screenshot=image_path.removeprefix(settings.MEDIA_ROOT),
+                detection_type=detection_type,
+            )
+            await detection_report.asave()
+            return detection_report
 
-        # await self.kick(reason, flag=True, detection_type=detection_type)
+    async def ban(
+        self,
+        reason: str,
+        duration: timedelta,
+        target_game_server=None,
+        detection_type: DetectionType = DetectionType.CUSTOM,
+        report: DetectionReport = None,
+        image_buffer: bytes = None,
+    ):
+        if not isinstance(report, DetectionReport):
+            report = await self.save_report(detection_type, image_buffer, report)
         ban = Ban(
             hwid=self._hwid,
             duration=duration,
             reason=reason,
             game_server=target_game_server,
         )
-
-        if len(report) or image_buffer:
-            detection_report = DetectionReport(
-                hwid=self._hwid,
-                report=report,
-                screenshot=image_path.removeprefix(settings.BASE_DIR.name).removeprefix(settings.MEDIA_URL),
-                detection_type=detection_type,
-            )
-            await detection_report.asave()
-            ban.report = detection_report
-
+        ban.report = report
         await ban.asave()
 
         embed_title = "Banned Player"
         try:
-            await utils.discord.send_discord_embed(
-                settings.DETECTIONS_WEBHOOK_URL,
-                embed_title,
-                f"""
-                **{self._hwid.username}** banned due to ```{reason}```
-                """,
-                fields=[
-                    (f"{key}:", f"```{value}```", False)
-                    for key, value in report.items()
-                ],
-                image_buffer=image_buffer,
-            )
             if self._connected_server:
                 send_alerts = await self._connected_server.game_server.get_config_by_id(config_ids.ALLOW_SEND_DETECTION_ALERT)
 
@@ -432,7 +439,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                     webhook_url = await self._connected_server.game_server.get_config_by_id(config_id=config_ids.DISCORD_WEBHOOK_URL)
                     if len(webhook_url) > 0:
                         if detection_type == DetectionType.CHEAT_SIGNATURE_FOUND:
-                            if report.get("string", "") == "D:\\Projets\\TZX\\x64\\Release\\Module.pdb":
+                            if report.report.get("string", "") == "D:\\Projets\\TZX\\x64\\Release\\Module.pdb":
                                 reason = "External Cheat Detected (TZX)"
 
                         embed_title = await self._connected_server.game_server.get_config_by_id(config_id=config_ids.DISCORD_EMBED_TITLE)
@@ -569,12 +576,15 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                 screenshots_directory,
                 f"{self._hwid.id}.png",
             )
+
             with open(image_path, "wb") as file:
                 file.write(image_buffer)
 
         return f"{settings.MEDIA_URL}screenshot/{self._hwid.id}.png"
     
     async def run_scanners(self, run: bool) -> bool:
+        return
+        logger.info(f"Turning \"{self._hwid.username}\" engine scanners {'on' if run else 'off'}...")
         response_future = asyncio.get_event_loop().create_future()
         self._pending_responses[SafeEnginePacketID.RUN_SCANNERS] = response_future        
 

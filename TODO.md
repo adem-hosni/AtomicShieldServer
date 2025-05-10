@@ -22,7 +22,7 @@
 
 # Server
 - Resend engine response to the agent
-- Check if the server is already loaded
+- Check if the engine is already loaded
 
 # Fivem Server
 - ~~Check if the key if it's being used~~

@@ -18,7 +18,10 @@
 - ~~SSL Verification~~
 - ~~Take player screenshot~~
 - ~~Complete home page~~
-- Show detection screenshot
+- ~~Show detection screenshot~~
+
+# Server
+- Resend engine response to the agent
 
 # Fivem Server
 - ~~Check if the key if it's being used~~
@@ -38,6 +41,7 @@
 - ~~Implement HTTP communication encryption~~
 - ~~Inject engine dll into fivem's process~~
 - ~~Add some security checks~~
+- Check engine load response
 
 # AtomicShield Engine
 - ~~HWID Checks~~
@@ -49,6 +53,7 @@
 - ~~Check server's response integrity~~
 - ~~Implement HTTP communication encryption~~
 - ~~Fix imgui transparency issue~~
+- Send load request to the server
 
 # Engine Integrity Checks
 - ~~Malicious Windows driver names verification~~
@@ -64,3 +69,4 @@
 - ~~Send screenshot with detection report~~
 - ~~Hook BaseThreadInitThunk~~
 - ~~Send detection report for malicious strings~~
+

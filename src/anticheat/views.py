@@ -5,6 +5,10 @@ from django.views.decorators.csrf import csrf_exempt
 from utils import check_request_body_key
 from guards import fivem_guard
 from core import atomic_core
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 @csrf_exempt
@@ -59,7 +63,8 @@ def version_check(request: HttpRequest) -> HttpResponse:
         with open(f"{settings.CONFIG_DIR}/version.json", "r") as file:
             version = json.load(file)
         client_version = request_body["version"]
-    except Exception:
+    except Exception as err:
+        logger.error(err)
         return HttpResponse()
 
     return HttpResponse(

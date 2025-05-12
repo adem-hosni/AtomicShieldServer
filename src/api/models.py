@@ -38,3 +38,6 @@ class Payment(models.Model):
     coupons = models.JSONField(blank=False, default=list)
     recurring_payment_refrence = models.TextField(null=True)
     paid_products = models.JSONField(blank=False, default=list)
+
+    def __str__(self):
+        return f"{self.customer_username} - {self.payment_method} - {self.status}"

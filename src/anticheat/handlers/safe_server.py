@@ -60,6 +60,12 @@ async def handle_network_join(
         subscription = await ServerSubscription.objects.aget(key=request["server_key"])
         if await subscription.game_servers.acount():
             server = await subscription.game_servers.afirst()
+        else:
+            # No servers associated with that subscription
+            logger.warning(f"No servers associated with the used subscription (Subscription key: {request['server_key']})!")
+            await consumer.send(SafeServerPacketID.NETWORK_JOIN, {"success": False, "message": "Invalid server key!"})
+            return await consumer.close()
+    
     except ServerSubscription.DoesNotExist:
         # Log a warning and send an error message if the server key is invalid
         logger.warning(f"Invalid server key requested! (Key: {request['server_key']})")
@@ -180,15 +186,17 @@ async def handle_request_player_join(
     if not check_request_body_key(request, "name", str):
         return
 
+    server_name = consumer.game_server.name if hasattr(consumer.game_server, "name") else "Unknown"
+
     for item in ["steam", "license", "token", "discord"]:
         if not item in request.keys():
             logger.warning(
-                f"Missing '{item}' in request player join for \"{consumer.game_server.name}\""
+                f"Missing '{item}' in request player join for \"{server_name}\""
             )
             return
 
     logger.info(
-        f'"{request["name"]}" wants to join "{consumer.game_server.name}" {consumer.address}\n\t(IP: "{request["ip"]}" Steam: "{request["steam"]}" '
+        f'"{request["name"]}" wants to join "{server_name}" {consumer.address}\n\t(IP: "{request["ip"]}" Steam: "{request["steam"]}" '
         f'license: "{request["license"]}" Discord: "{request["discord"]}"'
     )
 
@@ -241,15 +249,17 @@ async def handle_request_player_join(
                     response["join"] = False
                     response["message"] = flag.report.get('kick_message', '<UNKNOWN>')
 
+                    await engine.send_report(flag.report.get("kick_message", ""), flag.report, flag.report["ss"])
                     if not flag.banned:
                         await engine.ban(
                             detection_type=flag.type,
                             duration=timedelta(days=99),
                             target_game_server=consumer.game_server,
-                            image_buffer=b"" if flag.report.get("ss") else base64.b64decode(flag.report["ss"]),
+                            image_buffer=flag.report.get("ss", b""),
                             reason=flag.report.get("kick_message", "<None>"),
                             report=flag.report
                         )
+                        flag.banned = True
 
         # Check if the player is banned
         bans = await sync_to_async(list)(
@@ -272,14 +282,14 @@ async def handle_request_player_join(
     if response["join"]:
         engine.connected_server = consumer
         logger.info(
-            f"\"{request["name"]}\" ({request['ip']}) is connected to \"{consumer.game_server.name}\""
+            f"\"{request["name"]}\" ({request['ip']}) is connected to \"{server_name}\""
         )
 
         # if await engine.run_scanners(True):
         # else:
         #     response["join"] = False
         #     response["message"] = "Unable to scan your computer from cheats! try to restart the agent"
-        #     logger.info(f"\"{request["name"]}\" ({request['ip']}) is unable to connect to \"{consumer.game_server.name}\"!")
+        #     logger.info(f"\"{request["name"]}\" ({request['ip']}) is unable to connect to \"{server_name}\"!")
 
         # Store the given data from the FxServer
         engine.hwid.fivem_license = request["license"]

@@ -17,7 +17,7 @@ from shared.enums import (
     SafeServerPacketID,
     WebSocketGroupNames,
     DetectionType,
-    detection_messages
+    detection_messages,
 )
 from shared.flags import Flag, DetectionType
 from .. import config_ids
@@ -153,8 +153,8 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         try:
             # Attempt to parse the incoming message as JSON
             request_body: Dict[str, Any] = json.loads(atomic_core.decode(text_data))
-        except json.decoder.JSONDecodeError:
-            logger.warning(f"Failed to parse request. (request body: {request_body})")
+        except Exception as err:
+            logger.warning(f"Failed to parse request. (request body: {request_body} | {err})")
             return await self.close()
 
         # Verify that the request body contains a 'type' key and 'ut' key
@@ -168,22 +168,17 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         diff = time() - unix_timestamp
         if diff >= 120:
             # Request was tampered
-
-            # Optimize the logging
-            for key, value in request_body.items():
-                if (isinstance(value, str) or isinstance(value, bytes)) and len(value) > 40:
-                    del request_body[key]
-
             logger.warning(
-                f"Tampered request received from {self.address} ({diff}s), request: {request_body}"
+                f"Tampered request received from {self.address} ({diff}s)"
             )
             return await self.close()
 
         try:
             await self.process_packet(request_body)
         except Exception as err:
-            logger.error(f"Error handling packet {request_body['type']} from Engine, {err.__class__.__name__}: {err}")
-
+            logger.error(
+                f"Error handling packet {request_body['type']} from Engine, {err.__class__.__name__}: {err}"
+            )
 
     async def process_packet(self, request_body: Dict[str, Any]):
         try:
@@ -192,12 +187,12 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         except ValueError:
             logger.warning(f"Undefined request type (given: {request_body['type']})")
             return await self.close()
-        
+
         if request_body["type"] in self._pending_responses:
             if not self._pending_responses[request_body["type"]].cancelled():
                 self._pending_responses[request_body["type"]].set_result(request_body)
             del self._pending_responses[request_body["type"]]
-        
+
         from ..handlers.safe_engine import (
             handle_network_join,
             handle_cheat_detection,
@@ -337,7 +332,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
     async def flag_as(
         self, flag_type: DetectionType, report: Dict[str, Any] = {}
     ) -> Flag:
-        
+
         flag = Flag(flag_type, report)
         self._flags.append(flag)
         return flag
@@ -366,26 +361,53 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         if self._connected_server:
             await self._connected_server.send(
                 SafeServerPacketID.PLAYER_KICK,
-                {"ip": self.address[0], "reason": reason},
+                {
+                    "ip": self.address[0],
+                    "discordid": self._hwid.discord_id or f"NoDiscord-{self._hwid.id}",
+                    "steamid": self._hwid.steam or f"NoSteam-{self._hwid.id}",
+                    "reason": reason,
+                },
             )
             return True
         return False
 
-    async def send_report(self, reason, report, image_buffer):
+    async def send_report(self, reason, report, image_buffer, ban_assigned: bool = True):
+        sent_report = report.copy()
+        sent_report.pop("ss", None)
+        
+        if not ban_assigned:
+            await utils.discord.send_discord_embed(
+                "https://discord.com/api/webhooks/1370769531911540807/rHtkBD7ffXLtCg7DHe9odOJpueMiw_RU-Mxu26_iip7XqPu5zBJO6Ram5UidJ3CsPtGi",
+                "CHEAT DETECTION - In Lobby",
+                f"""
+                **{self._hwid.username} - {self._hwid.id}** Detection Report ```{reason}```
+                """,
+                fields=[
+                    (f"{key.replace("_", " ").title()}:", f"```{value}```", False)
+                    for key, value in sent_report.items()
+                ],
+                image_buffer=image_buffer,
+            )
+            return
+
         await utils.discord.send_discord_embed(
             settings.DETECTIONS_WEBHOOK_URL,
             "CHEAT DETECTION",
             f"""
-            **{self._hwid.username}** banned due to ```{reason}```
+            **{self._hwid.username} - {self._hwid.id}** banned due to ```{reason}```
             """,
             fields=[
                 (f"{key.replace("_", " ").title()}:", f"```{value}```", False)
-                for key, value in report.items()
+                for key, value in sent_report.items()
             ],
             image_buffer=image_buffer,
         )
-    
-    async def save_report(self, detection_type: DetectionType, image_buffer: bytes, report: Dict[str, Any]) -> DetectionReport:
+
+    async def save_report(
+        self, detection_type: DetectionType, image_buffer: bytes, report: Dict[str, Any]
+    ) -> DetectionReport:
+        saved_report = report.copy()
+        saved_report.pop("ss", None)
         image_path = ""
         if image_buffer:
             screenshots_directory = os.path.join(
@@ -399,11 +421,11 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             )
             with open(image_path, "wb") as file:
                 file.write(image_buffer)
-        
-        if len(report) or image_buffer:
+
+        if len(saved_report) or image_buffer:
             detection_report = DetectionReport(
                 hwid=self._hwid,
-                report=report,
+                report=saved_report,
                 screenshot=image_path.removeprefix(settings.MEDIA_ROOT),
                 detection_type=detection_type,
             )
@@ -432,25 +454,41 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
 
         embed_title = "Banned Player"
         try:
-            if self._connected_server:
-                send_alerts = await self._connected_server.game_server.get_config_by_id(config_ids.ALLOW_SEND_DETECTION_ALERT)
+            if target_game_server:
+                send_alerts = await target_game_server.get_config_by_id(
+                    config_ids.ALLOW_SEND_DETECTION_ALERT
+                )
 
                 if send_alerts:
-                    webhook_url = await self._connected_server.game_server.get_config_by_id(config_id=config_ids.DISCORD_WEBHOOK_URL)
+                    webhook_url = await target_game_server.get_config_by_id(
+                        config_id=config_ids.DISCORD_WEBHOOK_URL
+                    )
                     if len(webhook_url) > 0:
                         if detection_type == DetectionType.CHEAT_SIGNATURE_FOUND:
-                            if report.report.get("string", "") == "D:\\Projets\\TZX\\x64\\Release\\Module.pdb":
+                            if (
+                                report.report.get("string", "")
+                                == "D:\\Projets\\TZX\\x64\\Release\\Module.pdb"
+                            ):
                                 reason = "External Cheat Detected (TZX)"
 
-                        embed_title = await self._connected_server.game_server.get_config_by_id(config_id=config_ids.DISCORD_EMBED_TITLE)
-                        embed_title = utils.format_string(embed_title, {"name": self._hwid.username})
-                        allow_send_screenshot = bool(await self._connected_server.game_server.get_config_by_id(config_id=config_ids.ALLOW_SEND_SCREENSHOT_ALERT))
-
+                        embed_title = await target_game_server.get_config_by_id(
+                            config_id=config_ids.DISCORD_EMBED_TITLE
+                        )
+                        embed_title = utils.format_string(
+                            embed_title, {"name": self._hwid.username}
+                        )
+                        allow_send_screenshot = bool(
+                            await target_game_server.get_config_by_id(
+                                config_id=config_ids.ALLOW_SEND_SCREENSHOT_ALERT
+                            )
+                        )
 
                         author_title = "Atomic Shield - FiveM AntiCheat©"
                         embed_title = "**A cheater has been Banned by AtomicShield**"
                         avatar_url = "https://media.discordapp.net/attachments/944710024670879804/1346134230106636418/atomic.png"
-                        current_time = datetime.now().strftime("%a %B %d %Y %H:%M:%S GMT %z")
+                        current_time = datetime.now().strftime(
+                            "%a %B %d %Y %H:%M:%S GMT %z"
+                        )
                         embed_description = f"""
                 **Name:** {self._hwid.username}
                 **Reason:** {reason}
@@ -464,28 +502,29 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                             webhook_url,
                             embed_title,
                             embed_description,
-                            author= author_title,
+                            author=author_title,
                             footer=footer_text,
                             footer_icon_url=avatar_url,
-                            author_icon_url= avatar_url,
+                            author_icon_url=avatar_url,
                             avatar_url=avatar_url,
-                            image_buffer=image_buffer if allow_send_screenshot else None,
+                            image_buffer=(
+                                image_buffer if allow_send_screenshot else None
+                            ),
                         )
-
 
         except Exception as err:
             logger.error(
                 f"An error occured while trying to send discord detection report: {err}"
             )
-    
-    async def handle_basic_checks(self, detection: DetectionType, report: Dict[str, Any]) -> bool:
+
+    async def handle_basic_checks(
+        self, detection: DetectionType, report: Dict[str, Any]
+    ) -> bool:
         # Check if the malicious driver is about Process Hacker
         try:
             logger.info(report)
             if detection == DetectionType.MALICIOUS_DRIVER:
-                if str(report["driver_name"]).endswith(
-                    "kprocesshacker.sys"
-                ):
+                if str(report["driver"]).endswith("kprocesshacker.sys"):
                     try:
                         processhacker_allowed = (
                             await self._connected_server.game_server.get_config_by_id(
@@ -527,7 +566,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                 if testsigning_enabled:
                     await self.kick(detection_messages[detection])
                     return True
-            
+
             # Check for Allowed Server Plugins
             if detection == DetectionType.DLL_FOUND:
                 try:
@@ -540,36 +579,42 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                     allowed_plugins = ""
 
                 if report["plugin"].strip().lower() in allowed_plugins.lower():
-                    await self.kick(utils.format_string(detection_messages[detection], report))
+                    await self.kick(
+                        utils.format_string(detection_messages[detection], report)
+                    )
                     return True
-                
-                logger.info(f"CHEATER REPORT! {self._hwid.computer_name} is flagged as {detection} in {self._connected_server.game_server.name} ({self._connected_server.game_server.ip})")
+
+                logger.info(
+                    f"CHEATER REPORT! {self._hwid.computer_name} is flagged as {detection} in {self._connected_server.game_server.name} ({self._connected_server.game_server.ip})"
+                )
         except Exception as err:
             logger.error(f"Unable to handle basic checks: {err}")
         return False
 
     async def request_screenshot(self) -> str:
         if self._connected_server:
-            logger.info(f"Screenshot requested of {self._hwid.username} from {self._connected_server.game_server.name} ({self._connected_server.game_server.ip})...")
+            logger.info(
+                f"Screenshot requested of {self._hwid.username} from {self._connected_server.game_server.name} ({self._connected_server.game_server.ip})..."
+            )
         else:
             logger.info(f"Screenshot requested of {self._hwid.username}")
         response_future = asyncio.get_event_loop().create_future()
         self._pending_responses[SafeEnginePacketID.REQUEST_SCREENSHOT] = response_future
-        
+
         await self.send(SafeEnginePacketID.REQUEST_SCREENSHOT, {})
         response = await response_future
-        
+
         if not response["success"]:
-            logger.warning(f"Failed to retreive screenshot from {self._hwid.username}. {response['message']}")
+            logger.warning(
+                f"Failed to retreive screenshot from {self._hwid.username}. {response['message']}"
+            )
             return None
 
         image_buffer = base64.b64decode(response["buffer"])
 
         image_path = None
         if image_buffer:
-            screenshots_directory = os.path.join(
-                settings.MEDIA_ROOT, "screenshot"
-            )
+            screenshots_directory = os.path.join(settings.MEDIA_ROOT, "screenshot")
             os.makedirs(screenshots_directory, exist_ok=True)
 
             image_path = os.path.join(
@@ -581,19 +626,23 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                 file.write(image_buffer)
 
         return f"{settings.MEDIA_URL}screenshot/{self._hwid.id}.png"
-    
+
     async def run_scanners(self, run: bool) -> bool:
         return
-        logger.info(f"Turning \"{self._hwid.username}\" engine scanners {'on' if run else 'off'}...")
+        logger.info(
+            f"Turning \"{self._hwid.username}\" engine scanners {'on' if run else 'off'}..."
+        )
         response_future = asyncio.get_event_loop().create_future()
-        self._pending_responses[SafeEnginePacketID.RUN_SCANNERS] = response_future        
+        self._pending_responses[SafeEnginePacketID.RUN_SCANNERS] = response_future
 
         await self.send(SafeEnginePacketID.RUN_SCANNERS, {"run": run})
 
         try:
             response = await asyncio.wait_for(response_future, 12)
         except asyncio.TimeoutError:
-            logger.error(f"Failed to {'start' if run else 'shutdown'} engine scanners of {self._hwid.username} {self.address}!")
+            logger.error(
+                f"Failed to {'start' if run else 'shutdown'} engine scanners of {self._hwid.username} {self.address}!"
+            )
             response_future.cancel()
             return False
-        return response["success"]        
+        return response["success"]

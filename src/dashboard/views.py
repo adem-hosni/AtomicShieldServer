@@ -1,6 +1,8 @@
 import os
+import random
 import logging
 import json
+from zipfile import ZipFile
 from asgiref.sync import sync_to_async
 from django.shortcuts import render, redirect
 from django.conf import settings
@@ -13,6 +15,7 @@ from django.http import (
     FileResponse,
     JsonResponse,
 )
+import shutil
 from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
 from django.utils.safestring import mark_safe
@@ -265,8 +268,8 @@ def render_bans(request: HttpRequest) -> HttpResponse:
                     "status": (
                         2 if ban.is_expired else int(ban.active)
                     ),  # 0: Disabled, 1: Banned, 2: Expired
-                    "reason": ban.reason,
-                    "screenshot_url": ban.report.screenshot.url,
+                    "reason": ban.reason, 
+                    "screenshot_url": ban.report.screenshot.url if ban.report.screenshot else "",
                     "license": ban.hwid.fivem_license,
                     "steam": ban.hwid.steam,
                     "discord_id": ban.hwid.discord_id,
@@ -803,16 +806,40 @@ def render_quicksetup(request: HttpRequest) -> HttpResponse:
             messages.error(request, "Unsupported distribution!")
             return redirect(request.path)
 
-        distribution_path = os.path.join(dists_dir, target_dist, "download.zip")
+        distribution_path = os.path.join(dists_dir, target_dist, "download_template.zip")
         if not os.path.isfile(distribution_path):
             messages.error(
                 request, f"Failed to download {target_dist.title()} distribution!"
             )
             return redirect(request.path)
+        
+        temp_zip_path = os.path.join(dists_dir, target_dist, f"temp-{random.randint(10, 100)}.zip")
+        shutil.copyfile(distribution_path, temp_zip_path)
+
+        if os.path.isfile(temp_zip_path):
+            key_path = "AtomicShield/server.key"
+            
+            if os.path.isfile(temp_zip_path):
+                with ZipFile(distribution_path, "r") as zip_read, ZipFile(temp_zip_path, "w") as zip_write:
+                    for item in zip_read.infolist():
+                        if item.filename != key_path:
+                            zip_write.writestr(item, zip_read.read(item.filename))
+                        else:
+                            server_key = "<YOUR ATOMICSHIELD SERVER KEY>"
+                            try:
+                                target_server = GameServer.objects.get(
+                                    id=request.session.get("selected_server", -1), owner=request.user
+                                )
+                                server_key = target_server.key
+                            except GameServer.DoesNotExist:
+                                ...
+
+                            zip_write.writestr(key_path, server_key)
+                distribution_path = temp_zip_path
 
         return FileResponse(
             open(distribution_path, "rb"),
-            filename=f"{settings.ANTICHEAT_NAME_LONG} {target_dist.title()} Distribution.zip",
+            filename=f"{settings.ANTICHEAT_NAME_LONG}-{target_dist}.zip",
         )
 
     dists = {}

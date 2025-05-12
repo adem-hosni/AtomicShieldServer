@@ -203,19 +203,13 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+import os
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
         "verbose": {
-            "format": "[{asctime}] {levelname} {message}",
-            "style": "{",
-        },
-        "uvicorn": {
-            "format": "[{asctime}] {levelname} {message}",
-            "style": "{",
-        },
-        "daphne": {
             "format": "[{asctime}] {levelname} {message}",
             "style": "{",
         },
@@ -232,34 +226,40 @@ LOGGING = {
             "filename": os.path.join(BASE_DIR, "../logs/console.log"),
             "formatter": "verbose",
         },
+        "error_file": {
+            "level": "ERROR",
+            "class": "logging.FileHandler",
+            "filename": os.path.join(BASE_DIR, "../logs/error.log"),
+            "formatter": "verbose",
+        },
     },
     "root": {
-        "handlers": ["alltypes", "console"],
+        "handlers": ["alltypes", "console", "error_file"],
         "level": "INFO",
     },
     "loggers": {
         "django": {
-            "handlers": ["console", "alltypes"],
+            "handlers": ["console", "alltypes", "error_file"],
             "level": "INFO",
             "propagate": False,
         },
         "uvicorn": {
-            "handlers": ["console", "alltypes"],
+            "handlers": ["console", "alltypes", "error_file"],
             "level": "INFO",
-            "propagate": False,  # Avoid duplicate logs
+            "propagate": False,
         },
         "daphne": {
-            "handlers": ["console", "alltypes"],
+            "handlers": ["console", "alltypes", "error_file"],
             "level": "INFO",
-            "propagate": False,  # Avoid duplicate logs
+            "propagate": False,
         },
         "uvicorn.error": {
-            "handlers": ["console", "alltypes"],
+            "handlers": ["console", "alltypes", "error_file"],
             "level": "ERROR",
             "propagate": False,
         },
         "uvicorn.access": {
-            "handlers": ["console", "alltypes"],
+            "handlers": ["console", "alltypes", "error_file"],
             "level": "INFO",
             "propagate": False,
         },

@@ -154,9 +154,10 @@ def format_string(string: str, vars: Dict[str, str] = {}):
     return string
 
 def validate_tebex_request(request):
-    if request.headers.get("User-Agent") != "TebexWebhook":
-        logger.warning(f"PayementAPI: Invalid Tebex User-Agent: {request.headers.get('User-Agent', '<Unknown>')}")
-        return False
+    # FIXME: Another agent on production ?
+    # if request.headers.get("User-Agent") != "TebexWebhook":
+    #     logger.warning(f"PayementAPI: Invalid Tebex User-Agent: {request.headers.get('User-Agent', '<Unknown>')}")
+    #     return False
 
     request_ip = request.META.get("HTTP_X_FORWARDED_FOR", request.META.get("REMOTE_ADDR", "")).split(", ")[0]
     if not request_ip in ["18.209.80.3", "54.87.231.232"]:

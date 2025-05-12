@@ -36,6 +36,7 @@ class UserAdmin(BaseUserAdmin, ModelAdmin):
 
     ordering = ('-date_joined',)
     list_display = ("username", "email", "date_joined", "last_login", "is_staff")
+    list_display_links = list_display
 
     def has_delete_permission(self, request, obj = ...):
         return False
@@ -79,14 +80,14 @@ class GameServerAdmin(ModelAdmin):
 
     list_display = ["name", "address", "owner", "remaining",  "type", "display_online"]
     list_display_links = list_display
-    search_fields = list_display
+    search_fields = ["name", "ip", "owner__username",  "type"]
     exclude = ("port",)
 
     list_filter = [OnlineFilter, "type"]
 
     @admin.display(description="Address")
     def address(self, obj: GameServer):
-        return f"{obj.ip}:{obj.port}"
+        return f"{obj.ip}"
 
     @admin.display(description="Owner")
     def owner(self, obj: GameServer):
@@ -172,7 +173,7 @@ class ServerSubscriptionAdmin(ModelAdmin):
     form = SubscriptionCustomForm
     list_display = ["id", "name", "key", "owner", "plan", "remaining", "status"]
     list_display_links = list_display
-    search_fields = list_display
+    search_fields = ["id", "key", "owner__username", "plan"]
 
     list_filter = ("plan", "status", "type")
 

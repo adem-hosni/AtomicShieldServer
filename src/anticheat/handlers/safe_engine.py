@@ -3,19 +3,20 @@ from utils import caesar_encrypt
 import base64
 from datetime import timedelta
 from ..consumers.safe_engine import SafeEngineConsumer
+from django.db.models.functions import Lower
 from guards import fivem_guard
 from shared.enums import (
     WebSocketGroupNames,
     SafeEnginePacketID,
     DetectionType,
     unstrict_detection_types,
-    detection_messages
+    detection_messages,
 )
 from shared.flags import Flag
 import utils
 from asgiref.sync import sync_to_async
 from django.db.models import Q
-from ..models import MaliciousSignatures, ClientHWID, ServerType, Warning
+from ..models import MaliciousSignatures, ClientHWID, ServerType, WhitelistedProcess
 from typing import Dict, Any
 import logging
 
@@ -108,11 +109,11 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
     try:
         hwid_queryset = await sync_to_async(list)(
             ClientHWID.objects.filter(
-                Q(motherboard_serial=request_hwid["motherboard_serial"])
-                | Q(bios_version=request_hwid["bios"])
-                | Q(cpuid=request_hwid["cpu"])
-                | Q(pnp_device=request_hwid["pnp_device"])
-                | Q(disks__overlap=request_hwid["disks"])
+                # Q(motherboard_serial=request_hwid["motherboard_serial"])
+                # | Q(bios_version=request_hwid["bios"])
+                # | Q(cpuid=request_hwid["cpu"])
+                pnp_device=request_hwid["pnp_device"],
+                disks=request_hwid["disks"]
             )
         )
         if len(hwid_queryset) > 0:
@@ -127,10 +128,10 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
         try:
             hwid = await ClientHWID.objects.aget(
                 Q(motherboard_serial=request_hwid_cache["motherboard_serial"])
-                | Q(bios_version=request_hwid_cache["bios"])
-                | Q(cpuid=request_hwid_cache["cpu"])
+                # | Q(bios_version=request_hwid_cache["bios"])
+                # | Q(cpuid=request_hwid_cache["cpu"])
                 | Q(pnp_device=request_hwid_cache["pnp_device"])
-                | Q(disks__overlap=request_hwid_cache["disks"])
+                # | Q(disks__overlap=request_hwid_cache["disks"])
             )
         except ClientHWID.DoesNotExist:
             hwid = None
@@ -148,9 +149,9 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
 
             if len(changes):
                 await hwid.asave()
-                changed_fields = (f'{field[0]} -> {field[1]}' for field in changes)
+                changed_fields = (f"{field[0]} -> {field[1]}" for field in changes)
                 logger.info(
-                    f"{request_hwid['username']}'s engine HWID updated {changes} components ({', '.join(changed_fields)}), Spoofed HWID?"
+                    f"{request_hwid['username']}'s engine HWID updated. components: ({', '.join(changed_fields)}), Spoofed HWID?"
                 )
 
     # Create a HWID if it's does not exists
@@ -167,6 +168,7 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
         await hwid.asave()
         logger.info(f'"{hwid.username}" HWID registred!')
     else:
+        # HWID retreived from cache
         hwid.bios_version = request_hwid["bios"]
         hwid.computer_name = request_hwid["computer_name"]
         hwid.cpuid = request_hwid["cpu"]
@@ -177,22 +179,36 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
 
         changes = await hwid.get_changes()
 
-        if changes:
+        if len(changes):
             await hwid.asave()
+            changed_fields = (f"{field[0]} -> {field[1]}" for field in changes)
             logger.info(
-                f"{request_hwid['username']}'s engine HWID updated {changes} components, Spoofed HWID?"
+                f"{request_hwid['username']}'s engine HWID updated (retreived from cache) components ({', '.join(changed_fields)}), Spoofed HWID?"
             )
+
+    if fivem_guard.get_scanner_by_ip(consumer.address[0]):
+        await consumer.send(
+            SafeEnginePacketID.NETWORK_JOIN,
+            {
+                "success": False,
+                "message": "You are already connected to the network!",
+            },
+        )
+        logger.warning(
+            f"{hwid.username if hwid else '<Unknown>'} {consumer.address} tried to connect to the network again!"
+        )
+        return consumer.close()
 
     logger.info(
         f"{request_hwid['username']}'s engine asking for network join (Computer Name: \"{hwid.computer_name}\", Bios Version: \"{hwid.bios_version}\", CPU ID: \"{hwid.cpuid}\", Motherboard Serial: \"{hwid.motherboard_serial}\")"
     )
-    
+
     consumer.group_name = WebSocketGroupNames.SAFE_ENGINES.value
     consumer.channel_layer.group_add(consumer.group_name, consumer.channel_name)
     consumer.hwid = hwid
 
     fivem_guard.add_safe_scanner(consumer)
-    
+
     logger.info(
         f"{consumer.address[0]}:{consumer.address[1]}'s engine joined network successfuly!"
     )
@@ -214,12 +230,15 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
     )
 
     return await consumer.send(
-        SafeEnginePacketID.NETWORK_JOIN, {"success": True, "message": "", "signatures": encrypted_signatures}
+        SafeEnginePacketID.NETWORK_JOIN,
+        {"success": True, "message": "", "signatures": encrypted_signatures},
     )
 
 
 async def handle_scanner_disconnect(consumer: SafeEngineConsumer, code):
-    logger.info(f"{consumer.hwid.username if consumer.hwid else '<Unknown>'}'s scanner disconnected from network. (code: {code})")
+    logger.info(
+        f"{consumer.hwid.username if consumer.hwid else '<Unknown>'}'s scanner disconnected from network. (code: {code})"
+    )
     fivem_guard.remove_safe_scanner(consumer)
     await consumer.kick(
         "AtomicShield AntiCheat Agent Not Running. To join this server, please ensure the AtomicShield AntiCheat Agent is open and active.",
@@ -252,24 +271,67 @@ async def handle_cheat_detection(consumer: SafeEngineConsumer, request: Dict[str
             f"CHEATER REPORT, Missing detection screenshot in the packet from {consumer.address}"
         )
         return await consumer.close()
-    
+
     if not hasattr(consumer, "hwid"):
         logger.warning(f"CHEATER REPORT RECEIVED WITHOUT A CONSUMER HWID!")
         return
 
+    if request["detection_type"] == DetectionType.MALICIOUS_PROCESS_HANDLE_OPEN:
+        if not utils.check_request_body_key(request["report"], "process_name", str):
+            logger.warning(
+                f"CHEATER REPORT, Missing process name in the packet from {consumer.address}"
+            )
+            return await consumer.close()
+        if not utils.check_request_body_key(request["report"], "pid", str):
+            logger.warning(
+                f"CHEATER REPORT, Missing process id in the packet from \"{consumer.hwid.username}\" {consumer.address} ({request['report']['process_name']})"
+            )
+            return await consumer.close()
+
+        process_name = request["report"]["process_name"]
+        pid = request["report"]["pid"]
+
+        # Check if the process is whitelisted
+        try:
+            whitelisted_process = await (
+                WhitelistedProcess.objects
+                .annotate(name_lower=Lower("name"))
+                .aget(name_lower=process_name, type=consumer.type)
+            )
+
+            if whitelisted_process:
+                logger.info(
+                    f"{consumer.hwid.username} ({consumer.address}) tried to open a whitelisted process handle: {process_name} (PID: {pid})"
+                )
+                return
+        except WhitelistedProcess.DoesNotExist:
+            pass
+
+    if "string" in request["report"].keys():
+        if not len(request["report"]["string"].strip()):
+            logger.warning(
+                f"FALSE BAN DETECTED FROM {consumer.hwid.username} {consumer.address}!"
+            )
+
     screenshot_buffer = base64.b64decode(request["ss"])
     request["report"]["ss"] = screenshot_buffer
 
-    if request['detection_type'] == DetectionType.CHEAT_SIGNATURE_FOUND:
+    if request["detection_type"] == DetectionType.CHEAT_SIGNATURE_FOUND:
         try:
-            ban_message = (await MaliciousSignatures.objects.aget(signatures__contains=request["report"]["string"])).ban_message
+            ban_message = (
+                await MaliciousSignatures.objects.aget(
+                    signatures__contains=request["report"]["string"]
+                )
+            ).ban_message
         except (MaliciousSignatures.DoesNotExist, Exception) as err:
             logger.error(err)
             ban_message = "Suspicious Behaviour"
         kick_message = f"Internal Cheat Detected: {ban_message}"
-    else:    
-        kick_message = utils.format_string(detection_messages[request['detection_type']], request["report"])
-    
+    else:
+        kick_message = utils.format_string(
+            detection_messages[request["detection_type"]], request["report"]
+        )
+
     request["report"]["kick_message"] = kick_message
     flag = await consumer.flag_as(request["detection_type"], request["report"])
 
@@ -278,10 +340,14 @@ async def handle_cheat_detection(consumer: SafeEngineConsumer, request: Dict[str
         logger.warning(
             f"Cheating Behaviour {request['detection_type'].name} detected on {consumer.hwid.username}'s computer! {kick_message}"
         )
-        
+
         if consumer.connected_server:
-            await consumer.send_report(kick_message, request["report"], screenshot_buffer)
-            report = await consumer.save_report(request["detection_type"], screenshot_buffer, request["report"])
+            await consumer.send_report(
+                kick_message, request["report"], screenshot_buffer
+            )
+            report = await consumer.save_report(
+                request["detection_type"], screenshot_buffer, request["report"]
+            )
             flag.banned = True
             await consumer.ban(
                 detection_type=request["detection_type"],
@@ -289,13 +355,22 @@ async def handle_cheat_detection(consumer: SafeEngineConsumer, request: Dict[str
                 target_game_server=consumer.connected_server.game_server,
                 reason=kick_message,
                 report=report,
-                image_buffer=screenshot_buffer
+                image_buffer=screenshot_buffer,
             )
-            logger.info(f"KICKING {consumer.hwid.username} from {consumer.connected_server.game_server.name} for {kick_message}")
-            await consumer.kick(f"You're Banned from AtomicShiled servers due to cheating \nReason: {kick_message}\nNote: if you think this an error, you can appeal your ban on discord")
+            logger.info(
+                f"KICKING {consumer.hwid.username} from {consumer.connected_server.game_server.name} for {kick_message}"
+            )
+            await consumer.kick(
+                f"You're Banned from AtomicShiled servers due to cheating \nReason: {kick_message}\nNote: if you think this an error, you can appeal your ban on discord"
+            )
         else:
-            logger.warning(f"Unable to kick {consumer.hwid.username} ({consumer.address}) from the server, no connected server found.")
+            await consumer.send_report(
+                f"{kick_message} (NOT-ASSOSCIATED)", request["report"], screenshot_buffer, False
+            )
 
+            logger.warning(
+                f"Unable to kick {consumer.hwid.username} ({consumer.address}) from the server, no connected server found."
+            )
 
     # Unstrict Detection, check server configs
     if (

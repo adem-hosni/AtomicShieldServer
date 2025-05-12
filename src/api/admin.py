@@ -6,6 +6,7 @@ from datetime import datetime
 
 class PaymentAdminModel(ModelAdmin):
     list_display = (
+        "id",
         "display_payment_id",
         "display_transaction_id",
         "username",
@@ -45,6 +46,10 @@ class PaymentAdminModel(ModelAdmin):
 
     def has_add_permission(self, request):
         return False
+        
+    def has_delete_permission(self, request, obj=None):
+        return False
+
 
     @admin.display(description="Payment ID")
     def display_payment_id(self, obj: Payment):

@@ -4,6 +4,7 @@ from unfold.admin import ModelAdmin
 from django.contrib.admin import SimpleListFilter
 from django.utils.translation import gettext_lazy as _
 from django.utils.safestring import mark_safe
+from simple_history.admin import SimpleHistoryAdmin
 from .models import (
     AntiCheatConfigTemplates,
     AntiCheatConfigurations,
@@ -14,11 +15,12 @@ from .models import (
     Warning,
     DetectionReport,
     AntiCheatVersion,
+    WhitelistedProcess
 )
 from guards import fivem_guard
 
 
-class ClientHWIDAdmin(ModelAdmin):
+class ClientHWIDAdmin(SimpleHistoryAdmin, ModelAdmin):
     class OnlineFilter(SimpleListFilter):
         title = _("Online")
         parameter_name = "online"
@@ -61,7 +63,20 @@ class ClientHWIDAdmin(ModelAdmin):
     ]
 
     list_display_links = list_display
-    search_fields = list_display
+    search_fields = (
+        "bios_version",
+        "computer_name",
+        "cpuid",
+        "discord_id",
+        "disks",
+        "fivem_license",
+        "fivem_token",
+        "id",
+        "motherboard_serial",
+        "pnp_device",
+        "steam",
+        "username",
+    )
 
     list_filter = [OnlineFilter]
 
@@ -75,18 +90,18 @@ class ClientHWIDAdmin(ModelAdmin):
     @admin.display(description="Discord ID")
     def display_discord_id(self, obj: ClientHWID):
         return obj.discord_id or "Not Linked"
-    
+
     @admin.display(description="Online", boolean=True)
     def display_online(self, obj: ClientHWID):
         return bool(fivem_guard.get_scanner_by_hwid(obj))
-    
+
     class Meta:
         model = ClientHWID
 
 
 class AntiCheatConfigurationsAdmin(ModelAdmin):
     list_display = ["id", "title", "description", "category"]
-    search_fields = list_display
+    search_fields = ["id", "name", "description"]
     list_display_links = list_display
     list_filter = ["category", "config_type"]
 
@@ -101,7 +116,7 @@ class AntiCheatConfigurationsAdmin(ModelAdmin):
 
 class ServerAntiCheatConfiguration(ModelAdmin):
     list_display = ["id", "display_server_name", "display_owner"]
-    search_fields = list_display
+    search_fields = ("config__overlap", "game_servers__name", "config")
     list_display_links = list_display
     list_filter = []
 
@@ -152,6 +167,7 @@ class MaliciousSignaturesAdmin(ModelAdmin):
 
 class BanAdminModel(ModelAdmin):
     list_display = [
+        "id",
         "username",
         "display_server",
         "banned_at",
@@ -159,9 +175,25 @@ class BanAdminModel(ModelAdmin):
         "state",
         "reason",
     ]
-    search_fields = list_display
+    search_fields = [
+        "hwid__username",
+        "game_server__name",
+        "reason",
+        "duration",
+    ]
     list_display_links = list_display
     list_filter = ["active"]
+    actions = ["unban"]
+
+    @admin.action(description="Unban")
+    def unban(self, request, queryset):
+        for obj in queryset:
+            obj.active = False
+            obj.save()
+        self.message_user(request, "Unbanned successfully", "success")
+    
+    def has_delete_permission(self, request, obj=None):
+        return False
 
     @admin.display(description="Username")
     def username(self, obj: Ban):
@@ -189,7 +221,7 @@ class WarningAdminModel(ModelAdmin):
 class DetectionReportAdminModel(ModelAdmin):
     list_display = ["id", "username", "display_server", "detected_at", "detection_type"]
     list_display_links = list_display
-    search_fields = list_display
+    search_fields = ("detected_at", "detection_type", "id", "report", "screenshot")
     list_filter = ["detection_type"]
     exclude = ["screenshot"]
     list_per_page = 80
@@ -275,6 +307,16 @@ class AntiCheatVersionTypeAdminModel(ModelAdmin):
         return super().save_model(request, obj, form, change)
 
 
+class WhitelistedProcessAdminModel(ModelAdmin):
+    list_display = ["id", "name"]
+    list_display_links = list_display
+    search_fields = list_display
+
+    @admin.display(description="Name")
+    def name(self, obj: WhitelistedProcess):
+        return obj.name
+
+
 admin.site.register(
     AntiCheatConfigurationCategories, AntiCheatConfigurationsCategoriesAdmin
 )
@@ -286,3 +328,4 @@ admin.site.register(Ban, BanAdminModel)
 admin.site.register(Warning, WarningAdminModel)
 admin.site.register(DetectionReport, DetectionReportAdminModel)
 admin.site.register(AntiCheatVersion, AntiCheatVersionTypeAdminModel)
+admin.site.register(WhitelistedProcess, WhitelistedProcessAdminModel)

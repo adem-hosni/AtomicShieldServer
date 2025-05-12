@@ -286,3 +286,18 @@ class AntiCheatVersion(models.Model):
         db_table = "versions"
         verbose_name = "Version"
         verbose_name_plural = "Versions"
+
+
+class WhitelistedProcess(models.Model):
+    name = models.CharField(max_length=64, unique=True)
+    type = models.IntegerField(
+        choices=ServerType, default=ServerType.FIVEM, blank=False
+    )
+
+    class Meta:
+        db_table = "whitelisted_processes"
+        verbose_name = "Whitelisted Process"
+        verbose_name_plural = "Whitelisted Processes"
+
+    def __str__(self) -> str:
+        return f"{self.name} ({self.id})"

@@ -18,3 +18,4 @@ gunicorn
 pycryptodome
 django-hosts
 django-simple-history
+whitenoise

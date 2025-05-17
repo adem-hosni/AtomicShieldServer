@@ -1,4 +1,0 @@
-User-agent: *
-Allow: *
-Disallow:
-Sitemap: https://atomic-shield.com/sitemap.xml

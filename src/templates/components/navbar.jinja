@@ -1,0 +1,39 @@
+{% load static %}
+<header class="sticky top-7 z-[100] w-auto">
+  <div
+    class="w-full h-16 py-5 px-8 flex backdrop-blur-lg font-medium rounded-xl items-center text-neutral-300 justify-between backdrop-blur-lg"
+  >
+  <a href="/"><img src="{% static 'assets/images/logo-4.png' %}" alt="AtomicShield" class="w-48 ml-6" /></a>
+    
+    <nav class="items-center gap-5 text-sm hidden lg:flex">
+      <a
+        class="text-neutral-400 hover:text-white transitions-all duration-300 rounded-md hover:bg-[rgba(255,255,255,0.1)] px-4 py-2"
+        href="/">Home</a>
+      <a
+        class="text-neutral-400 hover:text-white transitions-all duration-300 rounded-md hover:bg-[rgba(255,255,255,0.1)] px-4 py-2"
+        href="/#features">Features</a>
+      <a
+        class="text-neutral-400 hover:text-white transitions-all duration-300 rounded-md hover:bg-[rgba(255,255,255,0.1)] px-4 py-2"
+        href="/#pricing">Pricing</a>
+      <a
+        class="text-neutral-400 hover:text-white transitions-all duration-300 rounded-md hover:bg-[rgba(255,255,255,0.1)] px-4 py-2"
+        href="https://discord.gg/dCsCcMMh3B">Discord</a>
+      <a
+        class="text-neutral-400 hover:text-white transitions-all duration-300 rounded-md hover:bg-[rgba(255,255,255,0.1)] px-4 py-2"
+        href="/#faq">FAQ</a>
+    </nav>
+
+    <section class="flex items-center ml-auto lg:ml-0 gap-2 text-white">
+      <button
+        onclick="location.href='/dashboard/main'"
+        class="group relative inline-flex h-9 items-center text-sm justify-center overflow-hidden rounded-lg bg-neutral-200 px-2 font-semibold text-neutral-700"
+      >
+        {% if request.user.is_authenticated %}
+          Dashboard
+        {% else %}
+          Login
+        {% endif %}
+      </button>
+    </section>
+  </div>
+</header>

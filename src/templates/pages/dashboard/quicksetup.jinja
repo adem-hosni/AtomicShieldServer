@@ -1,0 +1,82 @@
+{% extends 'bases/dashboard.jinja' %} {% block content %}
+<div
+  class="p-4 rounded-lg transition-all duration-300 bg-[#081017]"
+>
+  {% include 'components/dashboard/breadcrumb.jinja' with current_page='Quick Setup' %}
+</div>
+
+<div class="w-full bg-[#081017] p-6 rounded-xl mt-4" style="overflow-y: auto">
+  <div class="flex items-center mb-4 md:mb-0 gap-3">
+    <div>
+      <div class="w-12 h-12 flex group items-center transition-all justify-center rounded-xl text-white group-hover:text-white bg-[#0e3638] text-white transition-all duration-300">
+        <div class="flex items-center justify-center relative w-8 h-8 undefined">
+          <i class="absolute fas fa-cubes opacity-20"></i>
+          <i class="absolute fa fa-cubes"></i>
+        </div>
+      </div>
+    </div>
+    <div class="w-full">
+      <div class="flex items-center gap-1">
+        <h3 class="min-w-min text-white font-semibold text-sm md:text-lg line-clamp-1">Servers</h3>
+      </div>
+      <h4 class="text-gray-400 text-sm">Download required anticheat files to run AtomicShield AntiCheat</h4>
+    </div>
+  </div>
+  <form method="post">
+    {% csrf_token %}
+    <div class="w-full flex gap-4">
+      <input type="hidden" name="selected-dist" value="windows"/>
+      <input type="submit" value="Download" class="ml-auto border border-2 border-white px-3 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-white hover:text-black cursor-pointer">
+    </div>
+  </form>
+</div>
+
+<div class="w-full bg-[#081017] p-6 rounded-xl mt-4 flex flex-wrap gap-6" style="overflow-y: auto" id="file-container"></div>
+
+<script>
+  const fileContainer = document.getElementById("file-container");
+  const selectDist = document.getElementById("select-dist");
+
+  const addFile = (filename, icon = "fa-file") => {
+    const divContainerTop = document.createElement("div");
+    divContainerTop.classList.add("w-36", "h-40", "bg-[#09121e]", "rounded-lg", "flex");
+    
+    const divLayout = document.createElement("div");
+    divLayout.classList.add("mx-auto", "my-auto", "text-center");
+
+    const fileIcon = document.createElement("i");
+    fileIcon.classList.add("fa-solid", icon, "fa-6x", "text-[#0e3638]");
+
+    const filenameParagraph = document.createElement("p");
+    filenameParagraph.classList.add("block", "text-center", "font-medium", "text-gray-400", "pt-2")
+    filenameParagraph.textContent = filename;
+
+    divLayout.appendChild(fileIcon);
+    divLayout.appendChild(filenameParagraph);
+
+    divContainerTop.appendChild(divLayout);
+    fileContainer.appendChild(divContainerTop);
+  }
+
+  const addFiles = (files) => files.forEach(file => addFile(file));
+
+  const clearList = () => fileContainer.innerHTML = "";
+
+  const dists = {{ dists|safe }};
+  clearList();
+  addFiles(Object.values(dists)[0]);
+
+  let lastValue = selectDist.value;
+  selectDist.addEventListener("change", () => {
+    const value = selectDist.value;
+
+    if (value !== lastValue && value in dists) {
+      clearList();
+      addFiles(dists[value])
+      lastValue = value;
+    }
+  })
+
+</script>
+
+{% endblock %}

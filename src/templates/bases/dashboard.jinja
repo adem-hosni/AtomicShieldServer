@@ -1,0 +1,79 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="author" description="AtomicShield">
+    <meta name="title" description="AtomicShield - AntiCheat">
+    <meta name="description" content="The ultimate anti-cheating solution for secure and fair online experiences. Protect your server with advanced detection, real-time monitoring, and robust prevention tools. Ensure integrity today!">
+    <link rel="shortcut icon" type="image/jpg" href="/static/assets/images/logo.png">
+    <meta itemprop="image" type="image/jpg" href="/static/assets/images/logo.png">
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="{% static '/image/logo-ico.svg' %}"
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+      integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <link
+      rel="stylesheet"
+      href="{% static 'vendor/iziToast/css/iziToast.css' %}"
+    />
+    <script src="{% static 'vendor/tailwindcss.js' %}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/4.0.0-alpha.1/lib.js" integrity="sha512-EDdISRNY5IjdTm+MLakVOKcEnYqleevuqclTakeWR/SZ8CnPWlnsE2JDDqVFO+Yw0cjBY2z3MDHL5EVx5pg6ow==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>    
+
+    <script src="{% static 'vendor/iziToast/js/iziToast.js' %}"></script>
+
+    <link
+      rel="shortcut icon"
+      type="image/png"
+      href="{% static 'assets/images/logo.png' %}"
+    />
+    <script src="{% static 'js/flowbite.js' %}"></script>
+
+    <title>AtomicShield | Dashboard</title>
+    <style>
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        box-shadow: inset 0 0 5px grey;
+        border-radius: 10px;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #01e4f4;
+        border-radius: 10px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #01a7fc;
+      }
+      ::-webkit-scrollbar-thumb:active {
+        background: #017aba; /* Darker shade of #01a7fc for active state */
+      }
+    </style>
+  </head>
+  <body class="bg-[#050C12] text-white flex flex-col min-h-screen">
+    {% include "components/dashboard/sidebar.jinja" %}
+    <main class="flex-grow p-4 sm:ml-64">
+      {% block content %} {% endblock content %}
+    </main>
+
+    <script>
+      {% if messages %}
+        {% for message in messages %}
+          iziToast.{{ message.tags }}({
+              title: '{{ message.level_tag|capfirst }}',
+              message: '{{ message }}',
+          });
+        {% endfor %}
+      {% endif %}
+    </script>
+  </body>
+</html>

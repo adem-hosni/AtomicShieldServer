@@ -1,0 +1,61 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="{% static '/image/logo-ico.svg' %}"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Atomic Shield - External FiveM AntiCheat</title>
+
+    <link
+      rel="stylesheet"
+      href="{% static 'vendor/iziToast/css/iziToast.css' %}"
+    />
+    <script src="{% static 'vendor/iziToast/js/iziToast.js' %}"></script>
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,100..900;1,100..900&amp;display=swap"
+      rel="stylesheet"
+    />
+
+    <meta name="description" content="Atomic Shield" />
+    <meta
+      name="keywords"
+      content="external anticheat, advanced anticheat, fivem anticheat, fivem anti-cheat, atomic shield, anticheat fivem, fivem shield, fivem, best fivem anticheat, open source, fivem cheat, cheating fivem, fivem,anticheat,anti cheat,fivem anticheat,anticheat fivem,cheat,cheats,cheating,best fivem anticheat,fivem anticheat panel"
+    />
+    <meta name="publisher" content="Atomic Shield" />
+    <meta name="classification" content="FiveM Anticheat, Atomic Shield Unbreakable Fivem AntiCheat.">
+    <meta property="og:title" content="Atomic Shield">
+    <meta property="og:description" content="The most advanced and reliable FiveM scripts.">
+    
+    <script src="{% static 'vendor/tailwindcss.js' %}" defer></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'index.css' %}">
+  </head>
+
+  <body class="scrollbar-hidden">
+    <div id="root"></div>
+    
+    <script>
+      {% if messages %}
+        {% for message in messages %}
+          iziToast.{{ message.tags }}({
+              title: '{{ message.level_tag|capfirst }}',
+              message: '{{ message }}',
+          });
+          {% endfor %}
+      {% endif %}
+    </script>
+    <script src="{% static 'index.js' %}"></script>
+  </body>
+</html>

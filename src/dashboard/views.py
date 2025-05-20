@@ -85,7 +85,7 @@ def dashboard_callback(request: HttpRequest, context: Dict[str, Any]):
             {
                 "title": label,
                 "description": intcomma(str(count)),
-                "value": (count / all_detections.count()) * 100,
+                "value": (count / max(1, all_detections.count())) * 100,
             }
         )
 

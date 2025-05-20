@@ -112,8 +112,8 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
             ClientHWID.objects.filter(
                 # Q(motherboard_serial=request_hwid["motherboard_serial"])
                 # | Q(bios_version=request_hwid["bios"])
-                cpuid=request_hwid["cpu"]
-                # pnp_device=request_hwid["pnp_device"]
+                # cpuid=request_hwid["cpu"]
+                pnp_device=request_hwid["pnp_device"]
                 # | Q(disks=request_hwid["disks"])
             )
         )
@@ -300,7 +300,7 @@ async def handle_cheat_detection(consumer: SafeEngineConsumer, request: Dict[str
             pass
 
     if "string" in request["report"].keys():
-        if not len(request["report"]["string"].strip()):
+        if not len(request["report"]["string"].strip().replace("\t", "")):
             logger.warning(
                 f"FALSE BAN DETECTED FROM {consumer.hwid.username} {consumer.address}!"
             )

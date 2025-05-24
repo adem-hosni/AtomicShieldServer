@@ -27,6 +27,8 @@ class SafeEnginePacketID(Enum):
     RUN_SCANNERS = 9
     ENGINE_SHUTDOWN = 10
     REQUEST_DEBUG_LOGS = 11
+    REQUEST_FILEHASH = 12
+    REQUEST_FILE_UPLOAD = 13
 
 
 class WebSocketGroupNames(Enum):

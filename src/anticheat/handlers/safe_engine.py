@@ -3,6 +3,7 @@ from utils import caesar_encrypt
 import base64
 from datetime import timedelta
 from ..consumers.safe_engine import SafeEngineConsumer
+from django.core.files.base import ContentFile
 from django.db.models.functions import Lower
 from guards import fivem_guard
 from shared.enums import (
@@ -16,7 +17,13 @@ from shared.flags import Flag
 import utils
 from asgiref.sync import sync_to_async
 from django.db.models import Q
-from ..models import MaliciousSignatures, ClientHWID, ServerType, WhitelistedProcess
+from ..models import (
+    MaliciousSignatures,
+    ClientHWID,
+    ServerType,
+    WhitelistedProcess,
+    ThreatFile,
+)
 from typing import Dict, Any
 import logging
 
@@ -126,34 +133,34 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
 
     # HWID not found? Check if the hwid cache already exists
     # if not hwid and False:
-        # try:
-        #     hwid = await ClientHWID.objects.aget(
-        #         # Q(motherboard_serial=request_hwid_cache["motherboard_serial"])
-        #         # | Q(bios_version=request_hwid_cache["bios"])
-        #         Q(cpuid=request_hwid_cache["cpu"])
-        #         | Q(pnp_device=request_hwid_cache["pnp_device"])
-        #         # | Q(disks__overlap=request_hwid_cache["disks"])
-        #     )
-        # except ClientHWID.DoesNotExist:
-        #     hwid = None
+    # try:
+    #     hwid = await ClientHWID.objects.aget(
+    #         # Q(motherboard_serial=request_hwid_cache["motherboard_serial"])
+    #         # | Q(bios_version=request_hwid_cache["bios"])
+    #         Q(cpuid=request_hwid_cache["cpu"])
+    #         | Q(pnp_device=request_hwid_cache["pnp_device"])
+    #         # | Q(disks__overlap=request_hwid_cache["disks"])
+    #     )
+    # except ClientHWID.DoesNotExist:
+    #     hwid = None
 
-        # if hwid:
-        #     hwid.bios_version = request_hwid["bios"]
-        #     hwid.computer_name = request_hwid["computer_name"]
-        #     hwid.cpuid = request_hwid["cpu"]
-        #     hwid.disks = request_hwid["disks"]
-        #     hwid.motherboard_serial = request_hwid["motherboard_serial"]
-        #     hwid.username = request_hwid["username"]
-        #     hwid.pnp_device = request_hwid["pnp_device"]
+    # if hwid:
+    #     hwid.bios_version = request_hwid["bios"]
+    #     hwid.computer_name = request_hwid["computer_name"]
+    #     hwid.cpuid = request_hwid["cpu"]
+    #     hwid.disks = request_hwid["disks"]
+    #     hwid.motherboard_serial = request_hwid["motherboard_serial"]
+    #     hwid.username = request_hwid["username"]
+    #     hwid.pnp_device = request_hwid["pnp_device"]
 
-        #     changes = await hwid.get_changes()
+    #     changes = await hwid.get_changes()
 
-        #     if len(changes):
-        #         await hwid.asave()
-        #         changed_fields = (f"{field[0]} -> {field[1]}" for field in changes)
-        #         logger.info(
-        #             f"{request_hwid['username']}'s engine HWID updated. components: ({', '.join(changed_fields)}), Spoofed HWID?"
-        #         )
+    #     if len(changes):
+    #         await hwid.asave()
+    #         changed_fields = (f"{field[0]} -> {field[1]}" for field in changes)
+    #         logger.info(
+    #             f"{request_hwid['username']}'s engine HWID updated. components: ({', '.join(changed_fields)}), Spoofed HWID?"
+    #         )
 
     # Create a HWID if it's does not exists
     if not hwid:
@@ -207,9 +214,7 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
 
     fivem_guard.add_safe_scanner(consumer)
 
-    logger.info(
-        f"{consumer.hwid.username}'s engine joined network successfuly!"
-    )
+    logger.info(f"{consumer.hwid.username}'s engine joined network successfuly!")
 
     signatures = await sync_to_async(list)(
         MaliciousSignatures.objects.filter(type=consumer.type)
@@ -374,4 +379,64 @@ async def handle_cheat_detection(consumer: SafeEngineConsumer, request: Dict[str
     ):
         await consumer.handle_basic_checks(
             request["detection_type"], request["report"], consumer.connected_server
+        )
+
+
+async def handle_filehash_request(
+    consumer: SafeEngineConsumer, request: Dict[str, Any]
+):
+    if not utils.check_request_body_key(request, "filehash", str):
+        logger.warning(
+            f"Missing filehash in the request from {consumer.address}, closing connection"
+        )
+        return await consumer.close()
+
+    if not utils.check_request_body_key(request, "filepath", str):
+        logger.warning(
+            f"Missing filepath in the request from {consumer.address}, closing connection"
+        )
+        return await consumer.close()
+
+    logger.info(
+        f"Filehash request from {consumer.hwid.username} ({consumer.address}), filehash: {request['filehash']}, filepath: {request['filepath']}"
+    )
+
+    try:
+        threatfile = await ThreatFile.objects.aget(
+            hash=request["filehash"]
+        )
+    except ThreatFile.DoesNotExist:
+        # File not found, upload it
+        file_buffer = await consumer.request_file_upload(request["filepath"])
+        if not file_buffer:
+            logger.warning(
+                f"Unable to upload file {request['filepath']} from {consumer.hwid.username} {consumer.address}"
+            )
+            return await consumer.close()
+        file_buffer = ContentFile(file_buffer, name=request["filepath"].replace("\\", "/").split("/")[-1])
+
+        # Insert the threat file
+        uploaded_threat = ThreatFile(
+            found_path=request["filepath"],
+            hash=request["filehash"],
+            file=file_buffer,
+            uploaded_by=consumer.hwid,
+        )
+        await uploaded_threat.asave()
+        logger.info(
+            f"File {request['filepath']} ({uploaded_threat.name}, {request['filehash']}) uploaded by {consumer.hwid.username} ({consumer.address})"
+        )
+    except Exception as err:
+        logger.error(f"Error while checking filehash ({request['filehash']}): {err}")
+    else:
+        # File found, reject the file upload
+        logger.info(
+            f"File {request['filepath']} ({threatfile.name}, {request['filehash']}) already exists in the database, rejecting upload from {consumer.hwid.username} ({consumer.address})"
+        )
+        await consumer.send(
+            SafeEnginePacketID.REQUEST_FILEHASH,
+            {
+                "success": True,
+                "message": "",
+            },
         )

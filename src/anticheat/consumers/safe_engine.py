@@ -196,6 +196,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         from ..handlers.safe_engine import (
             handle_network_join,
             handle_cheat_detection,
+            handle_filehash_request,
         )
 
         match request_body["type"]:
@@ -203,6 +204,8 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                 asyncio.create_task(handle_network_join(self, request_body))
             case SafeEnginePacketID.CHEAT_DETECTION:
                 asyncio.create_task(handle_cheat_detection(self, request_body))
+            case SafeEnginePacketID.REQUEST_FILEHASH:
+                asyncio.create_task(handle_filehash_request(self, request_body))
 
     async def disconnect(self, code):
         """
@@ -691,3 +694,34 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             f"Debug logs of {self._hwid.username} {self.address} received successfully ({len(response['logs'])} bytes)!"
         )
         return response["logs"]
+
+
+    async def request_file_upload(self, file_path: str) -> bytes:
+        logger.info(
+            f"File upload requested of {self._hwid.username} ({file_path})..."
+        )
+        response_future = asyncio.get_event_loop().create_future()
+        self._pending_responses[SafeEnginePacketID.REQUEST_FILE_UPLOAD] = response_future
+
+        await self.send(SafeEnginePacketID.REQUEST_FILE_UPLOAD, {"file_path": file_path})
+
+        try:
+            response = await asyncio.wait_for(response_future, 120*2)
+        except asyncio.TimeoutError:
+            logger.error(
+                f"Failed to retreive file upload from {self._hwid.username} {self.address}!"
+            )
+            response_future.cancel()
+            return None
+
+        if not response["success"]:
+            logger.warning(
+                f"Failed to retreive file upload from {self._hwid.username}. {response['message']}"
+            )
+            return None
+
+        logger.info(
+            f"File upload of {self._hwid.username} received successfully ({len(response['buffer'])} bytes)!"
+        )
+
+        return base64.b64decode(response["buffer"])

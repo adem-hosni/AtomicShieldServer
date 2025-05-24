@@ -577,14 +577,14 @@ def render_servers(request: HttpRequest) -> HttpResponse:
 
 @login_required
 def select_server(request: HttpRequest) -> HttpResponse:
-    print(request.body)
-    request_body: Dict[str, Union[bool, str]] = request.POST
-
-    print(request_body)
+    request_body: Dict[str, Union[bool, str]] = request.body.decode()
 
     # Check the request_body is a json
     if not len(request_body):
+        logger.error("DASHBOARD - UNEXPECTED ERROR: Empty request body")
         return HttpResponse(json.dumps({"success": False}))
+
+    request_body = json.loads(request_body)
 
     # Check the request_body keys
     if not ("server_id" in request_body.keys() or "select" in request_body.keys()):

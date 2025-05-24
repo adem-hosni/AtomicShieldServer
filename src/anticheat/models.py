@@ -301,3 +301,24 @@ class WhitelistedProcess(models.Model):
 
     def __str__(self) -> str:
         return f"{self.name} ({self.id})"
+
+
+class ThreatFile(models.Model):
+    file = models.FileField(upload_to="threat_files/")
+    found_path = models.CharField(max_length=256)
+    hash = models.CharField(max_length=256)
+    note = models.CharField(max_length=256, blank=True, null=True)
+    uploaded_by = models.ForeignKey(ClientHWID, on_delete=models.CASCADE)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    @property
+    def name(self) -> str:
+        return self.file.name.replace("/", "\\").split("\\")[-1]
+
+    class Meta:
+        db_table = "threat_files"
+        verbose_name = "Threat File"
+        verbose_name_plural = "Threat Files"
+
+    def __str__(self) -> str:
+        return f"{self.name} ({self.id})"

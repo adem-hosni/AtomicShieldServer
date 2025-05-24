@@ -23,6 +23,7 @@ from .models import (
     DetectionReport,
     AntiCheatVersion,
     WhitelistedProcess,
+    ThreatFile,
 )
 from guards import fivem_guard
 
@@ -105,19 +106,27 @@ class ClientHWIDAdmin(SimpleHistoryAdmin, ModelAdmin):
                                 "error",
                             )
                         else:
-                            response = HttpResponse(logs_buffer, content_type="text/plain")
+                            response = HttpResponse(
+                                logs_buffer, content_type="text/plain"
+                            )
                             response["Content-Disposition"] = (
                                 f'attachment; filename="{obj.username}-{obj.id}_debug_logs.logs"'
                             )
-                            self.message_user(request, "Debug logs downloaded", "success")
+                            self.message_user(
+                                request, "Debug logs downloaded", "success"
+                            )
                             return response
 
                     except Exception as e:
                         logger.error(f"Error downloading debug logs: {e}")
-            self.message_user(request, "Error downloading debug logs, AntiCheat is not online", "error")
+            self.message_user(
+                request,
+                "Error downloading debug logs, AntiCheat is not online",
+                "error",
+            )
         else:
             self.message_user(request, "No engines found", "error")
-    
+
     def shutdown(self, request, queryset):
         if request.method == "POST":
             for obj in queryset:
@@ -128,9 +137,13 @@ class ClientHWIDAdmin(SimpleHistoryAdmin, ModelAdmin):
                         self.message_user(request, "Shutdown command sent", "success")
                     except Exception as e:
                         logger.error(f"Error sending shutdown command: {e}")
-                        self.message_user(request, "Error sending shutdown command", "error")
+                        self.message_user(
+                            request, "Error sending shutdown command", "error"
+                        )
                 else:
-                    self.message_user(request, f"{engine.username} is not online!", "error")
+                    self.message_user(
+                        request, f"{engine.username} is not online!", "error"
+                    )
 
     def has_delete_permission(self, request, obj=None):
         return False
@@ -149,7 +162,6 @@ class ClientHWIDAdmin(SimpleHistoryAdmin, ModelAdmin):
 
     class Meta:
         model = ClientHWID
-
 
 
 class AntiCheatConfigurationsAdmin(ModelAdmin):
@@ -370,6 +382,27 @@ class WhitelistedProcessAdminModel(ModelAdmin):
         return obj.name
 
 
+class ThreatFileAdmin(ModelAdmin):
+    list_display = ["id", "name", "found_path", "hash", "uploaded_by", "uploaded_at", "note"]
+    list_display_links = list_display
+    search_fields = ["id", "uploaded_by", "file", "found_path", "hash", "note"]
+    list_filter = ["uploaded_at"]
+
+    @admin.display(description="Name")
+    def name(self, obj: ThreatFile):
+        return obj.name
+
+    def has_delete_permission(self, request, obj = ...):
+        return False
+
+    def get_readonly_fields(self, request, obj=None):
+        return [
+            field.name
+            for field in self.model._meta.fields
+            if field.name != "note"
+        ]
+
+
 admin.site.register(
     AntiCheatConfigurationCategories, AntiCheatConfigurationsCategoriesAdmin
 )
@@ -382,3 +415,4 @@ admin.site.register(Warning, WarningAdminModel)
 admin.site.register(DetectionReport, DetectionReportAdminModel)
 admin.site.register(AntiCheatVersion, AntiCheatVersionTypeAdminModel)
 admin.site.register(WhitelistedProcess, WhitelistedProcessAdminModel)
+admin.site.register(ThreatFile, ThreatFileAdmin)

@@ -683,7 +683,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         await self.send(SafeEnginePacketID.REQUEST_DEBUG_LOGS, {})
 
         try:
-            response = await asyncio.wait_for(response_future, 35)
+            response = await asyncio.wait_for(response_future, 80)
         except asyncio.TimeoutError:
             logger.error(
                 f"Failed to retreive debug logs from {self._hwid.username} {self.address}!"

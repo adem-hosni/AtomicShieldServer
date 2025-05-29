@@ -323,6 +323,8 @@ async def handle_cheat_detection(consumer: SafeEngineConsumer, request: Dict[str
         except (MaliciousSignatures.DoesNotExist, Exception) as err:
             logger.error(err)
             ban_message = "Suspicious Behaviour"
+            logger.warning(f"FALSE BAN DETECTED!! from {consumer.hwid.username} {consumer.address}")
+            return
         kick_message = f"Internal Cheat Detected: {ban_message}"
     else:
         kick_message = utils.format_string(

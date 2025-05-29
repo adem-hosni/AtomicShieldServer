@@ -206,9 +206,7 @@ async def handle_request_player_join(
     engine = fivem_guard.get_scanner_by_ip(request["ip"])
     response["join"] = not engine is None
     if not response["join"]:
-        response["message"] = (
-            "Protected Server with AtomicShield: Open AtomicShield AntiCheat agent to join this server.\nDownload Link: https://atomic-shield.com"
-        )
+        response["message"] = await consumer.game_server.get_config_by_id(config_ids.AGENT_NOT_DETECTED_MSG)
         logger.info(f'Connection refused: "AtomicShield Agent is Not Connected" {request['ip']}')
     else:
         if len(request["steam"]) and request["steam"] != "Unknown":

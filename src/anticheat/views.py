@@ -132,7 +132,7 @@ def crash_report_upload(request: HttpRequest) -> HttpResponse:
             exception_flags=exception_flags,
             registers={
                 key: hex(value) if isinstance(value, int) else value
-                for key, value in request_body.items()
+                for key, value in request_body.get("registers", {}).items()
             },
         )
         logger.info(

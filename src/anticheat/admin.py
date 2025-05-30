@@ -24,6 +24,7 @@ from .models import (
     AntiCheatVersion,
     WhitelistedProcess,
     ThreatFile,
+    CrashReport,
 )
 from guards import fivem_guard
 
@@ -383,7 +384,15 @@ class WhitelistedProcessAdminModel(ModelAdmin):
 
 
 class ThreatFileAdmin(ModelAdmin):
-    list_display = ["id", "name", "found_path", "hash", "uploaded_by", "uploaded_at", "note"]
+    list_display = [
+        "id",
+        "name",
+        "found_path",
+        "hash",
+        "uploaded_by",
+        "uploaded_at",
+        "note",
+    ]
     list_display_links = list_display
     search_fields = ["id", "uploaded_by", "file", "found_path", "hash", "note"]
     list_filter = ["uploaded_at"]
@@ -392,15 +401,34 @@ class ThreatFileAdmin(ModelAdmin):
     def name(self, obj: ThreatFile):
         return obj.name
 
-    def has_delete_permission(self, request, obj = ...):
+    def has_delete_permission(self, request, obj=...):
         return False
 
     def get_readonly_fields(self, request, obj=None):
-        return [
-            field.name
-            for field in self.model._meta.fields
-            if field.name != "note"
-        ]
+        return [field.name for field in self.model._meta.fields if field.name != "note"]
+
+
+class CrashReportAdmin(ModelAdmin):
+    list_display = [
+        "id",
+        "crash_by",
+        "error",
+        "exception_code",
+        "exception_address",
+        "exception_flags",
+    ]
+    list_display_links = list_display
+    search_fields = list_display
+    list_filter = ["exception_code"]
+
+    def has_delete_permission(self, request, obj=...):
+        return False
+
+    def has_add_permission(self, request, obj=...):
+        return False
+    
+    def get_readonly_fields(self, request, obj=None):
+        return [field.name for field in self.model._meta.fields]
 
 
 admin.site.register(
@@ -416,3 +444,4 @@ admin.site.register(DetectionReport, DetectionReportAdminModel)
 admin.site.register(AntiCheatVersion, AntiCheatVersionTypeAdminModel)
 admin.site.register(WhitelistedProcess, WhitelistedProcessAdminModel)
 admin.site.register(ThreatFile, ThreatFileAdmin)
+admin.site.register(CrashReport, CrashReportAdmin)

@@ -7,4 +7,5 @@ urlpatterns = [
     path("status/server", view=views.server_status, name="server_status"),
     path("status/version", view=views.version_check),
     path("engine/interaction", view=views.engine_interaction),
+    path("crash-report", view=views.crash_report_upload),
 ]

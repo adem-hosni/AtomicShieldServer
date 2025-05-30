@@ -5,6 +5,7 @@ from django.views.decorators.csrf import csrf_exempt
 from utils import check_request_body_key
 from guards import fivem_guard
 from core import atomic_core
+from .models import CrashReport
 import logging
 
 
@@ -76,6 +77,7 @@ def version_check(request: HttpRequest) -> HttpResponse:
         )
     )
 
+
 @csrf_exempt
 def engine_interaction(request: HttpRequest) -> HttpResponse:
     response = None
@@ -91,8 +93,55 @@ def engine_interaction(request: HttpRequest) -> HttpResponse:
                     else:
                         response = {"success": False}
 
-
     except Exception:
         return HttpResponse()
 
     return HttpResponse(atomic_core.encode(response or ""))
+
+
+@csrf_exempt
+def crash_report_upload(request: HttpRequest) -> HttpResponse:
+    request_ip = request.META.get("HTTP_X_REAL_IP", request.META.get("REMOTE_ADDR"))    
+    logger.warning(f"CRASH REPORT RECEIVED! from {request_ip}")
+
+    try:
+        request_body = json.loads(request.body.decode())
+
+        exception_code = hex(request_body.get("exception_code", 0))
+        exception_address = hex(request_body.get("exception_address", 0))
+        exception_flags = hex(request_body.get("exception_flags", 0))
+
+        try:
+            report = CrashReport.objects.get(
+                exception_code=exception_code,
+                exception_address=exception_address,
+                exception_flags=exception_flags,
+            )
+            if report:
+                logger.info(f"Found a crash report same with the received (Report id: {report.id})!")
+                return HttpResponse()
+        except CrashReport.DoesNotExist:
+            ...
+
+        crash_by = fivem_guard.get_scanner_by_ip(request_ip)
+        report = CrashReport.objects.create(
+            crash_by=crash_by,
+            error=request_body.get("error", "CRASHED"),
+            exception_code=exception_code,
+            exception_address=exception_address,
+            exception_flags=exception_flags,
+            registers={
+                key: hex(value) if isinstance(value, int) else value
+                for key, value in request_body.items()
+            },
+        )
+        logger.info(
+            f"Crash report saved as {report.id} by {crash_by}: {report.error} | EXCEPTION CODE: {report.exception_code} | EXCEPTION ADDRESS: {report.exception_address} | EXCEPTION FLAGS: {report.exception_flags}"
+        )
+
+        return HttpResponse()
+
+    except Exception as err:
+        logger.error(f"Error saving crash report: {err}")
+
+    return HttpResponse()

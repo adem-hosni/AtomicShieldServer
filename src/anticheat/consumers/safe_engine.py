@@ -152,9 +152,10 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         """
         try:
             # Attempt to parse the incoming message as JSON
-            request_body: Dict[str, Any] = json.loads(atomic_core.decode(text_data))
+            request_buffer = atomic_core.decode(text_data)
+            request_body: Dict[str, Any] = json.loads(request_buffer)
         except Exception as err:
-            logger.warning(f"Failed to parse request. (request body: {request_body} | {err})")
+            logger.warning(f"Failed to parse request. (request buffer: {request_buffer} | {err})")
             return await self.close()
 
         # Verify that the request body contains a 'type' key and 'ut' key

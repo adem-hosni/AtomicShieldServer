@@ -322,3 +322,19 @@ class ThreatFile(models.Model):
 
     def __str__(self) -> str:
         return f"{self.name} ({self.id})"
+
+
+class CrashReport(models.Model):
+    crash_by = models.ForeignKey(ClientHWID, on_delete=models.CASCADE, null=True)
+    error = models.CharField(max_length=64, null=True)
+    exception_code = models.CharField(max_length=32)
+    exception_address = models.CharField(max_length=32)
+    exception_flags = models.CharField(max_length=32)
+    registers = models.JSONField(default=dict)
+
+    class Meta:
+        verbose_name = "Crash Report"
+    
+    def __str__(self):
+        return f"Crash Report {self.exception_code} ({self.id}) - {self.crash_by.username if self.crash_by else 'Unknown'}"
+

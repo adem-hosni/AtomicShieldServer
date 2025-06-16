@@ -3,6 +3,7 @@ from anticheat.models import ClientHWID
 from anticheat.consumers.safe_engine import SafeEngineConsumer
 from shared.enums import WebSocketGroupNames
 from typing import List, Union, Any
+import utils
 
 
 class _GuardManagerBase(object):
@@ -144,6 +145,12 @@ class _GuardManagerBase(object):
         """
         for iter_engine in self._safe_engines:
             if iter_engine.address[0] == scanner_ip:
+                return iter_engine
+        return None  # Not Found
+    
+    def get_engine_by_24subnet(self, ip: str) -> Union[SafeEngineConsumer, None]:
+        for iter_engine in self._safe_engines:
+            if utils.is_same_subnet_24(ip, iter_engine.address[0]):
                 return iter_engine
         return None  # Not Found
     

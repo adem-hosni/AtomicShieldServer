@@ -174,3 +174,11 @@ def validate_tebex_request(request):
     #     return False
 
     return True
+
+
+def is_same_subnet_24(ip1: str, ip2: str) -> bool:
+    def get_subnet(ip):
+        return ".".join(ip.split(".")[:3])
+    
+    return get_subnet(ip1) == get_subnet(ip2)
+

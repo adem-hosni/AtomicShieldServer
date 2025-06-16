@@ -413,9 +413,11 @@ class CrashReportAdmin(ModelAdmin):
         "id",
         "crash_by",
         "error",
+        "module_base",
         "exception_code",
         "exception_address",
         "exception_flags",
+        "crashed_at"
     ]
     list_display_links = list_display
     search_fields = list_display

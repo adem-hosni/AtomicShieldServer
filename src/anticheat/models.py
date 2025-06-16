@@ -327,10 +327,12 @@ class ThreatFile(models.Model):
 class CrashReport(models.Model):
     crash_by = models.ForeignKey(ClientHWID, on_delete=models.CASCADE, null=True)
     error = models.CharField(max_length=64, null=True)
+    module_base = models.CharField(max_length=64, null=True)
     exception_code = models.CharField(max_length=32)
     exception_address = models.CharField(max_length=32)
     exception_flags = models.CharField(max_length=32)
     registers = models.JSONField(default=dict)
+    crashed_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         verbose_name = "Crash Report"

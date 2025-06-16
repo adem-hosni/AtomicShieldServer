@@ -110,6 +110,7 @@ def crash_report_upload(request: HttpRequest) -> HttpResponse:
         exception_code = hex(request_body.get("exception_code", 0))
         exception_address = hex(request_body.get("exception_address", 0))
         exception_flags = hex(request_body.get("exception_flags", 0))
+        module_base = hex(request_body.get("module_base", 0))
 
         try:
             report = CrashReport.objects.get(
@@ -130,6 +131,7 @@ def crash_report_upload(request: HttpRequest) -> HttpResponse:
             exception_code=exception_code,
             exception_address=exception_address,
             exception_flags=exception_flags,
+            module_base=module_base,
             registers={
                 key: hex(value) if isinstance(value, int) else value
                 for key, value in request_body.get("registers", {}).items()

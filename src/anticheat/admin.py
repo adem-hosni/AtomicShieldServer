@@ -68,8 +68,8 @@ class ClientHWIDAdmin(SimpleHistoryAdmin, ModelAdmin):
         "username",
         "computer_name",
         "motherboard_serial",
-        "bios_version",
         "display_discord_id",
+        "display_connected_server",
         "display_build_timestamp",
         "display_online",
     ]
@@ -160,6 +160,14 @@ class ClientHWIDAdmin(SimpleHistoryAdmin, ModelAdmin):
     @admin.display(description="Discord ID")
     def display_discord_id(self, obj: ClientHWID):
         return obj.discord_id or "Not Linked"
+    
+    @admin.display(description="Connected Server")
+    def display_connected_server(self, obj: ClientHWID):
+        engine = fivem_guard.get_scanner_by_hwid(obj)
+        if engine:
+            server = engine.connected_server
+            return server.name if server else "No Server Connected"
+        return "Not Connected"
 
     @admin.display(description="Online", boolean=True)
     def display_online(self, obj: ClientHWID):

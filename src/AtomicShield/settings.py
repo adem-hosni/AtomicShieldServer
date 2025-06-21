@@ -41,10 +41,14 @@ ALLOWED_HOSTS = [
     ".atomic-shield.com",
 ]
 
-CSRF_TRUSTED_ORIGINS = [
-    "https://atomic-shield.com",
-    "https://www.atomic-shield.com",
-]
+CSRF_TRUSTED_ORIGINS = (
+    [
+        "https://atomic-shield.com",
+        "https://www.atomic-shield.com",
+    ]
+    if not DEBUG
+    else ["http://31.97.180.157:553"]
+)
 
 # Application definition
 
@@ -70,7 +74,7 @@ INSTALLED_APPS = [
     "dashboard",
     "anticheat",
     "resources",
-    "appreloader"
+    "appreloader",
 ]
 
 

@@ -66,11 +66,11 @@ class ClientHWIDAdmin(SimpleHistoryAdmin, ModelAdmin):
     list_display = [
         "id",
         "username",
-        "display_disks",
         "computer_name",
         "motherboard_serial",
         "bios_version",
         "display_discord_id",
+        "display_build_timestamp",
         "display_online",
     ]
 
@@ -149,9 +149,13 @@ class ClientHWIDAdmin(SimpleHistoryAdmin, ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         return False
 
-    @admin.display(description="Disks")
-    def display_disks(self, obj: ClientHWID):
-        return "-".join(obj.disks)
+    @admin.display(description="Build")
+    def display_build_timestamp(self, obj: ClientHWID):
+        return (
+            fivem_guard.get_scanner_by_hwid(obj).build_timestamp
+            if fivem_guard.get_scanner_by_hwid(obj)
+            else "N/A"
+        )
 
     @admin.display(description="Discord ID")
     def display_discord_id(self, obj: ClientHWID):
@@ -417,7 +421,7 @@ class CrashReportAdmin(ModelAdmin):
         "exception_code",
         "exception_address",
         "exception_flags",
-        "crashed_at"
+        "crashed_at",
     ]
     list_display_links = list_display
     search_fields = list_display
@@ -428,7 +432,7 @@ class CrashReportAdmin(ModelAdmin):
 
     def has_add_permission(self, request, obj=...):
         return False
-    
+
     def get_readonly_fields(self, request, obj=None):
         return [field.name for field in self.model._meta.fields]
 

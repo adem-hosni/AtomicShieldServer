@@ -341,7 +341,8 @@ async def handle_player_quit(consumer: SafeServerConsumer, request: Dict[str, An
             },
         )
     else:
-        player_engine.connected_server = consumer
+        if player_engine:
+            player_engine.connected_server = consumer
 
     logger.info(
         f"\"{request['name']}\" ({player_engine.address}) Disconnected from \"{player_engine.connected_server.game_server.name}\" ({player_engine.connected_server.game_server.ip})."
@@ -359,6 +360,9 @@ async def handle_engine_check(consumer: SafeServerConsumer, request: Dict[str, A
     for player_ip in request["players"]:
         if not fivem_guard.get_scanner_by_ip(player_ip):
             inactive_engines.append(player_ip)
+            logger.warning(
+                f"Player engine with IP {player_ip} is not connected to the AtomicShield network!"
+            )
 
     # Log incoming request and result
     # logger.info(

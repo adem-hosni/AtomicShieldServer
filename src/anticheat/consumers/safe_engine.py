@@ -57,6 +57,8 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         self._flags: List[Flag] = []
         self._type: ServerType = None
         self._pending_responses = {}
+        self.build_timestamp = "NONE"
+        self.received_ip = "NONE"
 
     async def connect(self):
         """

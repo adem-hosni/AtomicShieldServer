@@ -36,8 +36,9 @@ class AtomicCore:
         if isinstance(buffer, bytes):
             buffer = buffer.decode()
         
-        decoded_buffer = base64.b64decode(buffer)
-        return self.decrypt_buffer(decoded_buffer).decode()
+        decoded_b64_buffer = base64.b64decode(buffer)
+        decrypted_buffer = self.decrypt_buffer(decoded_b64_buffer)
+        return decrypted_buffer.decode()
 
     def encrypt_buffer(self, buffer: Union[str, bytes]):
         if not len(self._aes_keys):

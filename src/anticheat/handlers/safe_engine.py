@@ -211,6 +211,8 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
     consumer.group_name = WebSocketGroupNames.SAFE_ENGINES.value
     consumer.channel_layer.group_add(consumer.group_name, consumer.channel_name)
     consumer.hwid = hwid
+    consumer.build_timestamp = request.get("build_timestamp", "")
+    consumer.received_ip = request.get("ip", consumer.address[0])
 
     fivem_guard.add_safe_scanner(consumer)
 

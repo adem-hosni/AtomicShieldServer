@@ -1,3 +1,4 @@
+import logging
 from anticheat.consumers.safe_server import SafeServerConsumer
 from anticheat.models import ClientHWID
 from anticheat.consumers.safe_engine import SafeEngineConsumer
@@ -5,6 +6,8 @@ from shared.enums import WebSocketGroupNames
 from typing import List, Union, Any
 import utils
 
+
+logger = logging.getLogger(__name__)
 
 class _GuardManagerBase(object):
     """
@@ -144,7 +147,7 @@ class _GuardManagerBase(object):
             Union[SafeEngineConsumer, None]: The scanner instance if found, otherwise None.
         """
         for iter_engine in self._safe_engines:
-            if iter_engine.address[0] == scanner_ip:
+            if iter_engine.address[0] == scanner_ip or iter_engine.received_ip == scanner_ip:
                 return iter_engine
         return None  # Not Found
     

@@ -211,11 +211,12 @@ async def handle_request_player_join(
         engine = fivem_guard.get_scanner_by_ip(request["ip"])
         if not engine:
             logger.info(f"Trying to retreive player's engine by 24 subnet matches...")
-            engine = fivem_guard.get_engine_by_24subnet(request["ip"])
+            if engine:
+                engine = fivem_guard.get_engine_by_24subnet(request["ip"])
         response["join"] = not engine is None
         if not response["join"]:
             response["message"] = await consumer.game_server.get_config_by_id(config_ids.AGENT_NOT_DETECTED_MSG)
-            logger.info(f'Connection refused: "AtomicShield Agent is Not Connected" {request['ip']}')
+            logger.info(f'Connection refused: "AtomicShield Agent is Not Connected" (requested ip: {request['ip']})')
         else:
             if len(request["steam"]) and request["steam"] != "Unknown":
                 engine.hwid.steam = request["steam"]
@@ -315,7 +316,7 @@ async def handle_request_player_join(
 
 async def handle_server_disconnect(consumer: SafeServerConsumer):
     logger.info(
-        f"{consumer.address[0]}:{consumer.address[1]} disconnected from AtomicShield servers network."
+        f"{consumer.game_server.name} {consumer.address} disconnected from AtomicShield servers network."
     )
     fivem_guard.remove_safe_server(consumer)
 

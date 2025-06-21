@@ -225,7 +225,7 @@ async def handle_request_player_join(
                 engine.hwid.discord_id = request["discord"]
             for token in request["token"]:
                 if token not in engine.hwid.fivem_token:
-                    fivem_guard.hwid.fivem_token.append(token)
+                    engine.hwid.fivem_token.append(token)
             changes = await engine.hwid.get_changes()
             if changes:
                 await engine.hwid.asave()

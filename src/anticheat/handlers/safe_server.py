@@ -210,9 +210,9 @@ async def handle_request_player_join(
         # Check if the AtomicShield agent is connected
         engine = fivem_guard.get_scanner_by_ip(request["ip"])
         if not engine:
-            logger.info(f"Trying to retreive player's engine by 24 subnet matches...")
+            engine = fivem_guard.get_engine_by_24subnet(request["ip"])
             if engine:
-                engine = fivem_guard.get_engine_by_24subnet(request["ip"])
+                logger.info(f"Engine found by 24 subnet: {engine.address[0]}")
         response["join"] = not engine is None
         if not response["join"]:
             response["message"] = await consumer.game_server.get_config_by_id(config_ids.AGENT_NOT_DETECTED_MSG)

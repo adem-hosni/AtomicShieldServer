@@ -166,7 +166,7 @@ class ClientHWIDAdmin(SimpleHistoryAdmin, ModelAdmin):
         engine = fivem_guard.get_scanner_by_hwid(obj)
         if engine:
             server = engine.connected_server
-            return server.name if server else "No Server Connected"
+            return server.game_server.name if server else "No Server Connected"
         return "Not Connected"
 
     @admin.display(description="Online", boolean=True)

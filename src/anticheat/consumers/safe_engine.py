@@ -365,6 +365,9 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             bool: True if the kick was successful, False otherwise.
         """
         if self._connected_server:
+            logger.info(
+                f"Kicking {self._hwid.username} ({self._hwid.id}) from {self._connected_server.game_server.name} ({self._connected_server.game_server.ip}) for reason: {reason or 'No reason provided'}"
+            )
             await self._connected_server.send(
                 SafeServerPacketID.PLAYER_KICK,
                 {

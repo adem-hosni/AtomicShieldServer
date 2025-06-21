@@ -328,10 +328,13 @@ async def handle_player_quit(consumer: SafeServerConsumer, request: Dict[str, An
     if not check_request_body_key(request, "name", str):
         return
 
+    if not check_request_body_key(request, "reason", str):
+        return
+
     player_engine = fivem_guard.get_scanner_by_ip(request["player_ip"])
     if not player_engine and not fivem_guard.get_engine_by_24subnet(request["player_ip"]):
         logger.warning(
-            f"Unauthorized player engine disconnected (ip: {request['player_ip']}, name: {request['name']})"
+            f"Unauthorized player engine disconnected (ip: {request['player_ip']}, name: {request['name']}, reason: {request['reason']})"
         )
         return await consumer.send(
             SafeServerPacketID.PLAYER_QUIT,
@@ -345,7 +348,7 @@ async def handle_player_quit(consumer: SafeServerConsumer, request: Dict[str, An
             player_engine.connected_server = consumer
 
     logger.info(
-        f"\"{request['name']}\" ({player_engine.address}) Disconnected from \"{player_engine.connected_server.game_server.name}\" ({player_engine.connected_server.game_server.ip})."
+        f"\"{request['name']}\" ({player_engine.address}) Disconnected from \"{player_engine.connected_server.game_server.name}\" ({player_engine.connected_server.game_server.ip}) | Reason: \"{request['reason']}\"."
     )
     player_engine.connected_server = None
     await player_engine.run_scanners(False)

@@ -55,8 +55,7 @@ class ApplicationAdminModel(ModelAdmin):
                         logger.error(f"Error reloading {name}: {err}")
         if fails:
             self.message_user(request, f"Failed to reload {fails} modules.", "error")
-        else:
-            self.message_user(request, f"Reloaded {success} modules.", "success")
+        self.message_user(request, f"Reloaded {success} modules.", "success")
 
 
 admin.site.register(Application, ApplicationAdminModel)

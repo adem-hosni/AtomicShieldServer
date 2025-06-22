@@ -242,7 +242,7 @@ async def handle_scanner_disconnect(consumer: SafeEngineConsumer, code):
     )
     fivem_guard.remove_safe_scanner(consumer)
     await consumer.kick(
-        "AtomicShield AntiCheat Agent Not Running. To join this server, please ensure the AtomicShield AntiCheat Agent is open and active.",
+        "AtomicShield AntiCheat Disconnected from the network, please reconnect to the network.",
     )
 
 

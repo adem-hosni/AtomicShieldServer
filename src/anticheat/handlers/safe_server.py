@@ -240,10 +240,10 @@ async def handle_request_player_join(
                 # Handle the strict flags (Unallowed by the server configuration)
                 for flag in engine.get_flags():
                     if flag.type in unstrict_detection_types:
-                        kicked = await engine.handle_basic_checks(flag.type, flag.report, consumer)
-                        if kicked:
+                        kick_message = await engine.handle_basic_checks(flag.type, flag.report, consumer)
+                        if kick_message:
                             response["join"] = False
-                            response["message"] = flag.type.label
+                            response["message"] = kick_message
                             logger.info(
                                 f'Connection refused: Strict Basic Checks Found on {engine.hwid.username}: "{flag.type.label}"'
                             )

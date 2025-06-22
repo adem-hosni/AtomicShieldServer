@@ -317,7 +317,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
     @property
     def is_flagged(self) -> bool:
         """
-        Check if the player is flagged from EagleAntiCheat
+        Check if the player is flagged from AtomicShield
 
         Returns:
             bool: True if flagged else False
@@ -543,8 +543,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                         processhacker_allowed = False
 
                     if not processhacker_allowed:
-                        await self.kick(detection_messages[detection])
-                        return True
+                        return detection_messages[detection]
 
             # Check for Secure Boot is forced
             if detection == DetectionType.SECURE_BOOT_DISABLED:
@@ -557,8 +556,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                 except AntiCheatConfigTemplates.DoesNotExist:
                     force_secureboot = False
                 if force_secureboot:
-                    await self.kick(detection_messages[detection])
-                    return True
+                    return detection_messages[detection]
 
             # Check for Force Test Signing Disabled
             if detection == DetectionType.TEST_SIGNING_ENABLED:
@@ -572,8 +570,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                     testsigning_enabled = False
 
                 if testsigning_enabled:
-                    await self.kick(detection_messages[detection])
-                    return True
+                    return detection_messages[detection]
 
             # Check for Allowed Server Plugins
             if detection == DetectionType.DLL_FOUND:
@@ -587,17 +584,14 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                     allowed_plugins = ""
 
                 if report["plugin"].strip().lower() in allowed_plugins.lower():
-                    await self.kick(
-                        utils.format_string(detection_messages[detection], report)
-                    )
-                    return True
+                    return utils.format_string(detection_messages[detection], report)
 
                 logger.info(
                     f"CHEATER REPORT! {self._hwid.computer_name} is flagged as {detection} in {self._connected_server.game_server.name} ({server.game_server.ip})"
                 )
         except Exception as err:
             logger.error(f"Unable to handle basic checks: {err}")
-        return False
+        return ""
 
     async def request_screenshot(self, base64decode: bool = True) -> str:
         if self._connected_server:

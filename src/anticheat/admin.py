@@ -62,6 +62,37 @@ class ClientHWIDAdmin(SimpleHistoryAdmin, ModelAdmin):
                     ]
                 )
             return queryset
+    
+    class ConnectedServerFilter(SimpleListFilter):
+        title = _("Connected Server")
+        parameter_name = "connected_server"
+
+        def lookups(self, request, model_admin):
+            return [
+                (server.game_server.id, server.game_server.name)
+                for server in fivem_guard.servers
+            ]
+
+        def queryset(self, request, queryset):
+            server_id = self.value()
+            if server_id:
+                try:
+                    server_id = int(server_id)
+                    return queryset.filter(
+                        id__in=[
+                            obj.id
+                            for obj in queryset
+                            if (
+                                (engine := fivem_guard.get_scanner_by_hwid(obj))
+                                and engine.connected_server
+                                and engine.connected_server.game_server.id == server_id
+                            )
+                        ]
+                    )
+                except Exception as e:
+                    logger.error(f"ConnectedServerFilter error: {e}")
+            return queryset
+
 
     list_display = [
         "id",
@@ -90,7 +121,7 @@ class ClientHWIDAdmin(SimpleHistoryAdmin, ModelAdmin):
         "username",
     )
 
-    list_filter = [OnlineFilter]
+    list_filter = [OnlineFilter, ConnectedServerFilter]
     actions = ["download_debug_logs", "shutdown"]
 
     def download_debug_logs(self, request, queryset):

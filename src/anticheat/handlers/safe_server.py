@@ -1,5 +1,6 @@
 import os
 import base64
+from django.core.cache import cache
 from datetime import timedelta
 from asgiref.sync import sync_to_async
 from typing import Dict, Any
@@ -205,7 +206,7 @@ async def handle_request_player_join(
     if request["ip"] == "127.0.0.1":
         response["join"] = False
         response["message"] = await consumer.game_server.get_config_by_id(config_ids.NETWORK_CORRUPTED)
-        logger.warning(f"got a localhost ip  in the server {consumer.game_server.name}{consumer.address}")
+        logger.warning(f"got a localhost ip in the server {consumer.game_server.name}{consumer.address}")
     else:
         # Check if the AtomicShield agent is connected
         engine = fivem_guard.get_scanner_by_ip(request["ip"])
@@ -213,6 +214,12 @@ async def handle_request_player_join(
             engine = fivem_guard.get_engine_by_24subnet(request["ip"])
             if engine:
                 logger.info(f"Engine found by 24 subnet: {engine.address[0]}")
+            else:
+                response["join"] = False
+                cached_engine_data = await cache.aget(f"ac:engine:{request['ip']}")
+                if cached_engine_data:
+                    response["join"] = True
+
         response["join"] = not engine is None
         if not response["join"]:
             response["message"] = await consumer.game_server.get_config_by_id(config_ids.AGENT_NOT_DETECTED_MSG)
@@ -269,21 +276,13 @@ async def handle_request_player_join(
                             flag.banned = True
 
             # Check if the player is banned
-            bans = await sync_to_async(list)(
-                Ban.objects.filter(hwid=engine.hwid).order_by("banned_at")
-            )
+            ban = await engine.get_last_ban()
+            if ban:
+                response["join"] = False
+                response["message"] = (
+                    f"You're Banned from AtomicShiled servers due to cheating \nReason: {ban.reason}\nNote: if you think this an error, you can appeal your ban on discord"
+                )
 
-            for ban in bans:
-                if not ban.is_expired:
-                    if (
-                        await sync_to_async(lambda: ban.game_server)()
-                    ) == consumer.game_server and ban.active:
-                        response["join"] = False
-                        response["message"] = (
-                            f"You're Banned from AtomicShiled servers due to cheating \nReason: {ban.reason}\nNote: if you think this an error, you can appeal your ban on discord"
-                        )
-
-                        break
 
         # Is the player available to join the FxServer ? then start the scanners
     if response["join"]:
@@ -322,7 +321,6 @@ async def handle_server_disconnect(consumer: SafeServerConsumer):
 
 
 async def handle_player_quit(consumer: SafeServerConsumer, request: Dict[str, Any]):
-
     if not check_request_body_key(request, "player_ip", str):
         return
 
@@ -347,10 +345,9 @@ async def handle_player_quit(consumer: SafeServerConsumer, request: Dict[str, An
     else:
         if player_engine:
             player_engine.connected_server = consumer
-
-    logger.info(
-        f"\"{request['name']}\" ({player_engine.address}) Disconnected from \"{player_engine.connected_server.game_server.name}\" ({player_engine.connected_server.game_server.ip}) | Reason: \"{request['reason']}\"."
-    )
+            logger.info(
+                f"\"{request['name']}\" ({player_engine.address}) Disconnected from \"{player_engine.connected_server.game_server.name}\" ({player_engine.connected_server.game_server.ip}) | Reason: \"{request['reason']}\"."
+            )
     player_engine.connected_server = None
     await player_engine.run_scanners(False)
 

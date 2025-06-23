@@ -176,6 +176,23 @@ class ClientHWIDAdmin(SimpleHistoryAdmin, ModelAdmin):
                     self.message_user(
                         request, f"{engine.username} is not online!", "error"
                     )
+    def get_search_results(self, request, queryset, search_term):
+        queryset, use_distinct = super().get_search_results(request, queryset, search_term)
+
+        # Match by IP address (hwid.address[0])
+        matching_ids = []
+        for obj in self.model.objects.all():
+            engine = fivem_guard.get_scanner_by_hwid(obj)
+            if engine and engine.address:
+                ip = engine.address[0]
+                if search_term in ip:
+                    matching_ids.append(obj.id)
+
+        if matching_ids:
+            queryset |= self.model.objects.filter(id__in=matching_ids)
+
+        return queryset, use_distinct
+
 
     def has_delete_permission(self, request, obj=None):
         return False

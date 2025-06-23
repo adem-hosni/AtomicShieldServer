@@ -60,7 +60,7 @@ class _GuardManagerBase(object):
                 return True
         return False
 
-    def add_safe_scanner(self, scanner: SafeEngineConsumer) -> bool:
+    def add_engine(self, scanner: SafeEngineConsumer) -> bool:
         """
         Add a AtomicShield engine to the manager if it belongs to the correct WebSocket group.
 

@@ -171,9 +171,23 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-CHANNEL_LAYERS = {
+# Cache settings
+CACHES = {
     "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer",
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/1",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+}
+
+CHANNEL_LAYERS = {
+        "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
     },
 }
 
@@ -345,8 +359,9 @@ LOGIN_REDIRECT_URL = "/dashboard/main/"
 PASSWORD_RESET_TIMEOUT = 60 * 60 * 24 * 1  # 1 Day
 
 # Sessions
-SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
+SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_COOKIE_AGE = (60 * 60 * 24) / 2  # 12h
+SESSION_CACHE_ALIAS = "default"
 
 # Captcha Settings
 RECAPTCHA_PUBLIC_KEY = "6Lee-LoqAAAAAO4gH6AC1DR0R-6V6lPpFzf2nYlx"

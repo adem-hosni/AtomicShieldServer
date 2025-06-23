@@ -1,3 +1,4 @@
+from django.core.cache import cache
 from asgiref.sync import sync_to_async
 from utils import caesar_encrypt
 import base64
@@ -208,14 +209,24 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
         f"{request_hwid['username']}'s engine asking for network join (Computer Name: \"{hwid.computer_name}\", Bios Version: \"{hwid.bios_version}\", CPU ID: \"{hwid.cpuid}\", Motherboard Serial: \"{hwid.motherboard_serial}\")"
     )
 
+    # Join the consumer to the network
     consumer.group_name = WebSocketGroupNames.SAFE_ENGINES.value
-    consumer.channel_layer.group_add(consumer.group_name, consumer.channel_name)
+    await consumer.channel_layer.group_add(consumer.group_name, consumer.channel_name)
     consumer.hwid = hwid
     consumer.build_timestamp = request.get("build_timestamp", "")
     consumer.received_ip = request.get("ip", consumer.address[0])
+    
+    # Sometimes the client sends an empty IP address, we should use the consumer's address instead
+    if consumer.received_ip:
+        consumer.received_ip = consumer.address[0]
 
-    fivem_guard.add_safe_scanner(consumer)
+    await cache.aset(f"ac:engine:{consumer.received_ip}", {
+        "hwid_id": consumer.hwid.id,
+        "address": consumer.address,
+        "build_timestamp": consumer.build_timestamp,
+    })
 
+    fivem_guard.add_engine(consumer)
     logger.info(f"{consumer.hwid.username}'s engine joined network successfuly!")
 
     signatures = await sync_to_async(list)(
@@ -244,6 +255,8 @@ async def handle_scanner_disconnect(consumer: SafeEngineConsumer, code):
     await consumer.kick(
         "AtomicShield AntiCheat Disconnected from the network, please reconnect to the network.",
     )
+
+    cache.delete(f"ac:engine:{consumer.received_ip}")
 
 
 async def handle_cheat_detection(consumer: SafeEngineConsumer, request: Dict[str, Any]):

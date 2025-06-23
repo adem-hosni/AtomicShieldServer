@@ -1,4 +1,5 @@
 import asyncio
+from asgiref.sync import sync_to_async
 import os
 import base64
 from anticheat.models import AntiCheatConfigTemplates
@@ -725,3 +726,29 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         )
 
         return base64.b64decode(response["buffer"])
+
+    async def get_bans(self) -> List[Ban]:
+        """
+        Retrieves the bans associated with the client's hardware ID.
+
+        Returns:
+            List[Ban]: A list of Ban objects associated with the client's hardware ID.
+        """
+        return await sync_to_async(list)(
+            Ban.objects.filter(hwid=self.hwid).order_by("banned_at")
+        )
+
+    async def get_last_ban(self) -> Optional[Ban]:
+        """
+        Retrieves the last ban associated with the client's hardware ID.
+
+        Returns:
+            Optional[Ban]: The last Ban object associated with the client's hardware ID, or None if no bans exist.
+        """
+        bans = await self.get_bans()
+        if not bans:
+            return None
+        for ban in reversed(bans):
+            if not ban.is_expired:
+                return ban
+        return None

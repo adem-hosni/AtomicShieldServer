@@ -1,17 +1,15 @@
 import asyncio
 import logging
+import zipfile
+import io
 from django.http import HttpResponse
-from django.utils.http import urlencode
-from django.http import HttpResponseRedirect
 from django.contrib import admin
 from django.http import HttpRequest
 from unfold.admin import ModelAdmin
 from django.contrib.admin import SimpleListFilter
-from asgiref.sync import async_to_sync
 from django.utils.translation import gettext_lazy as _
 from django.utils.safestring import mark_safe
 from simple_history.admin import SimpleHistoryAdmin
-from .forms import ClientHWIDForm
 from .models import (
     AntiCheatConfigTemplates,
     AntiCheatConfigurations,
@@ -62,7 +60,7 @@ class ClientHWIDAdmin(SimpleHistoryAdmin, ModelAdmin):
                     ]
                 )
             return queryset
-    
+
     class ConnectedServerFilter(SimpleListFilter):
         title = _("Connected Server")
         parameter_name = "connected_server"
@@ -92,7 +90,6 @@ class ClientHWIDAdmin(SimpleHistoryAdmin, ModelAdmin):
                 except Exception as e:
                     logger.error(f"ConnectedServerFilter error: {e}")
             return queryset
-
 
     list_display = [
         "id",
@@ -125,39 +122,74 @@ class ClientHWIDAdmin(SimpleHistoryAdmin, ModelAdmin):
     actions = ["download_debug_logs", "shutdown"]
 
     def download_debug_logs(self, request, queryset):
-        if request.method == "POST":
-            for obj in queryset:
-                engine = fivem_guard.get_scanner_by_hwid(obj)
-                if engine:
-                    try:
-                        logs_buffer = asyncio.run(engine.request_debug_logs())
-                        if not len(logs_buffer.strip()):
-                            self.message_user(
-                                request,
-                                "No debug logs found for this engine",
-                                "error",
-                            )
-                        else:
-                            response = HttpResponse(
-                                logs_buffer, content_type="text/plain"
-                            )
-                            response["Content-Disposition"] = (
-                                f'attachment; filename="{obj.username}-{obj.id}_debug_logs.logs"'
-                            )
-                            self.message_user(
-                                request, "Debug logs downloaded", "success"
-                            )
-                            return response
+        engines = []
+        for obj in queryset:
+            engine = fivem_guard.get_scanner_by_hwid(obj)
+            if engine:
+                engines.append((obj, engine))
 
-                    except Exception as e:
-                        logger.error(f"Error downloading debug logs: {e}")
-            self.message_user(
-                request,
-                "Error downloading debug logs, AntiCheat is not online",
-                "error",
+        if not engines:
+            self.message_user(request, "No engines found.", "error")
+            return
+
+        async def gather_logs():
+            tasks = [engine.request_debug_logs() for _, engine in engines]
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+            return results
+
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            results = loop.run_until_complete(gather_logs())
+        finally:
+            loop.close()
+
+        # Filter valid logs (ignore exceptions and empty logs)
+        valid_logs = []
+        for (obj, _), result in zip(engines, results):
+            if not isinstance(result, str):
+                logger.error(f"Error fetching logs for {obj.username}: (got {result.__class__.__name__})")
+                continue
+
+            if not result.strip():
+                self.message_user(
+                    request, f"No debug logs found for {obj.username}", "error"
+                )
+                continue
+            valid_logs.append((obj, result))
+
+        if not valid_logs:
+            self.message_user(request, "No valid debug logs to download.", "error")
+            return
+
+        if len(valid_logs) == 1:
+            obj, logs = valid_logs[0]
+            response = HttpResponse(logs, content_type="text/plain")
+            response["Content-Disposition"] = (
+                f'attachment; filename="{obj.username}-{obj.id}_debug_logs.logs"'
             )
-        else:
-            self.message_user(request, "No engines found", "error")
+            self.message_user(
+                request, f"Debug logs downloaded for {obj.username}", "success"
+            )
+            return response
+
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(
+            zip_buffer, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9
+        ) as zip_file:
+            for obj, logs in valid_logs:
+                filename = f"{obj.username}-{obj.id}_debug_logs.logs"
+                zip_file.writestr(filename, logs)
+
+        zip_buffer.seek(0)
+        response = HttpResponse(zip_buffer.read(), content_type="application/zip")
+        response["Content-Disposition"] = (
+            f'attachment; filename="{len(valid_logs)}-debug-logs.zip"'
+        )
+        self.message_user(
+            request, f"{len(valid_logs)} debug logs downloaded as zip archive.", "success"
+        )
+        return response
 
     def shutdown(self, request, queryset):
         if request.method == "POST":
@@ -176,8 +208,11 @@ class ClientHWIDAdmin(SimpleHistoryAdmin, ModelAdmin):
                     self.message_user(
                         request, f"{engine.username} is not online!", "error"
                     )
+
     def get_search_results(self, request, queryset, search_term):
-        queryset, use_distinct = super().get_search_results(request, queryset, search_term)
+        queryset, use_distinct = super().get_search_results(
+            request, queryset, search_term
+        )
 
         # Match by IP address (hwid.address[0])
         matching_ids = []
@@ -193,7 +228,6 @@ class ClientHWIDAdmin(SimpleHistoryAdmin, ModelAdmin):
 
         return queryset, use_distinct
 
-
     def has_delete_permission(self, request, obj=None):
         return False
 
@@ -208,7 +242,7 @@ class ClientHWIDAdmin(SimpleHistoryAdmin, ModelAdmin):
     @admin.display(description="Discord ID")
     def display_discord_id(self, obj: ClientHWID):
         return obj.discord_id or "Not Linked"
-    
+
     @admin.display(description="Connected Server")
     def display_connected_server(self, obj: ClientHWID):
         engine = fivem_guard.get_scanner_by_hwid(obj)

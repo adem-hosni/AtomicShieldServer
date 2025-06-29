@@ -1,3 +1,4 @@
+import uuid
 import asyncio
 from asgiref.sync import sync_to_async
 import os
@@ -23,7 +24,7 @@ from shared.enums import (
 from shared.flags import Flag, DetectionType
 from .. import config_ids
 import json
-from typing import Union, Dict, List, Optional, Any
+from typing import Union, Dict, List, Optional, Any, Tuple
 import logging
 
 logger = logging.getLogger(__name__)
@@ -57,9 +58,21 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         self._flagged: bool = False
         self._flags: List[Flag] = []
         self._type: ServerType = None
-        self._pending_responses = {}
+        self._pending_responses: Dict[
+            Tuple[SafeEnginePacketID, str], asyncio.Future[Any]
+        ] = {}
         self.build_timestamp = "NONE"
         self.received_ip = "NONE"
+
+    def generate_request_id(self) -> str:
+        """
+        Generates a unique request ID for tracking purposes.
+
+        Returns:
+        --------
+            str: A unique request ID.
+        """
+        return str(uuid.uuid4())
 
     async def connect(self):
         """
@@ -172,9 +185,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         diff = time() - unix_timestamp
         if diff >= 120 and False:
             # Request was tampered
-            logger.warning(
-                f"Tampered request received from {self.address} ({diff}s)"
-            )
+            logger.warning(f"Tampered request received from {self.address} ({diff}s)")
             return await self.close()
 
         try:
@@ -191,11 +202,16 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         except ValueError:
             logger.warning(f"Undefined request type (given: {request_body['type']})")
             return await self.close()
+        
+        packet_type = request_body["type"]
+        request_id = request_body.get("request_id", None)
+        key = (packet_type, request_id) if request_id else packet_type
 
-        if request_body["type"] in self._pending_responses:
-            if not self._pending_responses[request_body["type"]].cancelled():
-                self._pending_responses[request_body["type"]].set_result(request_body)
-            del self._pending_responses[request_body["type"]]
+        if key in self._pending_responses:
+            future = self._pending_responses[key]
+            if not future.cancelled():
+                future.set_result(request_body)
+            del self._pending_responses[key]
 
         from ..handlers.safe_engine import (
             handle_network_join,
@@ -381,10 +397,12 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             return True
         return False
 
-    async def send_report(self, reason, report, image_buffer, ban_assigned: bool = True):
+    async def send_report(
+        self, reason, report, image_buffer, ban_assigned: bool = True
+    ):
         sent_report = report.copy()
         sent_report.pop("ss", None)
-        
+
         if not ban_assigned:
             await utils.discord.send_discord_embed(
                 "https://discord.com/api/webhooks/1370769531911540807/rHtkBD7ffXLtCg7DHe9odOJpueMiw_RU-Mxu26_iip7XqPu5zBJO6Ram5UidJ3CsPtGi",
@@ -528,7 +546,10 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             )
 
     async def handle_basic_checks(
-        self, detection: DetectionType, report: Dict[str, Any], server: SafeServerConsumer
+        self,
+        detection: DetectionType,
+        report: Dict[str, Any],
+        server: SafeServerConsumer,
     ) -> bool:
         # Check if the malicious driver is about Process Hacker
         try:
@@ -549,10 +570,8 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             # Check for Secure Boot is forced
             if detection == DetectionType.SECURE_BOOT_DISABLED:
                 try:
-                    force_secureboot = (
-                        await server.game_server.get_config_by_id(
-                            config_ids.FORCE_SECUREBOOT
-                        )
+                    force_secureboot = await server.game_server.get_config_by_id(
+                        config_ids.FORCE_SECUREBOOT
                     )
                 except AntiCheatConfigTemplates.DoesNotExist:
                     force_secureboot = False
@@ -562,10 +581,8 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             # Check for Force Test Signing Disabled
             if detection == DetectionType.TEST_SIGNING_ENABLED:
                 try:
-                    testsigning_enabled = (
-                        await server.game_server.get_config_by_id(
-                            config_ids.FORCE_TESTSIGNING
-                        )
+                    testsigning_enabled = await server.game_server.get_config_by_id(
+                        config_ids.FORCE_TESTSIGNING
                     )
                 except AntiCheatConfigTemplates.DoesNotExist:
                     testsigning_enabled = False
@@ -576,10 +593,8 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             # Check for Allowed Server Plugins
             if detection == DetectionType.DLL_FOUND:
                 try:
-                    allowed_plugins = (
-                        await server.game_server.get_config_by_id(
-                            config_ids.ALLOWED_FIVEM_PLUGINS
-                        )
+                    allowed_plugins = await server.game_server.get_config_by_id(
+                        config_ids.ALLOWED_FIVEM_PLUGINS
                     )
                 except AntiCheatConfigTemplates.DoesNotExist:
                     allowed_plugins = ""
@@ -602,16 +617,24 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         else:
             logger.info(f"Screenshot requested of {self._hwid.username}")
         response_future = asyncio.get_event_loop().create_future()
-        self._pending_responses[SafeEnginePacketID.REQUEST_SCREENSHOT] = response_future
+        request_id = self.generate_request_id()
 
-        await self.send(SafeEnginePacketID.REQUEST_SCREENSHOT, {})
+        self._pending_responses[(SafeEnginePacketID.REQUEST_SCREENSHOT, request_id)] = (
+            response_future
+        )
+
+        await self.send(
+            SafeEnginePacketID.REQUEST_SCREENSHOT, {"request_id": request_id}
+        )
         try:
             response = await asyncio.wait_for(response_future, 35)
         except asyncio.TimeoutError:
             logger.error(
                 f"Failed to retreive screenshot from {self._hwid.username} {self.address}!"
             )
-            response_future.cancel()
+            self._pending_responses.pop(
+                (SafeEnginePacketID.REQUEST_SCREENSHOT, request_id), None
+            )
             return None
 
         if not response["success"]:
@@ -621,9 +644,12 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             return None
 
         logger.info(
-            f"Screenshot of {self._hwid.username} received successfully ({len(response['buffer'])} bytes)!")
-        
-        return base64.b64decode(response["buffer"]) if base64decode else response["buffer"]
+            f"Screenshot of {self._hwid.username} received successfully ({len(response['buffer'])} bytes)!"
+        )
+
+        return (
+            base64.b64decode(response["buffer"]) if base64decode else response["buffer"]
+        )
 
     async def get_screenshot(self) -> str:
         image_buffer = await self.request_screenshot(base64decode=True)
@@ -649,9 +675,15 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             f"Turning \"{self._hwid.username}\" engine scanners {'on' if run else 'off'}..."
         )
         response_future = asyncio.get_event_loop().create_future()
-        self._pending_responses[SafeEnginePacketID.RUN_SCANNERS] = response_future
+        request_id = self.generate_request_id()
 
-        await self.send(SafeEnginePacketID.RUN_SCANNERS, {"run": run})
+        self._pending_responses[(SafeEnginePacketID.RUN_SCANNERS, request_id)] = (
+            response_future
+        )
+
+        await self.send(
+            SafeEnginePacketID.RUN_SCANNERS, {"run": run, "request_id": request_id}
+        )
 
         try:
             response = await asyncio.wait_for(response_future, 12)
@@ -659,60 +691,83 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             logger.error(
                 f"Failed to {'start' if run else 'shutdown'} engine scanners of {self._hwid.username} {self.address}!"
             )
-            response_future.cancel()
+            self._pending_responses.pop(
+                (SafeEnginePacketID.RUN_SCANNERS, request_id), None
+            )
             return False
         return response["success"]
 
     async def shutdown(self) -> bool:
-        logger.info(
-            f"Shutting down engine of {self._hwid.username} {self.address}..."
-        )
+        logger.info(f"Shutting down engine of {self._hwid.username} {self.address}...")
         response_future = asyncio.get_event_loop().create_future()
-        self._pending_responses[SafeEnginePacketID.ENGINE_SHUTDOWN] = response_future
+        request_id = self.generate_request_id()
+        self._pending_responses[(SafeEnginePacketID.ENGINE_SHUTDOWN, request_id)] = (
+            response_future
+        )
 
-        await self.send(SafeEnginePacketID.ENGINE_SHUTDOWN, {})
+        await self.send(SafeEnginePacketID.ENGINE_SHUTDOWN, {"request_id": request_id})
 
         return True
-    
-    async def request_debug_logs(self) -> str:
-        logger.info(
-            f"Debug logs requested of {self._hwid.username} {self.address}..."
-        )
-        response_future = asyncio.get_event_loop().create_future()
-        self._pending_responses[SafeEnginePacketID.REQUEST_DEBUG_LOGS] = response_future
 
-        await self.send(SafeEnginePacketID.REQUEST_DEBUG_LOGS, {})
+    async def request_debug_logs(self) -> str:
+        logger.info(f"Debug logs requested from {self._hwid.username} {self.address}...")
+
+        response_future = asyncio.get_event_loop().create_future()
+        request_id = self.generate_request_id()
+        key = (SafeEnginePacketID.REQUEST_DEBUG_LOGS, request_id)
+
+        self._pending_responses[key] = response_future
+        await self.send(SafeEnginePacketID.REQUEST_DEBUG_LOGS, {"request_id": request_id})
 
         try:
-            response = await asyncio.wait_for(response_future, 80)
-        except asyncio.TimeoutError:
-            logger.error(
-                f"Failed to retreive debug logs from {self._hwid.username} {self.address}!"
-            )
-            response_future.cancel()
-            return ""
-        logger.info(
-            f"Debug logs of {self._hwid.username} {self.address} received successfully ({len(response['logs'])} bytes)!"
-        )
-        return response["logs"]
+            waited = 0
+            interval = 0.5
+            max_wait = 30
 
+            while waited < max_wait:
+                if response_future.done():
+                    response = response_future.result()
+                    logger.info(
+                        f"Logs received from {self._hwid.username} {self.address} ({len(response['logs'])} bytes)"
+                    )
+                    return response["logs"]
+                await asyncio.sleep(interval)
+                waited += interval
+
+            raise asyncio.TimeoutError("Log request timed out")
+
+        except asyncio.CancelledError:
+            logger.warning(f"Cancelled debug log request for {self._hwid.username} {self.address}")
+            return ""
+        except asyncio.TimeoutError:
+            logger.error(f"Timeout while retrieving logs from {self._hwid.username} {self.address}")
+            return ""
+        finally:
+            self._pending_responses.pop(key, None)
 
     async def request_file_upload(self, file_path: str) -> bytes:
-        logger.info(
-            f"File upload requested of {self._hwid.username} ({file_path})..."
-        )
+        logger.info(f"File upload requested of {self._hwid.username} ({file_path})...")
         response_future = asyncio.get_event_loop().create_future()
-        self._pending_responses[SafeEnginePacketID.REQUEST_FILE_UPLOAD] = response_future
+        request_id = self.generate_request_id()
 
-        await self.send(SafeEnginePacketID.REQUEST_FILE_UPLOAD, {"file_path": file_path})
+        self._pending_responses[
+            (SafeEnginePacketID.REQUEST_FILE_UPLOAD, request_id)
+        ] = response_future
+
+        await self.send(
+            SafeEnginePacketID.REQUEST_FILE_UPLOAD,
+            {"file_path": file_path, "request_id": request_id},
+        )
 
         try:
-            response = await asyncio.wait_for(response_future, 120*2)
+            response = await asyncio.wait_for(response_future, 120 * 2)
         except asyncio.TimeoutError:
             logger.error(
                 f"Failed to retreive file upload from {self._hwid.username} {self.address}!"
             )
-            response_future.cancel()
+            self._pending_responses.pop(
+                (SafeEnginePacketID.REQUEST_FILE_UPLOAD, request_id), None
+            )
             return None
 
         if not response["success"]:

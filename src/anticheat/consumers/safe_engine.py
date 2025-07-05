@@ -793,7 +793,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             Ban.objects.filter(hwid=self.hwid).order_by("banned_at")
         )
 
-    async def get_last_ban(self) -> Optional[Ban]:
+    async def get_last_ban(self, game_server_consumer: Optional[SafeServerConsumer] = None) -> Optional[Ban]:
         """
         Retrieves the last ban associated with the client's hardware ID.
 
@@ -804,6 +804,8 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         if not bans:
             return None
         for ban in reversed(bans):
-            if not ban.is_expired:
+            if game_server_consumer and ban.game_server != game_server_consumer.game_server:
+                continue
+            if not ban.is_expired and ban.active:
                 return ban
         return None

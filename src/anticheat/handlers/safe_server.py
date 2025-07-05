@@ -263,11 +263,11 @@ async def handle_request_player_join(
                         response["join"] = False
                         response["message"] = flag.report.get('kick_message', '<UNKNOWN>')
 
-                        await engine.send_report(flag.report.get("kick_message", ""), flag.report, flag.report["ss"])
                         if not flag.banned:
+                            await engine.send_report(flag.report.get("kick_message", ""), flag.report, flag.report["ss"])
                             await engine.ban(
                                 detection_type=flag.type,
-                                duration=timedelta(days=99),
+                                duration=timedelta(days=999),
                                 target_game_server=consumer.game_server,
                                 image_buffer=flag.report.get("ss", b""),
                                 reason=flag.report.get("kick_message", "<None>"),

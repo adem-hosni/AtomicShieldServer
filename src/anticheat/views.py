@@ -126,7 +126,7 @@ def crash_report_upload(request: HttpRequest) -> HttpResponse:
 
         crash_by = fivem_guard.get_scanner_by_ip(request_ip)
         report = CrashReport.objects.create(
-            crash_by=crash_by,
+            crash_by=crash_by.hwid,
             error=request_body.get("error", "CRASHED"),
             exception_code=exception_code,
             exception_address=exception_address,

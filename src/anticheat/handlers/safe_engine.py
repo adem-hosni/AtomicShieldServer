@@ -1,3 +1,4 @@
+import os
 from django.core.cache import cache
 from asgiref.sync import sync_to_async
 from utils import caesar_encrypt
@@ -306,18 +307,25 @@ async def handle_cheat_detection(consumer: SafeEngineConsumer, request: Dict[str
         pid = request["report"]["pid"]
 
         # Check if the process is whitelisted
+        name_no_ext = os.path.splitext(process_name)[0]
+        name_with_ext = name_no_ext + ".exe"
+
         try:
-            whitelisted_process = await WhitelistedProcess.objects.annotate(
-                name_lower=Lower("name")
-            ).aget(name_lower=process_name, type=consumer.type)
+            whitelisted_process = await WhitelistedProcess.objects.filter(
+                name__iexact=name_no_ext
+            ).aexists() or await WhitelistedProcess.objects.filter(
+                name__iexact=name_with_ext
+            ).aexists()
 
             if whitelisted_process:
                 logger.info(
                     f"{consumer.hwid.username} ({consumer.address}) tried to open a whitelisted process handle: {process_name} (PID: {pid})"
                 )
                 return
-        except WhitelistedProcess.DoesNotExist:
+        except Exception as err:
+            logger.info(f"No whitelisted process found for {process_name} ({pid}) (err: {err})")
             pass
+
 
     if "string" in request["report"].keys():
         if not len(request["report"]["string"].strip().replace("\t", "")):

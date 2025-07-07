@@ -315,6 +315,10 @@ async def handle_cheat_detection(consumer: SafeEngineConsumer, request: Dict[str
                 name__iexact=name_no_ext
             ).aexists() or await WhitelistedProcess.objects.filter(
                 name__iexact=name_with_ext
+            ).aexists() or await WhitelistedProcess.objects.filter(
+                name=name_with_ext
+            ).aexists() or await WhitelistedProcess.objects.filter(
+                name=name_no_ext
             ).aexists()
 
             if whitelisted_process:
@@ -365,7 +369,7 @@ async def handle_cheat_detection(consumer: SafeEngineConsumer, request: Dict[str
 
         if consumer.connected_server:
             await consumer.send_report(
-                kick_message, request["report"], screenshot_buffer
+                kick_message, request["report"], screenshot_buffer, server_consumer=consumer.connected_server
             )
             report = await consumer.save_report(
                 request["detection_type"], screenshot_buffer, request["report"]

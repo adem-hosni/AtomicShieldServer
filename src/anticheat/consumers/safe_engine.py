@@ -202,7 +202,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         except ValueError:
             logger.warning(f"Undefined request type (given: {request_body['type']})")
             return await self.close()
-        
+
         packet_type = request_body["type"]
         request_id = request_body.get("request_id", None)
         key = (packet_type, request_id) if request_id else packet_type
@@ -398,7 +398,12 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         return False
 
     async def send_report(
-        self, reason, report, image_buffer, ban_assigned: bool = True
+        self,
+        reason,
+        report,
+        image_buffer,
+        ban_assigned: bool = True,
+        server_consumer: Optional[SafeServerConsumer] = None,
     ):
         sent_report = report.copy()
         sent_report.pop("ss", None)
@@ -413,6 +418,13 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                 fields=[
                     (f"{key.replace("_", " ").title()}:", f"```{value}```", False)
                     for key, value in sent_report.items()
+                ]
+                + [
+                    (
+                        (f"```{server_consumer.game_server.name}```", False)
+                        if server_consumer
+                        else ("```NO SERVER CONNECTED```", False)
+                    )
                 ],
                 image_buffer=image_buffer,
             )
@@ -710,14 +722,18 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         return True
 
     async def request_debug_logs(self) -> str:
-        logger.info(f"Debug logs requested from {self._hwid.username} {self.address}...")
+        logger.info(
+            f"Debug logs requested from {self._hwid.username} {self.address}..."
+        )
 
         response_future = asyncio.get_event_loop().create_future()
         request_id = self.generate_request_id()
         key = (SafeEnginePacketID.REQUEST_DEBUG_LOGS, request_id)
 
         self._pending_responses[key] = response_future
-        await self.send(SafeEnginePacketID.REQUEST_DEBUG_LOGS, {"request_id": request_id})
+        await self.send(
+            SafeEnginePacketID.REQUEST_DEBUG_LOGS, {"request_id": request_id}
+        )
 
         try:
             waited = 0
@@ -737,10 +753,14 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             raise asyncio.TimeoutError("Log request timed out")
 
         except asyncio.CancelledError:
-            logger.warning(f"Cancelled debug log request for {self._hwid.username} {self.address}")
+            logger.warning(
+                f"Cancelled debug log request for {self._hwid.username} {self.address}"
+            )
             return ""
         except asyncio.TimeoutError:
-            logger.error(f"Timeout while retrieving logs from {self._hwid.username} {self.address}")
+            logger.error(
+                f"Timeout while retrieving logs from {self._hwid.username} {self.address}"
+            )
             return ""
         finally:
             self._pending_responses.pop(key, None)
@@ -793,7 +813,9 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             Ban.objects.filter(hwid=self.hwid).order_by("banned_at")
         )
 
-    async def get_last_ban(self, game_server_consumer: Optional[SafeServerConsumer] = None) -> Optional[Ban]:
+    async def get_last_ban(
+        self, game_server_consumer: Optional[SafeServerConsumer] = None
+    ) -> Optional[Ban]:
         """
         Retrieves the last ban associated with the client's hardware ID.
 
@@ -804,7 +826,10 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         if not bans:
             return None
         for ban in reversed(bans):
-            if game_server_consumer and ban.game_server != game_server_consumer.game_server:
+            if (
+                game_server_consumer
+                and ban.game_server != game_server_consumer.game_server
+            ):
                 continue
             if not ban.is_expired and ban.active:
                 return ban

@@ -208,7 +208,7 @@ def render_bans(request: HttpRequest) -> HttpResponse:
     except GameServer.DoesNotExist:
         messages.error(request, "The selected server does not exists!")
     else:
-        bans = Ban.objects.filter(game_server=target_server)
+        bans = Ban.objects.filter(game_server=target_server).order_by("-banned_at")
 
     if request.method == "POST":
         if not target_server:

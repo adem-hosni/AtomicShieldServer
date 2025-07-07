@@ -1,66 +1,47 @@
-# Authentication
-- ~~Implement Authentication Middleware~~
-- ~~Add captcha to the authentication~~
-- ~~Protect admin dashboard~~
+# AtomicPlatform
+- Convert dashboard to reactjs:
+    - Add detection chart for last 30 day detections in dashboard home
+    - Show last changelogs in home
+    - Show server stats (player count, game mode, game build, subscription status, ...)
+    - Refactor **announcements** page
+    - Refactor **bans** table
+    - Refactor **configuration**
+    - Refactor **instalation** page
+- Authentication:
+    - Refactor **signin** and **signup** pages
+    - Add extra authentication methods (discord and google)
+- Link with atomic server api
+- Set player detection action (ban/kick)
+- Add anticheat audit logs page
+- Player info page:
+    - Show player suspicious score (10% suspicious, 60%, ...)
+    - Show player old bans
+- Game Monitor:
+    - Create monitoring dashboard
+    - Send player screen data to atomic websocket
+    - Load player screen data from atomic websocket
+    - Add **ban** and **kick** actions
+    - Request player identifiers
+    - Save player screenshot from stream
+    - Record player with custom duration (30s, 60s, ...)
+- Configurations to add:
+    - Log player join
+    - Log player disconnect
+- Whitelist System:
+    - Create whitelist system web page
+    - Add player whitelist license and discord id
+- Engine uptime:
+    - Add player uptime
+    - Add player total playing time
+- HWID System:
+    - Refactor HWID system (get engine)
+    - Delete unnecessary HWIDs in the database
 
-# Dashboard
-- ~~Add refresh server key functionality~~
-- ~~Integrating Server Creation with active subscriptions~~
-- ~~Add Subscriptions Section~~
-- ~~Add Quick Setup Section~~
-wwwww- ~~Add Server Edit action~~
-- ~~Add Discord Webhook Logs~~
-- ~~Add Disable bans functionality~~
-- ~~Add Reset Configurations button~~
-- ~~Add 404 Page Not Found Page~~
-- Show online player
-- Validate received HWID caches
-- SSL Verification
-- Take player screenshot
-- Show detection screenshot
-- Complete home page
-
-# Fivem Server
-- ~~Check if the key if it's being used~~
-- ~~Check if the player is banned~~
-- ~~Implement server subscription duration (AtomicShield master server side)~~
-- Check for engine disconnect
-- Check if the player disconnected from Fivem server
-- Check AtomicShield server status
-- Implement HTTP communication encryption
-
-# AtomicShield Agent
-- ~~Rebase imgui design code~~
-- ~~Check if the client is already connected~~
-- ~~Check server's status~~
-- ~~Check agent version~~
-- ~~Implement startup option~~
-- ~~Implement HTTP communication encryption~~
-- Inject engine dll into fivem's process
-- Add some security checks
-
-# AtomicShield Engine
-- ~~HWID Checks~~
-- ~~Malicious Tools checking~~
-- ~~Memory scan Pulse (with network sync)~~
-- ~~Player warn~~
-- ~~Validate HWID~~
-- ~~HWID Caching~~
-- ~~Check server's response integrity~~
-- ~~Implement HTTP communication encryption~~
-- Fix imgui transparency issue
-
-# Engine Integrity Checks
-- ~~Malicious Windows driver names verification~~
-- ~~Check for Fivem plugins in plugins folder~~
-- ~~Verify the driver test signing mode is off~~
-- ~~Verify Secure Boot is Enabled~~
-- ~~Check for unsigned modules~~
-- ~~Protect anticheat threads~~
-- ~~Determine whether the thread base wasn't in any module range~~
-- ~~Check process in-memory strings~~
-- ~~Check process handles~~
-- ~~Hide scan process~~
-- ~~Send screenshot with detection report~~
-- ~~Hook BaseThreadInitThunk~~
-- Send detection report for malicious strings
+# AtomicEngine:
+- Reload engine
+- Load signatures from the server
+- Add engine uptime
+- Refactor HWID
+- Add more HWID components
+- Store HWID caches
+s

@@ -380,9 +380,9 @@ EMAIL_SUBJECT_PREFIX = "[AtomicShield] "
 TEBEX_SECRET_KEY = "433788188a0ba1d3bb38b21fc39b2967"
 
 if not DEBUG:
-    # Redirect from http to httpsS
-    SECURE_SSL_REDIRECT = True
-    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    # Redirect from http to https
+    # SECURE_SSL_REDIRECT = True
+    # SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
     USE_X_FORWARDED_HOST = True
 
@@ -393,16 +393,6 @@ if not DEBUG:
     SESSION_COOKIE_SECURE = True
     SESSION_COOKIE_SAMESITE = None
     SESSION_COOKIE_HTTPONLY = True
-
-    SECURE_CONTENT_TYPE_NOSNIFF = True
-    SECURE_BROWSER_XSS_FILTER = True
-    SECURE_REFERRER_POLICY = "same-origin"
-
-    SECURE_CONTENT_TYPE_NOSNIFF = True
-    SECURE_BROWSER_XSS_FILTER = True
-
-    X_FRAME_OPTIONS = "DENY"
-    REFERRER_POLICY = "no-referrer-when-downgrade"
 
     CSRF_COOKIE_SECURE = True
     CSRF_COOKIE_HTTPONLY = True

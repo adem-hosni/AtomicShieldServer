@@ -743,6 +743,8 @@ def render_configurations(request: HttpRequest) -> HttpResponse:
                 case "save":
                     for config_id, config_value in request.POST.items():
                         if config_id != "csrfmiddlewaretoken" and config_id != "type":
+                            if config_value == "on" or config_value == "off":
+                                config_value = True if config_value == "on" else False
                             target_server.configurations.config[config_id] = (
                                 config_value
                             )

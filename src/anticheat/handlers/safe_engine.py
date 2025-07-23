@@ -1,4 +1,6 @@
+import re
 import os
+import asyncio
 from django.core.cache import cache
 from asgiref.sync import sync_to_async
 from utils import caesar_encrypt
@@ -63,6 +65,22 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
             f"got Empty {'HWID,' if not len(request_hwid) else ''}{'HWID Cache' if not len([]) else ''} on {consumer.address}"
         )
         return consumer.close()
+
+    for component in request_hwid.keys():
+        component_value = request_hwid[component]
+
+        if isinstance(component_value, list):
+            for i in range(len(component_value)):
+                item = component_value[i]
+                if isinstance(item, str):
+                    component_value[i] = utils.decode_if_base64(item)
+                else:
+                    component_value[i] = item  # leave untouched
+        elif isinstance(component_value, str):
+            request_hwid[component] = utils.decode_if_base64(component_value)
+        else:
+            # leave dicts, ints, bools, etc. as-is
+            request_hwid[component] = component_value
 
     if not utils.check_request_body_key(request_hwid, "extra", dict):
         await consumer.send(
@@ -216,19 +234,24 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
     consumer.hwid = hwid
     consumer.build_timestamp = request.get("build_timestamp", "")
     consumer.received_ip = request.get("ip", consumer.address[0])
-    
+
     # Sometimes the client sends an empty IP address, we should use the consumer's address instead
-    if consumer.received_ip:
+    if not consumer.received_ip:
         consumer.received_ip = consumer.address[0]
 
-    await cache.aset(f"ac:engine:{consumer.received_ip}", {
-        "hwid_id": consumer.hwid.id,
-        "address": consumer.address,
-        "build_timestamp": consumer.build_timestamp,
-    })
+    await cache.aset(
+        f"ac:engine:{consumer.received_ip}",
+        {
+            "hwid_id": consumer.hwid.id,
+            "address": consumer.address,
+            "build_timestamp": consumer.build_timestamp,
+        },
+    )
 
     fivem_guard.add_engine(consumer)
-    logger.info(f"{consumer.hwid.username}'s engine joined network successfuly!")
+    logger.info(
+        f"{consumer.hwid.username}'s engine joined network successfuly [{consumer.received_ip}]!"
+    )
 
     signatures = await sync_to_async(list)(
         MaliciousSignatures.objects.filter(type=consumer.type)
@@ -249,15 +272,28 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
 
 
 async def handle_scanner_disconnect(consumer: SafeEngineConsumer, code):
+    async def delayed_kick_check(consumer: SafeEngineConsumer, code: int):
+        await asyncio.sleep(40)
+        if (not fivem_guard.get_scanner_by_ip(consumer.address[0])) or (
+            not fivem_guard.get_engine_by_24subnet(consumer.address[0])
+        ):
+            logger.info(
+                f"{consumer.hwid.username if consumer.hwid else '<Unknown>'} still disconnected after 20s, kicking. (code: {code})"
+            )
+            await consumer.kick(
+                "AtomicShield AntiCheat was disconnected for too long. Please reconnect to the network."
+            )
+            cache.delete(f"ac:engine:{consumer.received_ip}")
+        else:
+            logger.info(
+                f"{consumer.hwid.username if consumer.hwid else '<Unknown>'} reconnected within 20s, no kick necessary."
+            )
+
     logger.info(
         f"{consumer.hwid.username if consumer.hwid else '<Unknown>'}'s scanner disconnected from network. (code: {code})"
     )
     fivem_guard.remove_safe_scanner(consumer)
-    await consumer.kick(
-        "AtomicShield AntiCheat Disconnected from the network, please reconnect to the network.",
-    )
-
-    cache.delete(f"ac:engine:{consumer.received_ip}")
+    asyncio.create_task(delayed_kick_check(consumer, code))
 
 
 async def handle_cheat_detection(consumer: SafeEngineConsumer, request: Dict[str, Any]):
@@ -306,19 +342,17 @@ async def handle_cheat_detection(consumer: SafeEngineConsumer, request: Dict[str
         process_name = request["report"]["process_name"]
         pid = request["report"]["pid"]
 
-        # Check if the process is whitelisted
         name_no_ext = os.path.splitext(process_name)[0]
         name_with_ext = name_no_ext + ".exe"
 
         try:
+            query = (
+                Q(name__iexact=name_no_ext)
+                | Q(name__iexact=name_with_ext)
+                | Q(name__iexact=process_name)
+            )
             whitelisted_process = await WhitelistedProcess.objects.filter(
-                name__iexact=name_no_ext
-            ).aexists() or await WhitelistedProcess.objects.filter(
-                name__iexact=name_with_ext
-            ).aexists() or await WhitelistedProcess.objects.filter(
-                name=name_with_ext
-            ).aexists() or await WhitelistedProcess.objects.filter(
-                name=name_no_ext
+                query
             ).aexists()
 
             if whitelisted_process:
@@ -327,9 +361,10 @@ async def handle_cheat_detection(consumer: SafeEngineConsumer, request: Dict[str
                 )
                 return
         except Exception as err:
-            logger.info(f"No whitelisted process found for {process_name} ({pid}) (err: {err})")
+            logger.info(
+                f"No whitelisted process found for {process_name} ({pid}) (err: {err})"
+            )
             pass
-
 
     if "string" in request["report"].keys():
         if not len(request["report"]["string"].strip().replace("\t", "")):
@@ -350,7 +385,9 @@ async def handle_cheat_detection(consumer: SafeEngineConsumer, request: Dict[str
         except (MaliciousSignatures.DoesNotExist, Exception) as err:
             logger.error(err)
             ban_message = "Suspicious Behaviour"
-            logger.warning(f"FALSE BAN DETECTED!! from {consumer.hwid.username} {consumer.address}")
+            logger.warning(
+                f"FALSE BAN DETECTED!! from {consumer.hwid.username} {consumer.address}"
+            )
             return
         kick_message = f"Internal Cheat Detected: {ban_message}"
     else:
@@ -368,14 +405,11 @@ async def handle_cheat_detection(consumer: SafeEngineConsumer, request: Dict[str
         )
 
         if consumer.connected_server:
-            await consumer.send_report(
-                kick_message, request["report"], screenshot_buffer, server_consumer=consumer.connected_server
-            )
             report = await consumer.save_report(
                 request["detection_type"], screenshot_buffer, request["report"]
             )
             flag.banned = True
-            await consumer.ban(
+            ban = await consumer.ban(
                 detection_type=request["detection_type"],
                 duration=timedelta(days=99),
                 target_game_server=consumer.connected_server.game_server,
@@ -386,6 +420,15 @@ async def handle_cheat_detection(consumer: SafeEngineConsumer, request: Dict[str
             logger.info(
                 f"KICKING {consumer.hwid.username} from {consumer.connected_server.game_server.name} for {kick_message}"
             )
+
+            await consumer.send_report(
+                kick_message,
+                request["report"],
+                screenshot_buffer,
+                server_consumer=consumer.connected_server,
+                ban_id=ban.id,
+            )
+
             await consumer.kick(
                 f"You're Banned from AtomicShiled servers due to cheating \nReason: {kick_message}\nNote: if you think this an error, you can appeal your ban on discord"
             )
@@ -431,9 +474,7 @@ async def handle_filehash_request(
     )
 
     try:
-        threatfile = await ThreatFile.objects.aget(
-            hash=request["filehash"]
-        )
+        threatfile = await ThreatFile.objects.aget(hash=request["filehash"])
     except ThreatFile.DoesNotExist:
         # File not found, upload it
         file_buffer = await consumer.request_file_upload(request["filepath"])
@@ -442,7 +483,9 @@ async def handle_filehash_request(
                 f"Unable to upload file {request['filepath']} from {consumer.hwid.username} {consumer.address}"
             )
             return await consumer.close()
-        file_buffer = ContentFile(file_buffer, name=request["filepath"].replace("\\", "/").split("/")[-1])
+        file_buffer = ContentFile(
+            file_buffer, name=request["filepath"].replace("\\", "/").split("/")[-1]
+        )
 
         # Insert the threat file
         uploaded_threat = ThreatFile(

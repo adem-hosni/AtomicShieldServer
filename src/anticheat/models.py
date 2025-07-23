@@ -144,7 +144,7 @@ class ClientHWID(models.Model):
 
 
 class DetectionReport(models.Model):
-    hwid = models.ForeignKey(ClientHWID, on_delete=models.CASCADE)
+    hwid = models.ForeignKey(ClientHWID, on_delete=models.SET_NULL, null=True, blank=True)
     detection_type = models.IntegerField(
         choices=DetectionType,
         null=False,
@@ -163,7 +163,7 @@ class DetectionReport(models.Model):
 
 
 class Ban(models.Model):
-    hwid = models.ForeignKey(ClientHWID, on_delete=models.CASCADE)
+    hwid = models.ForeignKey(ClientHWID, on_delete=models.CASCADE, null=True, blank=True)
     banned_at = models.DateTimeField(auto_now_add=True)
     duration = models.DurationField(null=True, editable=True)  # null
     game_server = models.ForeignKey(

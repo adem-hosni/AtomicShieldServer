@@ -28,3 +28,14 @@ def download_fivem_engine(request: HttpRequest) -> HttpResponse:
     logger.info(f"{request_ip} is downloading FiveM's engine")
 
     return response
+
+@csrf_exempt
+def download_latest_agent(request: HttpRequest) -> HttpResponse:
+    request_ip = request.META.get("HTTP_X_REAL_IP", request.META.get("REMOTE_ADDR"))
+    logger.info(f"{request_ip} is updating the latest AtomicShield agent")
+
+    response = HttpResponse()
+    response['Content-Type'] = 'application/octet-stream'
+    response['Content-Disposition'] = 'attachment; filename="AtomicShieldAgent.exe"'
+    response['X-Accel-Redirect'] = '/static/download/AtomicShieldAgent.exe'
+    return response

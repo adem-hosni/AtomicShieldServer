@@ -62,7 +62,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             Tuple[SafeEnginePacketID, str], asyncio.Future[Any]
         ] = {}
         self.build_timestamp = "NONE"
-        self.received_ip = "NONE"
+        self.received_ip: str = "NONE"
 
     def generate_request_id(self) -> str:
         """
@@ -404,6 +404,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         image_buffer,
         ban_assigned: bool = True,
         server_consumer: Optional[SafeServerConsumer] = None,
+        ban_id: Any = None,
     ):
         sent_report = report.copy()
         sent_report.pop("ss", None)
@@ -418,13 +419,6 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                 fields=[
                     (f"{key.replace("_", " ").title()}:", f"```{value}```", False)
                     for key, value in sent_report.items()
-                ]
-                + [
-                    (
-                        (f"```{server_consumer.game_server.name}```", False)
-                        if server_consumer
-                        else ("```NO SERVER CONNECTED```", False)
-                    )
                 ],
                 image_buffer=image_buffer,
             )
@@ -439,7 +433,18 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             fields=[
                 (f"{key.replace("_", " ").title()}:", f"```{value}```", False)
                 for key, value in sent_report.items()
-            ],
+            ] + [
+                    (
+                        "Server:",
+                        (
+                            f"```{server_consumer.game_server.name}```"
+                            if server_consumer
+                            else "```NO SERVER CONNECTED```"
+                        ),
+                        False,
+                    ),
+                    ("BAN ID: ", f"**{ban_id}**", True)
+                ],
             image_buffer=image_buffer,
         )
 
@@ -480,7 +485,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         detection_type: DetectionType = DetectionType.CUSTOM,
         report: DetectionReport = None,
         image_buffer: bytes = None,
-    ):
+    ) -> Ban:
         if not isinstance(report, DetectionReport):
             report = await self.save_report(detection_type, image_buffer, report)
         ban = Ban(
@@ -534,7 +539,8 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                 **Reason:** {reason}
                 **Steam:** {self._hwid.steam}
                 **License:** {self._hwid.fivem_license}
-                **Discord:** {self._hwid.discord_id}
+                **Discord:** <@!{self._hwid.discord_id}>
+                **Ban ID:** {ban.id}
                 **Was this a false positive? Open a ticket in our Discord.**\ndiscord.gg/atomic-shield - <https://atomic-shield.com/>
                 """
                         footer_text = f"AtomicShield - {current_time}"
@@ -556,6 +562,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             logger.error(
                 f"An error occured while trying to send discord detection report: {err}"
             )
+        return ban
 
     async def handle_basic_checks(
         self,

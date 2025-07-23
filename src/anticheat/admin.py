@@ -342,7 +342,7 @@ class BanAdminModel(ModelAdmin):
         "duration",
     ]
     list_display_links = list_display
-    list_filter = ["active"]
+    list_filter = ["active", "game_server", "banned_at"]
     actions = ["unban"]
 
     @admin.action(description="Unban")
@@ -481,10 +481,9 @@ class ThreatFileAdmin(ModelAdmin):
     list_display = [
         "id",
         "name",
-        "found_path",
-        "hash",
         "uploaded_by",
         "uploaded_at",
+        "hash",
         "note",
     ]
     list_display_links = list_display

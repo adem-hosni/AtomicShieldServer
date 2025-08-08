@@ -9,7 +9,7 @@ from asgiref.sync import sync_to_async
 from guards import fivem_guard
 from anticheat.models import AntiCheatConfigurations, AntiCheatConfigTemplates
 from shared.models import ServerType
-from typing import Dict, Any, Union
+from typing import Dict, Any, Union, List
 
 
 class ServerStatus(models.IntegerChoices):
@@ -153,7 +153,7 @@ class GameServer(models.Model):
         return fivem_guard.is_server_running(self.ip)
     
     @property
-    def active_players(self) -> SafeServerConsumer:
+    def active_players(self) -> List[SafeServerConsumer]:
         active_players = []
         for engine in fivem_guard.engines:
             if engine.connected_server:

@@ -38,7 +38,7 @@ urlpatterns = [
     path("home/", include("home.urls")),
     path("api/auth/", include("authentication.urls")),
     path("anticheat/", include("anticheat.urls")),
-    path("api/dashboard", include("dashboard.urls")),
+    path("api/", include("dashboard.urls")),
     path("resources/", include("resources.urls")),
 
     path("sitemap.xml/", sitemap, {"sitemaps": sitemaps}, name="sitemap"),

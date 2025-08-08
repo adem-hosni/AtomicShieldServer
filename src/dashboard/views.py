@@ -245,11 +245,18 @@ def dashboard_overview(request: HttpRequest) -> JsonResponse:
             "id": subscription.id,
             "name": subscription.name,
             "plan": subscription.plan,
-            "status": subscription.status,
+            "status": "active" if subscription.is_valid_for_now() else "expired",
             "period": utils.represent_timedelta_string(subscription.expires_at),
-            "serversUsed": 0,
-            "serversLimit": 0,
         } for subscription in ServerSubscription.objects.filter(owner=request.user)
+    ]
+
+    # Server Types
+    server_types = [
+        {
+            "id": ServerType.FIVEM.value,
+            "name": ServerType.FIVEM.label,
+            "description": "FiveM FxServer",
+        }
     ]
 
     return Response({
@@ -262,8 +269,233 @@ def dashboard_overview(request: HttpRequest) -> JsonResponse:
             "recentActivity": security_events_data,
             "threatAssessment": threat_assessment_data,
             "globalStats": global_stats_data,
-            "subscriptions": subscriptions_data
+            "subscriptions": subscriptions_data,
+            "serverTypes": server_types,
         }
+    })
+
+@api_view(["POST", "GET"])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+def add_server(request: HttpRequest) -> Response:
+    ip = request.data.get("serverIp", "").strip()
+    port = "80"
+    name = str(request.data.get("serverName", "")).strip()
+    server_type = request.data.get("serverType", ServerType.FIVEM.value)
+    subscription_id = request.data.get("subscriptionId", None)
+
+    # Check if the server_type and the subscription_id are of type string
+    if isinstance(server_type, str) or isinstance(subscription_id, str):
+        if not server_type.isnumeric():
+            messages.error(request, "Invalid server type")
+            logger.warning(f"{request.user.username} trying to use an invalid server type ({server_type})!")
+            return Response({"success": False, "message": "Invalid server type"})
+
+        if not subscription_id.isnumeric():
+            messages.error(request, "Invalid Subscription")
+            logger.warning(f"{request.user.username} trying to use an invalid subscription id ({subscription_id})!")
+            return Response({"success": False, "message": "Invalid Subscription"})
+
+        server_type = int(server_type)
+        subscription_id = int(subscription_id)
+
+    # Check if the port is of type string
+    if isinstance(port, str):
+        if not port.isnumeric():
+            logger.warning(f"{request.user.username} trying to use an invalid port ({port})!")
+            return Response({"success": False, "message": "Invalid server port"})
+        port = int(port)
+
+    # Check port range (1 -> 65535)
+    if not (port >= 1 and port <= 65535):
+        logger.warning(f"{request.user.username} trying to use an invalid port range ({port})!")
+        return Response({"success": False, "message": "Invalid port range"})
+
+    if not len(name):
+        logger.warning(f"{request.user.username} trying to use an empty server name!")
+        return Response({"success": False, "message": "Invalid server name"})
+
+    if len(name) > 64:
+        logger.warning(f"{request.user.username} trying to use a server name longer than 64 characters ({name})!")
+        return Response({"success": False, "message": "Server name must be less than 64 characters"})
+
+    # Check if the ip is correct
+    if not utils.isvalid_ip(ip):
+        logger.warning(f"{request.user.username} trying to use an invalid IPV4 IP ({ip})!")
+        return Response({"success": False, "message": "Invalid IPV4 IP"})
+
+    # Check the selected subscription health
+    try:
+        subscription = ServerSubscription.objects.get(
+            id=subscription_id
+        )
+    except ServerSubscription.DoesNotExist:
+        logger.warning(f"{request.user.username} trying to use a non existing subscription (used subscription id: {subscription_id})!")
+        return Response({"success": False, "message": "Invalid subscription selected"})
+
+    # Check the subscription's owner
+    if subscription.owner != request.user:
+        logger.warning(f"{request.user.username} trying to use {subscription.owner.username}'s subscription!")
+        return Response({"success": False, "message": "Not your subscription!"})
+
+    if not subscription.is_valid_for_now():
+        logger.warning(f"{request.user.username} trying to use expired subscription (subscription id: {subscription_id})!")
+        return Response({"success": False, "message": "Expired Subscription"})
+
+    # Check if the server address already used
+    if GameServer.objects.filter(
+        ip=ip, port=port, type=server_type
+    ).exists():
+        logger.warning(f"{request.user.username} trying to use an already used server address ({ip}:{port})!")
+        return Response({"success": False, "message": "Server Address Already been used!"})
+
+    # Check if the server name exists in the owned servers
+    if GameServer.objects.filter(
+        name=name, owner=request.user, type=server_type
+    ).exists():
+        logger.warning(f"{request.user.username} trying to use an already used server name ({name})!")
+        return Response({"success": False, "message": "Server name already used!"})
+
+    if (
+        server_type != ServerType.FIVEM.value
+        and server_type != ServerType.FIVEM.value
+    ):
+        logger.warning(f"{request.user.username} trying to use an unsupported server type ({server_type})!")
+        return Response({"success": False, "message": "Unsupported server type"})
+
+    # Generate a license key for the server
+    license_key = utils.generate_key(4)
+
+    # Check if key already exists, regenerate it
+    if ServerSubscription.objects.filter(key=license_key).exists():
+        license_key = utils.generate_key(4)
+
+    # Create the server configs
+    configurations = AntiCheatConfigurations()
+    for config in AntiCheatConfigTemplates.objects.filter(
+        server_type=server_type
+    ):
+        configurations.config[config.id] = config.default_value
+    configurations.save()
+
+    new_server = GameServer.objects.create(
+        ip=ip,
+        port=port,
+        name=name,
+        owner=request.user,
+        configurations=configurations,
+        type=server_type,
+        status=ServerStatus.online,
+    )
+    new_server.subscriptions.add(subscription)
+    request.session["selected_server"] = new_server.id
+    logger.info(
+        f"Added New {ServerType(server_type)} Server {ip}:{port} from {request.user.username}, license key: ({license_key})"
+    )
+    return Response({
+        "success": True,
+        "data": {
+            "name": new_server.name,
+        }
+    })
+
+
+@api_view(["POST", "GET"])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+def server_dashboard(request: HttpRequest, server_id: int) -> Response:
+    try:
+        game_server = GameServer.objects.get(
+            owner=request.user, id=server_id
+        )
+    except GameServer.DoesNotExist:
+        logger.warning(f"{request.user.username} tried to access a non-existing server ({server_id})!")
+        return Response({
+            "success": False,
+            "message": "The selected server does not exist or you do not have permission to access it."
+        })
+    except Exception:
+        logger.exception(f"An unexpected error occurred while accessing server {server_id} for user {request.user.username}.")
+        return Response({
+            "success": False,
+            "message": "An unexpected error occurred while accessing the server."
+        })
+
+    server_info = {
+        "id": game_server.id,
+        "name": game_server.name,
+        "ip": game_server.ip,
+        "description": "Server Description",
+        "playerCount": game_server.active_player_count,
+        "maxPlayers": game_server.active_player_count,
+        "uptime": 0
+    }
+
+    server_stats = {
+        "currentPlayers": {
+            "value": game_server.active_player_count,
+            "trend": {
+                "value": "+5 today",
+                "isPositive": True
+            },
+        },
+        "peakPlayers": {
+            "value": game_server.active_player_count,  # TODO: This should be replaced with actual peak player count logic
+            "trend": {
+                "value": "+10 this week",
+                "isPositive": True
+            },
+        },
+        "totalBans": {
+            "value": Ban.objects.filter(game_server=game_server).count(),
+            "trend": {
+                "value": f"+{Ban.objects.filter(game_server=game_server, banned_at__date=timezone.now().date()).count()} today",
+                "isPositive": True
+            },
+        },
+    }
+
+    return Response({
+        "success": True,
+        "data": {
+            "serverInfo": server_info,
+            "stats": server_stats,
+            "license": {
+                "key": game_server.key,
+                "expirationDate": represent_timedelta_string(game_server.subscriptions.last().expires_at) if game_server.subscriptions.exists() else "N/A",
+                "daysUntilExpiration": game_server.subscriptions.last().expires_at.days if game_server.subscriptions.exists() else -1,
+                "status": "active" if game_server.subscriptions.exists() and game_server.subscriptions.last().is_valid_for_now() else "expired",
+            }
+        },
+        "message": "Server dashboard retrieved successfully."
+    })
+
+@api_view(["POST", "GET"])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+def list_servers(request: HttpRequest) -> Response:
+    """
+    List all servers owned by the user.
+    """
+    user = request.user
+    game_servers = GameServer.objects.filter(owner=user)
+    servers = []
+
+    for server in game_servers:
+        servers.append({
+            "id": server.id,
+            "name": server.name,
+            "ip": server.ip,
+            "status": "active" if server.is_online else "inactive",
+            "subscriptionPlan": server.subscriptions.last().plan if server.subscriptions.exists() else "None",
+            "createdAt": "",
+            "imageUrl": ""
+        })
+    
+    return Response({
+        "success": True,
+        "data": {"servers": servers},
+        "message": "Servers retrieved successfully."
     })
 
 @login_required

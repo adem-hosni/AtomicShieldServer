@@ -10,7 +10,7 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from core import atomic_core
 from .safe_server import SafeServerConsumer
 from django.conf import settings
-from ..models import ClientHWID, MaliciousSignatures, Ban, DetectionReport
+from ..models import HWID, MaliciousSignatures, Ban, DetectionReport
 import utils
 import utils.discord
 from shared.models import ServerType
@@ -52,7 +52,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         """
         super().__init__(*args, **kwargs)
         self._group_name = ""
-        self._hwid: ClientHWID = None
+        self._hwid: HWID = None
         self._connected_server: SafeServerConsumer = None
         self._detected_signatures: List[MaliciousSignatures] = []
         self._flagged: bool = False
@@ -271,7 +271,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         return self._hwid
 
     @hwid.setter
-    def hwid(self, hwid: Union[ClientHWID, Any]):
+    def hwid(self, hwid: Union[HWID, Any]):
         """
         Sets the hardware ID.
 
@@ -283,7 +283,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         ------
             TypeError: If the value is not of type ClientHWID.
         """
-        if not isinstance(hwid, ClientHWID):
+        if not isinstance(hwid, HWID):
             raise TypeError(f"Can't convert type {type(hwid)} to type ClientHWIDs")
         self._hwid = hwid
 

@@ -1,6 +1,6 @@
 from django import forms
 from unfold.widgets import UnfoldAdminTextareaWidget
-from .models import ClientHWID
+from .models import HWID
 
 
 class ClientHWIDForm(forms.ModelForm):
@@ -9,7 +9,7 @@ class ClientHWIDForm(forms.ModelForm):
     )
 
     class Meta:
-        model = ClientHWID
+        model = HWID
         fields = "__all__"
 
     def set_logs(self, logs: str) -> None:

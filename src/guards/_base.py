@@ -1,6 +1,6 @@
 import logging
 from anticheat.consumers.safe_server import SafeServerConsumer
-from anticheat.models import ClientHWID
+from anticheat.models import HWID
 from anticheat.consumers.safe_engine import SafeEngineConsumer
 from shared.enums import WebSocketGroupNames
 from typing import List, Union, Any
@@ -124,7 +124,7 @@ class _GuardManagerBase(object):
         """
         return bool(self.get_scanner_by_ip(scanner_ip))
 
-    def is_engine_connected_by_hwid(self, hwid: ClientHWID) -> bool:
+    def is_engine_connected_by_hwid(self, hwid: HWID) -> bool:
         """
         Check if a scanner is connected to a AtomicShield server based on the scanner's HWID.
 
@@ -157,7 +157,7 @@ class _GuardManagerBase(object):
                 return iter_engine
         return None  # Not Found
     
-    def get_scanner_by_hwid(self, hwid: ClientHWID) -> Union[SafeEngineConsumer, None]:
+    def get_scanner_by_hwid(self, hwid: HWID) -> Union[SafeEngineConsumer, None]:
         """
         Retrieve a AtomicShield scanner by its HWID.
 
@@ -186,3 +186,11 @@ class _GuardManagerBase(object):
             if server.address[0] == server_ip:
                 return server
         return None  # Not Found
+
+    @property
+    def total_engines(self):
+        return len(self._safe_engines)
+
+    @property
+    def total_servers(self):
+        return len(self._safe_servers)

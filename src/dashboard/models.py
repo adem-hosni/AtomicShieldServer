@@ -3,8 +3,10 @@ from time import time
 from django.utils import timezone
 from datetime import datetime, timedelta
 from utils import represent_timedelta_string
+from anticheat.consumers.safe_server import SafeServerConsumer
 from django.contrib.auth.models import User
 from asgiref.sync import sync_to_async
+from guards import fivem_guard
 from anticheat.models import AntiCheatConfigurations, AntiCheatConfigTemplates
 from shared.models import ServerType
 from typing import Dict, Any, Union
@@ -145,6 +147,24 @@ class GameServer(models.Model):
                 latest_subscription.save()
         except ServerSubscription.DoesNotExist:
             ...
+    
+    @property
+    def is_online(self) -> bool:
+        return fivem_guard.is_server_running(self.ip)
+    
+    @property
+    def active_players(self) -> SafeServerConsumer:
+        active_players = []
+        for engine in fivem_guard.engines:
+            if engine.connected_server:
+                if engine.connected_server.game_server == self:
+                    active_players.append(engine)
+        return active_players
+    
+    @property
+    def active_player_count(self) -> int:
+        return len(self.active_players)
+
 
     class Meta:
         db_table = "gameservers"

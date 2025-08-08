@@ -16,6 +16,10 @@ from django.http import (
     JsonResponse,
 )
 import shutil
+from rest_framework.decorators import authentication_classes, permission_classes, api_view
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework.response import Response
 from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
 from django.utils.safestring import mark_safe
@@ -23,9 +27,10 @@ from datetime import timedelta
 from django.contrib import messages
 from django.contrib.humanize.templatetags.humanize import intcomma
 from django.contrib.auth.decorators import login_required
+from django.utils import timezone
 from guards import fivem_guard
 from utils import check_request_body_key, represent_timedelta_string
-from anticheat.models import Ban, DetectionReport
+from anticheat.models import Ban, DetectionReport, HWID
 from shared.enums import DetectionType
 from .models import (
     Announcements,
@@ -142,6 +147,124 @@ def dashboard_callback(request: HttpRequest, context: Dict[str, Any]):
 def render_dashboard_redirect(request: HttpRequest) -> HttpResponse:
     return redirect(reverse("main"))
 
+
+@api_view(["GET"])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+def dashboard_overview(request: HttpRequest) -> JsonResponse:
+    # System status
+    system_status = {
+        "value": 100,
+        "badge": {
+            "text": "All Systems",
+            "variant": "default",
+            "pulse": True,
+        }
+    }
+
+    # Servers Data
+    user_servers = GameServer.objects.filter(owner=request.user)
+    servers_count = user_servers.count()
+    online_servers_count = sum([server.is_online for server in user_servers])
+
+    total_servers_data = {
+        "value": servers_count,
+        "subtitle": f"{online_servers_count} online, {servers_count - online_servers_count} offline",
+        "trend": {
+            "value": "+1 this week",
+            "isPositive": True,
+        }
+    }
+
+    # Network Players
+    network_players = {
+        "value": fivem_guard.total_engines,
+        "subtitle": "Across all servers",
+        "trend": {
+            "value": "+45 today",
+            "isPositive": True
+        }
+    }
+
+    # Threat Level
+    threats_today = DetectionReport.objects.filter(detected_at__date=timezone.now().date()).count()
+    threat_level = {
+        "value": threats_today,
+        "subtitle": "No active threats" if threats_today == 0 else f"Active threats detected",
+        "badge": {
+            "text": "SAFE" if threats_today == 0 else "ELEVATED",
+            "variant": "outline" if threats_today == 0 else "destructive",
+            "pulse": True,
+        }
+    }
+
+    dashboard_stats_data = {
+        "systemStatus": system_status,
+        "totalServers": total_servers_data,
+        "networkPlayers": network_players,
+        "threatLevel": threat_level,
+    }
+
+    servers_data = [{
+        "id": server.id,
+        "name": server.name,
+        "description": "Server Description",
+        "playerCount": server.active_player_count,
+        "status": "Online" if server.is_online else "Offline",
+        "statusColor": "green" if server.is_online else "gray",
+        "imageUrl": 'server.configurations.config.get("server_image", "")',
+    } for server in user_servers]
+
+    # Select last detections
+    recent_security_events = DetectionReport.objects.order_by('-detected_at')[:5]
+    security_events_data = [{
+        "action": "Cheat Detection",
+        "user": event.hwid.username,
+        "time": event.detected_at.strftime("%Y-%m-%d %H:%M:%S"),
+        "severity": "high"
+    } for event in recent_security_events]
+
+    # Threat assessment data
+    threat_assessment_data = {
+        "detectionRate": f"{DetectionReport.objects.count() / HWID.objects.count() * 100 if HWID.objects.count() > 0 else 0}%",
+        "falsePositives": "0.1%",
+        "responseTime": "12ms",
+    }
+
+    # Global Stats
+    global_stats_data = {
+        "totalBans24h": Ban.objects.filter(banned_at__date=timezone.now().date()).count(),
+        "kicks24h": 0,
+        "warnings24h": 0,
+        "cleanSessions": random.randint(50, 100),
+    }
+
+    # User Subscriptions
+    subscriptions_data = [
+        {
+            "id": subscription.id,
+            "name": subscription.name,
+            "plan": subscription.plan,
+            "status": subscription.status,
+            "period": utils.represent_timedelta_string(subscription.expires_at),
+            "serversUsed": 0,
+            "serversLimit": 0,
+        } for subscription in ServerSubscription.objects.filter(owner=request.user)
+    ]
+
+    return Response({
+        "success": True,
+        "message": "",
+        "error": "",
+        "data": {
+            "stats": dashboard_stats_data,
+            "servers": servers_data,
+            "recentActivity": security_events_data,
+            "threatAssessment": threat_assessment_data,
+            "globalStats": global_stats_data,
+            "subscriptions": subscriptions_data
+        }
+    })
 
 @login_required
 def render_maindashboard(request: HttpRequest) -> HttpResponse:

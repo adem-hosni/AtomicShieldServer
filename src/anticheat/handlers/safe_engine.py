@@ -23,7 +23,7 @@ from asgiref.sync import sync_to_async
 from django.db.models import Q
 from ..models import (
     MaliciousSignatures,
-    ClientHWID,
+    HWID,
     ServerType,
     WhitelistedProcess,
     ThreatFile,
@@ -136,7 +136,7 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
     # Try to get the hwid by one component at least
     try:
         hwid_queryset = await sync_to_async(list)(
-            ClientHWID.objects.filter(
+            HWID.objects.filter(
                 # Q(motherboard_serial=request_hwid["motherboard_serial"])
                 # | Q(bios_version=request_hwid["bios"])
                 # cpuid=request_hwid["cpu"]
@@ -148,7 +148,7 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
             hwid = hwid_queryset[0]
         else:
             hwid = None
-    except ClientHWID.DoesNotExist:
+    except HWID.DoesNotExist:
         hwid = None
 
     # HWID not found? Check if the hwid cache already exists
@@ -184,7 +184,7 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
 
     # Create a HWID if it's does not exists
     if not hwid:
-        hwid = ClientHWID(
+        hwid = HWID(
             username=request_hwid["username"],
             disks=request_hwid["disks"],
             cpuid=request_hwid["cpu"],

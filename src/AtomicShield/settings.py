@@ -75,6 +75,16 @@ INSTALLED_APPS = [
     "anticheat",
     "resources",
     "appreloader",
+    "rest_framework",
+    "rest_framework.authtoken",
+    "dj_rest_auth",
+    "dj_rest_auth.registration",
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
+    "allauth.socialaccount.providers.discord",
+    "rest_framework_simplejwt",
+    "corsheaders",
 ]
 
 
@@ -82,6 +92,8 @@ SITE_ID = 1
 ASGI_APPLICATION = "AtomicShield.asgi.application"
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django_hosts.middleware.HostsRequestMiddleware",
     "django_browser_reload.middleware.BrowserReloadMiddleware",  # Debug
@@ -97,17 +109,54 @@ MIDDLEWARE = [
     "django_hosts.middleware.HostsResponseMiddleware",
 ]
 
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",
+    "allauth.account.auth_backends.AuthenticationBackend",
+]
+
+CORS_ALLOW_ALL_ORIGINS = True
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:8080",
+]
+
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ),
+}
+
+REST_USE_JWT = True
+
+ACCOUNT_EMAIL_VERIFICATION = "optional"
+ACCOUNT_LOGIN_METHODS = ["email", "username"]
+ACCOUNT_SIGNUP_FIELDS = ["email", "username*", "password1*", "password2*"]
+
+SOCIALACCOUNT_PROVIDERS = {
+    "discord": {
+        "APP": {
+            "client_id": "YOUR_DISCORD_CLIENT_ID",
+            "secret": "YOUR_DISCORD_CLIENT_SECRET",
+            "key": "",
+        },
+        "SCOPE": [
+            "identify",
+            "email",
+        ],
+    }
+}
+
 if DEBUG:
     INSTALLED_APPS.append("django_browser_reload")
-    # INSTALLED_APPS.append("debug_toolbar")
-
-    # MIDDLEWARE.append("debug_toolbar.middleware.DebugToolbarMiddleware")
 
     INTERNAL_IPS = [
         "127.0.0.1",
     ]
 
 ROOT_URLCONF = "AtomicShield.urls"
+
+APPEND_SLASH=True
 
 # Domain Settings
 ROOT_HOSTCONF = "AtomicShield.hosts"
@@ -172,22 +221,19 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 # Cache settings
-CACHES = {
-    "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379/1",
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        }
-    }
-}
+# CACHES = {
+#     "default": {
+#         "BACKEND": "django_redis.cache.RedisCache",
+#         "LOCATION": "redis://127.0.0.1:6379/1",
+#         "OPTIONS": {
+#             "CLIENT_CLASS": "django_redis.client.DefaultClient",
+#         }
+#     }
+# }
 
 CHANNEL_LAYERS = {
-        "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [("127.0.0.1", 6379)],
-        },
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",
     },
 }
 
@@ -362,6 +408,27 @@ PASSWORD_RESET_TIMEOUT = 60 * 60 * 24 * 1  # 1 Day
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_COOKIE_AGE = (60 * 60 * 24) / 2  # 12h
 SESSION_CACHE_ALIAS = "default"
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    )
+}
+
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=1),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "ALGORITHM": "HS256",
+    "SIGNING_KEY": SECRET_KEY,
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
+    "USER_ID_FIELD": "id",
+    "USER_ID_CLAIM": "user_id",
+}
 
 # Captcha Settings
 RECAPTCHA_PUBLIC_KEY = "6Lee-LoqAAAAAO4gH6AC1DR0R-6V6lPpFzf2nYlx"

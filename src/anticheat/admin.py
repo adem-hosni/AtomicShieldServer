@@ -15,7 +15,7 @@ from .models import (
     AntiCheatConfigurations,
     AntiCheatConfigurationCategories,
     MaliciousSignatures,
-    ClientHWID,
+    HWID,
     Ban,
     Warning,
     DetectionReport,
@@ -232,7 +232,7 @@ class ClientHWIDAdmin(SimpleHistoryAdmin, ModelAdmin):
         return False
 
     @admin.display(description="Build")
-    def display_build_timestamp(self, obj: ClientHWID):
+    def display_build_timestamp(self, obj: HWID):
         return (
             fivem_guard.get_scanner_by_hwid(obj).build_timestamp
             if fivem_guard.get_scanner_by_hwid(obj)
@@ -240,11 +240,11 @@ class ClientHWIDAdmin(SimpleHistoryAdmin, ModelAdmin):
         )
 
     @admin.display(description="Discord ID")
-    def display_discord_id(self, obj: ClientHWID):
+    def display_discord_id(self, obj: HWID):
         return obj.discord_id or "Not Linked"
 
     @admin.display(description="Connected Server")
-    def display_connected_server(self, obj: ClientHWID):
+    def display_connected_server(self, obj: HWID):
         engine = fivem_guard.get_scanner_by_hwid(obj)
         if engine:
             server = engine.connected_server
@@ -252,11 +252,11 @@ class ClientHWIDAdmin(SimpleHistoryAdmin, ModelAdmin):
         return "Not Connected"
 
     @admin.display(description="Online", boolean=True)
-    def display_online(self, obj: ClientHWID):
+    def display_online(self, obj: HWID):
         return bool(fivem_guard.get_scanner_by_hwid(obj))
 
     class Meta:
-        model = ClientHWID
+        model = HWID
 
 
 class AntiCheatConfigurationsAdmin(ModelAdmin):
@@ -532,7 +532,7 @@ admin.site.register(
 admin.site.register(AntiCheatConfigTemplates, AntiCheatConfigurationsAdmin)
 admin.site.register(AntiCheatConfigurations, ServerAntiCheatConfiguration)
 admin.site.register(MaliciousSignatures, MaliciousSignaturesAdmin)
-admin.site.register(ClientHWID, ClientHWIDAdmin)
+admin.site.register(HWID, ClientHWIDAdmin)
 admin.site.register(Ban, BanAdminModel)
 admin.site.register(Warning, WarningAdminModel)
 admin.site.register(DetectionReport, DetectionReportAdminModel)

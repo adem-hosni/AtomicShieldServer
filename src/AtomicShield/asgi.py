@@ -14,6 +14,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "AtomicShield.settings")
 from django.core.asgi import get_asgi_application
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
+from .middleware import WebSocketExceptionHandlerMiddleware
 
 django_asgi_app = get_asgi_application()
 
@@ -23,8 +24,8 @@ import anticheat.routing
 application = ProtocolTypeRouter(
     {
         "http": django_asgi_app,
-        "websocket": AuthMiddlewareStack(
+        "websocket": WebSocketExceptionHandlerMiddleware(AuthMiddlewareStack(
             URLRouter(anticheat.routing.websocket_urlpatterns)
-        ),
+        )),
     }
 )

@@ -1,6 +1,8 @@
 import os
+import random
 import logging
 import json
+from zipfile import ZipFile
 from asgiref.sync import sync_to_async
 from django.shortcuts import render, redirect
 from django.conf import settings
@@ -13,6 +15,11 @@ from django.http import (
     FileResponse,
     JsonResponse,
 )
+import shutil
+from rest_framework.decorators import authentication_classes, permission_classes, api_view
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework.response import Response
 from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
 from django.utils.safestring import mark_safe
@@ -20,9 +27,10 @@ from datetime import timedelta
 from django.contrib import messages
 from django.contrib.humanize.templatetags.humanize import intcomma
 from django.contrib.auth.decorators import login_required
+from django.utils import timezone
 from guards import fivem_guard
 from utils import check_request_body_key, represent_timedelta_string
-from anticheat.models import Ban, DetectionReport
+from anticheat.models import Ban, DetectionReport, HWID
 from shared.enums import DetectionType
 from .models import (
     Announcements,
@@ -82,7 +90,7 @@ def dashboard_callback(request: HttpRequest, context: Dict[str, Any]):
             {
                 "title": label,
                 "description": intcomma(str(count)),
-                "value": (count / all_detections.count()) * 100,
+                "value": (count / max(1, all_detections.count())) * 100,
             }
         )
 
@@ -139,6 +147,124 @@ def dashboard_callback(request: HttpRequest, context: Dict[str, Any]):
 def render_dashboard_redirect(request: HttpRequest) -> HttpResponse:
     return redirect(reverse("main"))
 
+
+@api_view(["GET"])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+def dashboard_overview(request: HttpRequest) -> JsonResponse:
+    # System status
+    system_status = {
+        "value": 100,
+        "badge": {
+            "text": "All Systems",
+            "variant": "default",
+            "pulse": True,
+        }
+    }
+
+    # Servers Data
+    user_servers = GameServer.objects.filter(owner=request.user)
+    servers_count = user_servers.count()
+    online_servers_count = sum([server.is_online for server in user_servers])
+
+    total_servers_data = {
+        "value": servers_count,
+        "subtitle": f"{online_servers_count} online, {servers_count - online_servers_count} offline",
+        "trend": {
+            "value": "+1 this week",
+            "isPositive": True,
+        }
+    }
+
+    # Network Players
+    network_players = {
+        "value": fivem_guard.total_engines,
+        "subtitle": "Across all servers",
+        "trend": {
+            "value": "+45 today",
+            "isPositive": True
+        }
+    }
+
+    # Threat Level
+    threats_today = DetectionReport.objects.filter(detected_at__date=timezone.now().date()).count()
+    threat_level = {
+        "value": threats_today,
+        "subtitle": "No active threats" if threats_today == 0 else f"Active threats detected",
+        "badge": {
+            "text": "SAFE" if threats_today == 0 else "ELEVATED",
+            "variant": "outline" if threats_today == 0 else "destructive",
+            "pulse": True,
+        }
+    }
+
+    dashboard_stats_data = {
+        "systemStatus": system_status,
+        "totalServers": total_servers_data,
+        "networkPlayers": network_players,
+        "threatLevel": threat_level,
+    }
+
+    servers_data = [{
+        "id": server.id,
+        "name": server.name,
+        "description": "Server Description",
+        "playerCount": server.active_player_count,
+        "status": "Online" if server.is_online else "Offline",
+        "statusColor": "green" if server.is_online else "gray",
+        "imageUrl": 'server.configurations.config.get("server_image", "")',
+    } for server in user_servers]
+
+    # Select last detections
+    recent_security_events = DetectionReport.objects.order_by('-detected_at')[:5]
+    security_events_data = [{
+        "action": "Cheat Detection",
+        "user": event.hwid.username,
+        "time": event.detected_at.strftime("%Y-%m-%d %H:%M:%S"),
+        "severity": "high"
+    } for event in recent_security_events]
+
+    # Threat assessment data
+    threat_assessment_data = {
+        "detectionRate": f"{DetectionReport.objects.count() / HWID.objects.count() * 100 if HWID.objects.count() > 0 else 0}%",
+        "falsePositives": "0.1%",
+        "responseTime": "12ms",
+    }
+
+    # Global Stats
+    global_stats_data = {
+        "totalBans24h": Ban.objects.filter(banned_at__date=timezone.now().date()).count(),
+        "kicks24h": 0,
+        "warnings24h": 0,
+        "cleanSessions": random.randint(50, 100),
+    }
+
+    # User Subscriptions
+    subscriptions_data = [
+        {
+            "id": subscription.id,
+            "name": subscription.name,
+            "plan": subscription.plan,
+            "status": subscription.status,
+            "period": utils.represent_timedelta_string(subscription.expires_at),
+            "serversUsed": 0,
+            "serversLimit": 0,
+        } for subscription in ServerSubscription.objects.filter(owner=request.user)
+    ]
+
+    return Response({
+        "success": True,
+        "message": "",
+        "error": "",
+        "data": {
+            "stats": dashboard_stats_data,
+            "servers": servers_data,
+            "recentActivity": security_events_data,
+            "threatAssessment": threat_assessment_data,
+            "globalStats": global_stats_data,
+            "subscriptions": subscriptions_data
+        }
+    })
 
 @login_required
 def render_maindashboard(request: HttpRequest) -> HttpResponse:
@@ -205,7 +331,7 @@ def render_bans(request: HttpRequest) -> HttpResponse:
     except GameServer.DoesNotExist:
         messages.error(request, "The selected server does not exists!")
     else:
-        bans = Ban.objects.filter(game_server=target_server)
+        bans = Ban.objects.filter(game_server=target_server).order_by("-banned_at")
 
     if request.method == "POST":
         if not target_server:
@@ -265,8 +391,8 @@ def render_bans(request: HttpRequest) -> HttpResponse:
                     "status": (
                         2 if ban.is_expired else int(ban.active)
                     ),  # 0: Disabled, 1: Banned, 2: Expired
-                    "reason": ban.reason,
-                    "screenshot_url": ban.report.screenshot.url,
+                    "reason": ban.reason, 
+                    "screenshot_url": ban.report.screenshot.url if ban.report.screenshot else "",
                     "license": ban.hwid.fivem_license,
                     "steam": ban.hwid.steam,
                     "discord_id": ban.hwid.discord_id,
@@ -574,14 +700,14 @@ def render_servers(request: HttpRequest) -> HttpResponse:
 
 @login_required
 def select_server(request: HttpRequest) -> HttpResponse:
-    print(request.body)
-    request_body: Dict[str, Union[bool, str]] = request.POST
-
-    print(request_body)
+    request_body: Dict[str, Union[bool, str]] = request.body.decode()
 
     # Check the request_body is a json
     if not len(request_body):
+        logger.error("DASHBOARD - UNEXPECTED ERROR: Empty request body")
         return HttpResponse(json.dumps({"success": False}))
+
+    request_body = json.loads(request_body)
 
     # Check the request_body keys
     if not ("server_id" in request_body.keys() or "select" in request_body.keys()):
@@ -740,6 +866,8 @@ def render_configurations(request: HttpRequest) -> HttpResponse:
                 case "save":
                     for config_id, config_value in request.POST.items():
                         if config_id != "csrfmiddlewaretoken" and config_id != "type":
+                            if config_value == "on" or config_value == "off":
+                                config_value = True if config_value == "on" else False
                             target_server.configurations.config[config_id] = (
                                 config_value
                             )
@@ -803,16 +931,40 @@ def render_quicksetup(request: HttpRequest) -> HttpResponse:
             messages.error(request, "Unsupported distribution!")
             return redirect(request.path)
 
-        distribution_path = os.path.join(dists_dir, target_dist, "download.zip")
+        distribution_path = os.path.join(dists_dir, target_dist, "download_template.zip")
         if not os.path.isfile(distribution_path):
             messages.error(
                 request, f"Failed to download {target_dist.title()} distribution!"
             )
             return redirect(request.path)
+        
+        temp_zip_path = os.path.join(dists_dir, target_dist, f"temp-{random.randint(10, 100)}.zip")
+        shutil.copyfile(distribution_path, temp_zip_path)
+
+        if os.path.isfile(temp_zip_path):
+            key_path = "AtomicShield/server.key"
+            
+            if os.path.isfile(temp_zip_path):
+                with ZipFile(distribution_path, "r") as zip_read, ZipFile(temp_zip_path, "w") as zip_write:
+                    for item in zip_read.infolist():
+                        if item.filename != key_path:
+                            zip_write.writestr(item, zip_read.read(item.filename))
+                        else:
+                            server_key = "<YOUR ATOMICSHIELD SERVER KEY>"
+                            try:
+                                target_server = GameServer.objects.get(
+                                    id=request.session.get("selected_server", -1), owner=request.user
+                                )
+                                server_key = target_server.key
+                            except GameServer.DoesNotExist:
+                                ...
+
+                            zip_write.writestr(key_path, server_key)
+                distribution_path = temp_zip_path
 
         return FileResponse(
             open(distribution_path, "rb"),
-            filename=f"{settings.ANTICHEAT_NAME_LONG} {target_dist.title()} Distribution.zip",
+            filename=f"{settings.ANTICHEAT_NAME_LONG}-{target_dist}.zip",
         )
 
     dists = {}
@@ -946,7 +1098,7 @@ async def render_players(request: HttpRequest) -> HttpResponse:
                 if engine:
                     match request_body.get("type"):
                         case "request_screenshot":
-                            image_path = await engine.request_screenshot()
+                            image_path = await engine.get_screenshot()
                             if image_path:
                                 logger.info(
                                     f"Successfuly screenshot requested from {engine.hwid.username}"

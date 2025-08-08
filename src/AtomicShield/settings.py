@@ -41,10 +41,14 @@ ALLOWED_HOSTS = [
     ".atomic-shield.com",
 ]
 
-CSRF_TRUSTED_ORIGINS = [
-    "https://atomic-shield.com",
-    "https://www.atomic-shield.com",
-]
+CSRF_TRUSTED_ORIGINS = (
+    [
+        "https://atomic-shield.com",
+        "https://www.atomic-shield.com",
+    ]
+    if not DEBUG
+    else ["http://31.97.180.157:553"]
+)
 
 # Application definition
 
@@ -62,6 +66,7 @@ INSTALLED_APPS = [
     "django_recaptcha",
     "django_hosts",
     "unfold.contrib.forms",
+    "unfold.contrib.simple_history",
     "simple_history",
     "api",
     "home",
@@ -69,6 +74,17 @@ INSTALLED_APPS = [
     "dashboard",
     "anticheat",
     "resources",
+    "appreloader",
+    "rest_framework",
+    "rest_framework.authtoken",
+    "dj_rest_auth",
+    "dj_rest_auth.registration",
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
+    "allauth.socialaccount.providers.discord",
+    "rest_framework_simplejwt",
+    "corsheaders",
 ]
 
 
@@ -76,6 +92,8 @@ SITE_ID = 1
 ASGI_APPLICATION = "AtomicShield.asgi.application"
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django_hosts.middleware.HostsRequestMiddleware",
     "django_browser_reload.middleware.BrowserReloadMiddleware",  # Debug
@@ -91,17 +109,54 @@ MIDDLEWARE = [
     "django_hosts.middleware.HostsResponseMiddleware",
 ]
 
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",
+    "allauth.account.auth_backends.AuthenticationBackend",
+]
+
+CORS_ALLOW_ALL_ORIGINS = True
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:8080",
+]
+
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ),
+}
+
+REST_USE_JWT = True
+
+ACCOUNT_EMAIL_VERIFICATION = "optional"
+ACCOUNT_LOGIN_METHODS = ["email", "username"]
+ACCOUNT_SIGNUP_FIELDS = ["email", "username*", "password1*", "password2*"]
+
+SOCIALACCOUNT_PROVIDERS = {
+    "discord": {
+        "APP": {
+            "client_id": "YOUR_DISCORD_CLIENT_ID",
+            "secret": "YOUR_DISCORD_CLIENT_SECRET",
+            "key": "",
+        },
+        "SCOPE": [
+            "identify",
+            "email",
+        ],
+    }
+}
+
 if DEBUG:
     INSTALLED_APPS.append("django_browser_reload")
-    # INSTALLED_APPS.append("debug_toolbar")
-
-    # MIDDLEWARE.append("debug_toolbar.middleware.DebugToolbarMiddleware")
 
     INTERNAL_IPS = [
         "127.0.0.1",
     ]
 
 ROOT_URLCONF = "AtomicShield.urls"
+
+APPEND_SLASH=True
 
 # Domain Settings
 ROOT_HOSTCONF = "AtomicShield.hosts"
@@ -165,6 +220,17 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# Cache settings
+# CACHES = {
+#     "default": {
+#         "BACKEND": "django_redis.cache.RedisCache",
+#         "LOCATION": "redis://127.0.0.1:6379/1",
+#         "OPTIONS": {
+#             "CLIENT_CLASS": "django_redis.client.DefaultClient",
+#         }
+#     }
+# }
+
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels.layers.InMemoryChannelLayer",
@@ -203,19 +269,13 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+import os
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
         "verbose": {
-            "format": "[{asctime}] {levelname} {message}",
-            "style": "{",
-        },
-        "uvicorn": {
-            "format": "[{asctime}] {levelname} {message}",
-            "style": "{",
-        },
-        "daphne": {
             "format": "[{asctime}] {levelname} {message}",
             "style": "{",
         },
@@ -225,6 +285,7 @@ LOGGING = {
             "class": "rich.logging.RichHandler",
             "rich_tracebacks": True,
             "show_time": True,
+            "show_path": False,
         },
         "alltypes": {
             "level": "INFO",
@@ -232,34 +293,40 @@ LOGGING = {
             "filename": os.path.join(BASE_DIR, "../logs/console.log"),
             "formatter": "verbose",
         },
+        "error_file": {
+            "level": "ERROR",
+            "class": "logging.FileHandler",
+            "filename": os.path.join(BASE_DIR, "../logs/error.log"),
+            "formatter": "verbose",
+        },
     },
     "root": {
-        "handlers": ["alltypes", "console"],
+        "handlers": ["alltypes", "console", "error_file"],
         "level": "INFO",
     },
     "loggers": {
         "django": {
-            "handlers": ["console", "alltypes"],
+            "handlers": ["console", "alltypes", "error_file"],
             "level": "INFO",
             "propagate": False,
         },
         "uvicorn": {
-            "handlers": ["console", "alltypes"],
+            "handlers": ["console", "alltypes", "error_file"],
             "level": "INFO",
-            "propagate": False,  # Avoid duplicate logs
+            "propagate": False,
         },
         "daphne": {
-            "handlers": ["console", "alltypes"],
+            "handlers": ["console", "alltypes", "error_file"],
             "level": "INFO",
-            "propagate": False,  # Avoid duplicate logs
+            "propagate": False,
         },
         "uvicorn.error": {
-            "handlers": ["console", "alltypes"],
+            "handlers": ["console", "alltypes", "error_file"],
             "level": "ERROR",
             "propagate": False,
         },
         "uvicorn.access": {
-            "handlers": ["console", "alltypes"],
+            "handlers": ["console", "alltypes", "error_file"],
             "level": "INFO",
             "propagate": False,
         },
@@ -338,8 +405,30 @@ LOGIN_REDIRECT_URL = "/dashboard/main/"
 PASSWORD_RESET_TIMEOUT = 60 * 60 * 24 * 1  # 1 Day
 
 # Sessions
-SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
+SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_COOKIE_AGE = (60 * 60 * 24) / 2  # 12h
+SESSION_CACHE_ALIAS = "default"
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    )
+}
+
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=1),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "ALGORITHM": "HS256",
+    "SIGNING_KEY": SECRET_KEY,
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
+    "USER_ID_FIELD": "id",
+    "USER_ID_CLAIM": "user_id",
+}
 
 # Captcha Settings
 RECAPTCHA_PUBLIC_KEY = "6Lee-LoqAAAAAO4gH6AC1DR0R-6V6lPpFzf2nYlx"
@@ -358,9 +447,9 @@ EMAIL_SUBJECT_PREFIX = "[AtomicShield] "
 TEBEX_SECRET_KEY = "433788188a0ba1d3bb38b21fc39b2967"
 
 if not DEBUG:
-    # Redirect from http to httpsS
-    SECURE_SSL_REDIRECT = True
-    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    # Redirect from http to https
+    # SECURE_SSL_REDIRECT = True
+    # SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
     USE_X_FORWARDED_HOST = True
 
@@ -374,4 +463,4 @@ if not DEBUG:
 
     CSRF_COOKIE_SECURE = True
     CSRF_COOKIE_HTTPONLY = True
-    CSRF_USE_SESSIONS = False
+    CSRF_USE_SESSIONS = True

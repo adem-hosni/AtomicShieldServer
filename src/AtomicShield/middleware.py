@@ -18,3 +18,14 @@ class ExceptionHandlerMiddleware:
 
     def process_exception(self, request, exception):
         logger.exception(f"Error from {request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR', ''))}, {exception.__class__.__name__}: {exception}")
+
+
+class WebSocketExceptionHandlerMiddleware:
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        try:
+            await self.app(scope, receive, send)
+        except Exception as err:
+            logger.exception(f"Unhandled WebSocket exception: {err}")

@@ -1,9 +1,13 @@
+import logging
 from anticheat.consumers.safe_server import SafeServerConsumer
-from anticheat.models import ClientHWID
+from anticheat.models import HWID
 from anticheat.consumers.safe_engine import SafeEngineConsumer
 from shared.enums import WebSocketGroupNames
 from typing import List, Union, Any
+import utils
 
+
+logger = logging.getLogger(__name__)
 
 class _GuardManagerBase(object):
     """
@@ -56,7 +60,7 @@ class _GuardManagerBase(object):
                 return True
         return False
 
-    def add_safe_scanner(self, scanner: SafeEngineConsumer) -> bool:
+    def add_engine(self, scanner: SafeEngineConsumer) -> bool:
         """
         Add a AtomicShield engine to the manager if it belongs to the correct WebSocket group.
 
@@ -120,6 +124,18 @@ class _GuardManagerBase(object):
         """
         return bool(self.get_scanner_by_ip(scanner_ip))
 
+    def is_engine_connected_by_hwid(self, hwid: HWID) -> bool:
+        """
+        Check if a scanner is connected to a AtomicShield server based on the scanner's HWID.
+
+        Args:
+            hwid (ClientHWID): The HWID of the scanner to check.
+
+        Returns:
+            bool: True if the scanner is connected, False otherwise.
+        """
+        return bool(self.get_scanner_by_hwid(hwid))
+
     def get_scanner_by_ip(self, scanner_ip: str) -> Union[SafeEngineConsumer, None]:
         """
         Retrieve a AtomicShield scanner by its IP address.
@@ -131,11 +147,17 @@ class _GuardManagerBase(object):
             Union[SafeEngineConsumer, None]: The scanner instance if found, otherwise None.
         """
         for iter_engine in self._safe_engines:
-            if iter_engine.address[0] == scanner_ip:
+            if iter_engine.address[0] == scanner_ip or scanner_ip in iter_engine.received_ip:
                 return iter_engine
         return None  # Not Found
     
-    def get_scanner_by_hwid(self, hwid: ClientHWID) -> Union[SafeEngineConsumer, None]:
+    def get_engine_by_24subnet(self, ip: str) -> Union[SafeEngineConsumer, None]:
+        for iter_engine in self._safe_engines:
+            if utils.is_same_subnet_24(ip, iter_engine.address[0]):
+                return iter_engine
+        return None  # Not Found
+    
+    def get_scanner_by_hwid(self, hwid: HWID) -> Union[SafeEngineConsumer, None]:
         """
         Retrieve a AtomicShield scanner by its HWID.
 
@@ -164,3 +186,11 @@ class _GuardManagerBase(object):
             if server.address[0] == server_ip:
                 return server
         return None  # Not Found
+
+    @property
+    def total_engines(self):
+        return len(self._safe_engines)
+
+    @property
+    def total_servers(self):
+        return len(self._safe_servers)

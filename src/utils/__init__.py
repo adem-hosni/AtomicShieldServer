@@ -5,8 +5,7 @@ from string import ascii_uppercase, digits
 from random import shuffle
 from typing import Optional, Dict, Any, List
 from datetime import timedelta
-import hashlib
-import hmac
+import base64
 
 
 logger = logging.getLogger(__name__)
@@ -154,9 +153,10 @@ def format_string(string: str, vars: Dict[str, str] = {}):
     return string
 
 def validate_tebex_request(request):
-    if request.headers.get("User-Agent") != "TebexWebhook":
-        logger.warning(f"PayementAPI: Invalid Tebex User-Agent: {request.headers.get('User-Agent', '<Unknown>')}")
-        return False
+    # FIXME: Another agent on production ?
+    # if request.headers.get("User-Agent") != "TebexWebhook":
+    #     logger.warning(f"PayementAPI: Invalid Tebex User-Agent: {request.headers.get('User-Agent', '<Unknown>')}")
+    #     return False
 
     request_ip = request.META.get("HTTP_X_FORWARDED_FOR", request.META.get("REMOTE_ADDR", "")).split(", ")[0]
     if not request_ip in ["18.209.80.3", "54.87.231.232"]:
@@ -173,3 +173,19 @@ def validate_tebex_request(request):
     #     return False
 
     return True
+
+
+def is_same_subnet_24(ip1: str, ip2: str) -> bool:
+    def get_subnet(ip):
+        return ".".join(ip.split(".")[:3])
+    
+    return get_subnet(ip1) == get_subnet(ip2)
+
+
+def decode_if_base64(s: str):
+    if re.fullmatch(r'^[A-Za-z0-9+/]*={0,2}$', s):
+        try:
+            return base64.b64decode(s).decode('utf-8', errors='replace')
+        except:
+            pass
+    return s

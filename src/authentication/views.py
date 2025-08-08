@@ -1,84 +1,44 @@
-import logging
-from django.shortcuts import render, redirect
-from django.db.models import Q
-from django.http import HttpRequest, HttpResponse
-from django.contrib.auth import authenticate, login, logout
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import AllowAny
 from django.contrib.auth.models import User
-from django.contrib import messages
+from django.db.models import Q
+from django.contrib.auth import authenticate
+from rest_framework_simplejwt.tokens import RefreshToken
 
-from .forms import SignInForm, SignUpForm
+class SignInView(APIView):
+    permission_classes = [AllowAny]
 
+    def get(self, request):
+        return self.post(request)
 
-logger = logging.getLogger(__name__)
+    def post(self, request):
+        email_or_username = request.data.get("email", "").strip()
+        password = request.data.get("password", "").strip()
 
-def render_signin(request: HttpRequest) -> HttpResponse:
-    if request.user.is_authenticated:
-        return redirect("/dashboard/main")
+        user = User.objects.filter(Q(username=email_or_username) | Q(email=email_or_username)).first()
+        if not user:
+            return Response({"success": False, "message": "Invalid email or username"}, status=401)
+    
+        if not user.check_password(password):
+            return Response({"success": False, "message": "Invalid password"}, status=401)
 
-    if request.method == "POST":
-        form = SignInForm(request.POST)
+        user = authenticate(username=user.username, password=password)
+        if not user:
+            return Response({"success": False, "message": "Authentication failed"}, status=401)
 
-        if form.is_valid():
-            username_or_email = form.cleaned_data["username_or_email"]
-            password = form.cleaned_data["password"]
+        refresh = RefreshToken.for_user(user)
+        access = refresh.access_token
 
-            queried_user = User.objects.filter(
-                Q(email=username_or_email) | Q(username=username_or_email)
-            ).first()
-            if queried_user:
-                user = authenticate(
-                    request, username=queried_user.username, password=password
-                )
-                if user:
-                    login(request, user)
-                    logger.info(f"\"{user.username}\" logged in")
-                    return redirect("/dashboard/main")
-                else:
-                    messages.error(request, "Password is incorrect")
-            else:
-                messages.error(request, "Username is incorrect")
-
-    else:
-        form = SignInForm()
-
-    return render(request, "pages/auth/signin.jinja", {"form": form})
-
-
-def render_signup(request: HttpRequest) -> HttpResponse:
-    if request.user.is_authenticated:
-        return redirect("/dashboard/main")
-
-    if request.method == "POST":
-        form = SignUpForm(request.POST)
-
-        if form.is_valid():
-            email = form.cleaned_data["email"]
-            username = form.cleaned_data["username"]
-            password = form.cleaned_data["password"]
-
-            if len(str(password)) < 8:
-                messages.error(request, "Password must have at least 8 characters")
-            else:
-                if User.objects.filter(username=username).exists():
-                    messages.error(request, "Username already exists")
-                elif User.objects.filter(email=email).exists():
-                    messages.error(request, "Email already exists")
-                else:
-                    user = User.objects.create_user(
-                        username=username, email=email, password=password
-                    )
-                    user = authenticate(username=username, password=password)
-                    if user:
-                        logger.info(f"\"{user.username}\" signed up")
-                        login(request, user)
-                        return redirect("/dashboard/main")
-    else:
-        form = SignUpForm()
-
-    return render(request, "pages/auth/signup.jinja", {"form": form})
-
-
-def render_logout(request: HttpRequest) -> HttpResponse:
-    logout(request)
-    logger.info(f"\"{request.user.username}\" logged out")
-    return redirect("/")
+        return Response({
+            "success": True,
+            "data": {
+                "access": str(access),
+                "refresh": str(refresh),
+                "user": {
+                    "id": user.id,
+                    "username": user.username,
+                    "email": user.email,
+                },
+            },
+        })

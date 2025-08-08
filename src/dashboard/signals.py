@@ -27,10 +27,10 @@ def fill_subscription_key(sender, instance, **kwargs):
     if not len(instance.key.strip()):
         instance.key = generate_key(5)
 
-@receiver(post_save, sender=User)
-def create_free_subscription(sender, instance: User, created, **kwargs):
-    if created:
-        if not instance.subscriptions.filter(plan=ServerSubscription.Plans.FREE).exists():
-            instance.subscriptions.create(plan=ServerSubscription.Plans.FREE, type=ServerType.FIVEM)
-            logger.info(f"Created free subscription for user \"{instance.username}\"")
+# @receiver(post_save, sender=User)
+# def create_free_subscription(sender, instance: User, created, **kwargs):
+#     if created:
+#         if not instance.subscriptions.filter(plan=ServerSubscription.Plans.FREE).exists():
+#             instance.subscriptions.create(plan=ServerSubscription.Plans.FREE, type=ServerType.FIVEM)
+#             logger.info(f"Created free subscription for user \"{instance.username}\"")
 

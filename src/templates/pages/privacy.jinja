@@ -1,0 +1,34 @@
+{% extends "bases/auth.jinja" %}
+{% load static %}
+{% block content %}
+<div id="root">
+  <div class="w-full bg-background-theme flex items-start flex-col noselect">
+    <h1 class="hidden">Atomic Shield - Privacy Policy</h1>
+    <img src="./static/image/logo-ico.svg" alt="Atomic Shield" class="hidden" />
+    {% include "components/header.jinja" %}
+    <div class="flex py-12 self-stretch px-4 sm:px-8 md:px-12">
+      <div class="w-full">
+        <div class="min-h-[43rem] py-4 text-white self-stretch px-4">
+          <section id="privacy-policy" class="mb-12">
+            <h2 class="text-4xl text-gray-300 font-extrabold tracking-tight pl-4 mb-4">
+              Privacy & Policy
+            </h2>
+            <div class="shadow-md p-6 rounded-lg">
+              <ul class="list-disc list-inside space-y-2 text-gray-300">
+                <li>You agree to use this software only for fair and legitimate gaming purposes.</li>
+                <li>Any attempt to cheat or gain unfair advantages will result in a ban or restriction.</li>
+                <li>We do NOT access, read, or collect any personal files or private data on your system.</li>
+                <li>Atomic Shield only monitors the game process and interactions related to it.</li>
+                <li>The software is digitally signed with a trusted CA certificate and cannot act as malware.</li>
+                <li>Monitoring occurs only while the game is running. Outside the game, the software is inactive.</li>
+                <li>Minimal anonymized data may be used strictly to improve detection and performance.</li>
+              </ul>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+    {% include "components/footer.jinja" %}
+  </div>
+</div>
+{% endblock content %}

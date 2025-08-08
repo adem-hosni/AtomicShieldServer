@@ -26,8 +26,6 @@ from .sitemaps import StaticViewSitemap
 # auto-import from django
 from .urlhandler import handler404, handler500
 
-import debug_toolbar.urls
-
 
 sitemaps = {
     "static": StaticViewSitemap(),
@@ -38,19 +36,19 @@ urlpatterns = [
     path("", include("home.urls")),
     path("api/", include("api.urls")),
     path("home/", include("home.urls")),
-    path("auth/", include("authentication.urls")),
+    path("api/auth/", include("authentication.urls")),
     path("anticheat/", include("anticheat.urls")),
-    path("dashboard/", include("dashboard.urls")),
+    path("api/dashboard", include("dashboard.urls")),
     path("resources/", include("resources.urls")),
 
     path("sitemap.xml/", sitemap, {"sitemaps": sitemaps}, name="sitemap"),
     path("robots.txt/", TemplateView.as_view(template_name="meta/robots.txt", content_type="text/plain")),
+    path(".well-known/security.txt/", TemplateView.as_view(template_name="meta/security.txt", content_type="text/plain")),
 ]
 
 if not settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 else:
     urlpatterns.append(path("__reload__/", include("django_browser_reload.urls")))
-    urlpatterns.append(path("__debug__/", include(debug_toolbar.urls)))
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

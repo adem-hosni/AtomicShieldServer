@@ -1,6 +1,1 @@
-[
-    "core.dll",
-    "net.dll",
-    "deathmatch.dll",
-    "mtaserver.conf"
-]
+["server.js", "fxmanifest.lua", "server.key"]

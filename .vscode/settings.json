@@ -1,31 +1,13 @@
 {
     "editor.defaultFormatter": "ms-python.black-formatter",
-    "emmet.includeLanguages": {
-        "django-html": "html",
-        "jinja-html": "html",
-    },
-    
-    "files.associations": {
-        "*.jinja": "html",
-        "*.css": "tailwindcss"
-    },
-    "tailwindCSS.includeLanguages": {
-        "html": "html",
-        "jinja": "jinja",
-        "django-html": "django-html",
-        "jinja-html": "jinja-html",
-        "javascript": "javascript",
-        "css": "css"
-    },
-    "editor.quickSuggestions": {
-        "strings": true
-    },
-    "search.useIgnoreFiles": false,
     "editor.smoothScrolling": true,
-    "[javascript]": {
-        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    "[json]": {
+        "editor.defaultFormatter": "vscode.json-language-features"
     },
-    "[css]": {
-        "editor.defaultFormatter": "esbenp.prettier-vscode"
-    }
+    "[html]": {
+        "editor.defaultFormatter": "vscode.html-language-features"
+    },
+    "[javascript]": {
+        "editor.defaultFormatter": "vscode.typescript-language-features"
+    },
 }

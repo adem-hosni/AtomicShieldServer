@@ -1,12 +1,10 @@
-# python dump_aes_keys_2_cpparray.py --mode production --target k
-
 import argparse
 
 import os
 from pathlib import Path
 
 
-parser = argparse.ArgumentParser(description="Dump AES keys to C++ array")
+parser = argparse.ArgumentParser(description="Dump AES256 keys to C++ array")
 parser.add_argument(
     "--mode", type=str, help="Keys Mode (debug/production)", required=True
 )

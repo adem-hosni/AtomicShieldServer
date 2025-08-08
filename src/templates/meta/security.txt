@@ -1,0 +1,4 @@
+Contact: mailto:support@atomic-shield.com
+Encryption: https://atomic-shield.com/pgp.txt
+Acknowledgments: https://atomic-shield.com/hall-of-fame
+Preferred-Languages: en

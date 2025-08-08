@@ -1,4 +1,6 @@
+import uuid
 import asyncio
+from asgiref.sync import sync_to_async
 import os
 import base64
 from anticheat.models import AntiCheatConfigTemplates
@@ -8,7 +10,7 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from core import atomic_core
 from .safe_server import SafeServerConsumer
 from django.conf import settings
-from ..models import ClientHWID, MaliciousSignatures, Ban, DetectionReport
+from ..models import HWID, MaliciousSignatures, Ban, DetectionReport
 import utils
 import utils.discord
 from shared.models import ServerType
@@ -17,12 +19,12 @@ from shared.enums import (
     SafeServerPacketID,
     WebSocketGroupNames,
     DetectionType,
-    detection_messages
+    detection_messages,
 )
 from shared.flags import Flag, DetectionType
 from .. import config_ids
 import json
-from typing import Union, Dict, List, Optional, Any
+from typing import Union, Dict, List, Optional, Any, Tuple
 import logging
 
 logger = logging.getLogger(__name__)
@@ -50,13 +52,27 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         """
         super().__init__(*args, **kwargs)
         self._group_name = ""
-        self._hwid: ClientHWID = None
+        self._hwid: HWID = None
         self._connected_server: SafeServerConsumer = None
         self._detected_signatures: List[MaliciousSignatures] = []
         self._flagged: bool = False
         self._flags: List[Flag] = []
         self._type: ServerType = None
-        self._pending_responses = {}
+        self._pending_responses: Dict[
+            Tuple[SafeEnginePacketID, str], asyncio.Future[Any]
+        ] = {}
+        self.build_timestamp = "NONE"
+        self.received_ip: str = "NONE"
+
+    def generate_request_id(self) -> str:
+        """
+        Generates a unique request ID for tracking purposes.
+
+        Returns:
+        --------
+            str: A unique request ID.
+        """
+        return str(uuid.uuid4())
 
     async def connect(self):
         """
@@ -152,9 +168,10 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         """
         try:
             # Attempt to parse the incoming message as JSON
-            request_body: Dict[str, Any] = json.loads(atomic_core.decode(text_data))
-        except json.decoder.JSONDecodeError:
-            logger.warning(f"Failed to parse request. (request body: {request_body})")
+            request_buffer = atomic_core.decode(text_data)
+            request_body: Dict[str, Any] = json.loads(request_buffer)
+        except Exception as err:
+            logger.warning(f"Failed to parse request. ({err})")
             return await self.close()
 
         # Verify that the request body contains a 'type' key and 'ut' key
@@ -166,24 +183,17 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         # Check the request's unix timestamp for integrity
         unix_timestamp = int(request_body["ut"])
         diff = time() - unix_timestamp
-        if diff >= 120:
+        if diff >= 120 and False:
             # Request was tampered
-
-            # Optimize the logging
-            for key, value in request_body.items():
-                if (isinstance(value, str) or isinstance(value, bytes)) and len(value) > 40:
-                    del request_body[key]
-
-            logger.warning(
-                f"Tampered request received from {self.address} ({diff}s), request: {request_body}"
-            )
+            logger.warning(f"Tampered request received from {self.address} ({diff}s)")
             return await self.close()
 
         try:
             await self.process_packet(request_body)
         except Exception as err:
-            logger.error(f"Error handling packet {request_body['type']} from Engine, {err.__class__.__name__}: {err}")
-
+            logger.error(
+                f"Error handling packet {request_body['type']} from Engine, {err.__class__.__name__}: {err}"
+            )
 
     async def process_packet(self, request_body: Dict[str, Any]):
         try:
@@ -192,15 +202,21 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         except ValueError:
             logger.warning(f"Undefined request type (given: {request_body['type']})")
             return await self.close()
-        
-        if request_body["type"] in self._pending_responses:
-            if not self._pending_responses[request_body["type"]].cancelled():
-                self._pending_responses[request_body["type"]].set_result(request_body)
-            del self._pending_responses[request_body["type"]]
-        
+
+        packet_type = request_body["type"]
+        request_id = request_body.get("request_id", None)
+        key = (packet_type, request_id) if request_id else packet_type
+
+        if key in self._pending_responses:
+            future = self._pending_responses[key]
+            if not future.cancelled():
+                future.set_result(request_body)
+            del self._pending_responses[key]
+
         from ..handlers.safe_engine import (
             handle_network_join,
             handle_cheat_detection,
+            handle_filehash_request,
         )
 
         match request_body["type"]:
@@ -208,6 +224,8 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                 asyncio.create_task(handle_network_join(self, request_body))
             case SafeEnginePacketID.CHEAT_DETECTION:
                 asyncio.create_task(handle_cheat_detection(self, request_body))
+            case SafeEnginePacketID.REQUEST_FILEHASH:
+                asyncio.create_task(handle_filehash_request(self, request_body))
 
     async def disconnect(self, code):
         """
@@ -253,7 +271,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         return self._hwid
 
     @hwid.setter
-    def hwid(self, hwid: Union[ClientHWID, Any]):
+    def hwid(self, hwid: Union[HWID, Any]):
         """
         Sets the hardware ID.
 
@@ -265,7 +283,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         ------
             TypeError: If the value is not of type ClientHWID.
         """
-        if not isinstance(hwid, ClientHWID):
+        if not isinstance(hwid, HWID):
             raise TypeError(f"Can't convert type {type(hwid)} to type ClientHWIDs")
         self._hwid = hwid
 
@@ -316,7 +334,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
     @property
     def is_flagged(self) -> bool:
         """
-        Check if the player is flagged from EagleAntiCheat
+        Check if the player is flagged from AtomicShield
 
         Returns:
             bool: True if flagged else False
@@ -337,7 +355,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
     async def flag_as(
         self, flag_type: DetectionType, report: Dict[str, Any] = {}
     ) -> Flag:
-        
+
         flag = Flag(flag_type, report)
         self._flags.append(flag)
         return flag
@@ -364,28 +382,77 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             bool: True if the kick was successful, False otherwise.
         """
         if self._connected_server:
+            logger.info(
+                f"Kicking {self._hwid.username} ({self._hwid.id}) from {self._connected_server.game_server.name} ({self._connected_server.game_server.ip}) for reason: {reason or 'No reason provided'}"
+            )
             await self._connected_server.send(
                 SafeServerPacketID.PLAYER_KICK,
-                {"ip": self.address[0], "reason": reason},
+                {
+                    "ip": self.address[0],
+                    "discordid": self._hwid.discord_id or f"NoDiscord-{self._hwid.id}",
+                    "steamid": self._hwid.steam or f"NoSteam-{self._hwid.id}",
+                    "reason": reason,
+                },
             )
             return True
         return False
 
-    async def send_report(self, reason, report, image_buffer):
+    async def send_report(
+        self,
+        reason,
+        report,
+        image_buffer,
+        ban_assigned: bool = True,
+        server_consumer: Optional[SafeServerConsumer] = None,
+        ban_id: Any = None,
+    ):
+        sent_report = report.copy()
+        sent_report.pop("ss", None)
+
+        if not ban_assigned:
+            await utils.discord.send_discord_embed(
+                "https://discord.com/api/webhooks/1370769531911540807/rHtkBD7ffXLtCg7DHe9odOJpueMiw_RU-Mxu26_iip7XqPu5zBJO6Ram5UidJ3CsPtGi",
+                "CHEAT DETECTION - In Lobby",
+                f"""
+                **{self._hwid.username} - {self._hwid.id}** Detection Report ```{reason}```
+                """,
+                fields=[
+                    (f"{key.replace("_", " ").title()}:", f"```{value}```", False)
+                    for key, value in sent_report.items()
+                ],
+                image_buffer=image_buffer,
+            )
+            return
+
         await utils.discord.send_discord_embed(
             settings.DETECTIONS_WEBHOOK_URL,
             "CHEAT DETECTION",
             f"""
-            **{self._hwid.username}** banned due to ```{reason}```
+            **{self._hwid.username} - {self._hwid.id}** banned due to ```{reason}```
             """,
             fields=[
                 (f"{key.replace("_", " ").title()}:", f"```{value}```", False)
-                for key, value in report.items()
-            ],
+                for key, value in sent_report.items()
+            ] + [
+                    (
+                        "Server:",
+                        (
+                            f"```{server_consumer.game_server.name}```"
+                            if server_consumer
+                            else "```NO SERVER CONNECTED```"
+                        ),
+                        False,
+                    ),
+                    ("BAN ID: ", f"**{ban_id}**", True)
+                ],
             image_buffer=image_buffer,
         )
-    
-    async def save_report(self, detection_type: DetectionType, image_buffer: bytes, report: Dict[str, Any]) -> DetectionReport:
+
+    async def save_report(
+        self, detection_type: DetectionType, image_buffer: bytes, report: Dict[str, Any]
+    ) -> DetectionReport:
+        saved_report = report.copy()
+        saved_report.pop("ss", None)
         image_path = ""
         if image_buffer:
             screenshots_directory = os.path.join(
@@ -399,11 +466,11 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             )
             with open(image_path, "wb") as file:
                 file.write(image_buffer)
-        
-        if len(report) or image_buffer:
+
+        if len(saved_report) or image_buffer:
             detection_report = DetectionReport(
                 hwid=self._hwid,
-                report=report,
+                report=saved_report,
                 screenshot=image_path.removeprefix(settings.MEDIA_ROOT),
                 detection_type=detection_type,
             )
@@ -418,7 +485,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         detection_type: DetectionType = DetectionType.CUSTOM,
         report: DetectionReport = None,
         image_buffer: bytes = None,
-    ):
+    ) -> Ban:
         if not isinstance(report, DetectionReport):
             report = await self.save_report(detection_type, image_buffer, report)
         ban = Ban(
@@ -432,31 +499,48 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
 
         embed_title = "Banned Player"
         try:
-            if self._connected_server:
-                send_alerts = await self._connected_server.game_server.get_config_by_id(config_ids.ALLOW_SEND_DETECTION_ALERT)
+            if target_game_server:
+                send_alerts = await target_game_server.get_config_by_id(
+                    config_ids.ALLOW_SEND_DETECTION_ALERT
+                )
 
                 if send_alerts:
-                    webhook_url = await self._connected_server.game_server.get_config_by_id(config_id=config_ids.DISCORD_WEBHOOK_URL)
+                    webhook_url = await target_game_server.get_config_by_id(
+                        config_id=config_ids.DISCORD_WEBHOOK_URL
+                    )
                     if len(webhook_url) > 0:
                         if detection_type == DetectionType.CHEAT_SIGNATURE_FOUND:
-                            if report.report.get("string", "") == "D:\\Projets\\TZX\\x64\\Release\\Module.pdb":
+                            if (
+                                report.report.get("string", "")
+                                == "D:\\Projets\\TZX\\x64\\Release\\Module.pdb"
+                            ):
                                 reason = "External Cheat Detected (TZX)"
 
-                        embed_title = await self._connected_server.game_server.get_config_by_id(config_id=config_ids.DISCORD_EMBED_TITLE)
-                        embed_title = utils.format_string(embed_title, {"name": self._hwid.username})
-                        allow_send_screenshot = bool(await self._connected_server.game_server.get_config_by_id(config_id=config_ids.ALLOW_SEND_SCREENSHOT_ALERT))
-
+                        embed_title = await target_game_server.get_config_by_id(
+                            config_id=config_ids.DISCORD_EMBED_TITLE
+                        )
+                        embed_title = utils.format_string(
+                            embed_title, {"name": self._hwid.username}
+                        )
+                        allow_send_screenshot = bool(
+                            await target_game_server.get_config_by_id(
+                                config_id=config_ids.ALLOW_SEND_SCREENSHOT_ALERT
+                            )
+                        )
 
                         author_title = "Atomic Shield - FiveM AntiCheat©"
                         embed_title = "**A cheater has been Banned by AtomicShield**"
                         avatar_url = "https://media.discordapp.net/attachments/944710024670879804/1346134230106636418/atomic.png"
-                        current_time = datetime.now().strftime("%a %B %d %Y %H:%M:%S GMT %z")
+                        current_time = datetime.now().strftime(
+                            "%a %B %d %Y %H:%M:%S GMT %z"
+                        )
                         embed_description = f"""
                 **Name:** {self._hwid.username}
                 **Reason:** {reason}
                 **Steam:** {self._hwid.steam}
                 **License:** {self._hwid.fivem_license}
-                **Discord:** {self._hwid.discord_id}
+                **Discord:** <@!{self._hwid.discord_id}>
+                **Ban ID:** {ban.id}
                 **Was this a false positive? Open a ticket in our Discord.**\ndiscord.gg/atomic-shield - <https://atomic-shield.com/>
                 """
                         footer_text = f"AtomicShield - {current_time}"
@@ -464,31 +548,35 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                             webhook_url,
                             embed_title,
                             embed_description,
-                            author= author_title,
+                            author=author_title,
                             footer=footer_text,
                             footer_icon_url=avatar_url,
-                            author_icon_url= avatar_url,
+                            author_icon_url=avatar_url,
                             avatar_url=avatar_url,
-                            image_buffer=image_buffer if allow_send_screenshot else None,
+                            image_buffer=(
+                                image_buffer if allow_send_screenshot else None
+                            ),
                         )
-
 
         except Exception as err:
             logger.error(
                 f"An error occured while trying to send discord detection report: {err}"
             )
-    
-    async def handle_basic_checks(self, detection: DetectionType, report: Dict[str, Any]) -> bool:
+        return ban
+
+    async def handle_basic_checks(
+        self,
+        detection: DetectionType,
+        report: Dict[str, Any],
+        server: SafeServerConsumer,
+    ) -> bool:
         # Check if the malicious driver is about Process Hacker
         try:
-            logger.info(report)
             if detection == DetectionType.MALICIOUS_DRIVER:
-                if str(report["driver_name"]).endswith(
-                    "kprocesshacker.sys"
-                ):
+                if str(report["driver"]).endswith("kprocesshacker.sys"):
                     try:
                         processhacker_allowed = (
-                            await self._connected_server.game_server.get_config_by_id(
+                            await server.game_server.get_config_by_id(
                                 config_ids.ALLOW_PROCESS_HACKER
                             )
                         )
@@ -496,80 +584,98 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                         processhacker_allowed = False
 
                     if not processhacker_allowed:
-                        await self.kick(detection_messages[detection])
-                        return True
+                        return detection_messages[detection]
 
             # Check for Secure Boot is forced
             if detection == DetectionType.SECURE_BOOT_DISABLED:
                 try:
-                    force_secureboot = (
-                        await self._connected_server.game_server.get_config_by_id(
-                            config_ids.FORCE_SECUREBOOT
-                        )
+                    force_secureboot = await server.game_server.get_config_by_id(
+                        config_ids.FORCE_SECUREBOOT
                     )
                 except AntiCheatConfigTemplates.DoesNotExist:
                     force_secureboot = False
                 if force_secureboot:
-                    await self.kick(detection_messages[detection])
-                    return True
+                    return detection_messages[detection]
 
             # Check for Force Test Signing Disabled
             if detection == DetectionType.TEST_SIGNING_ENABLED:
                 try:
-                    testsigning_enabled = (
-                        await self._connected_server.game_server.get_config_by_id(
-                            config_ids.FORCE_TESTSIGNING
-                        )
+                    testsigning_enabled = await server.game_server.get_config_by_id(
+                        config_ids.FORCE_TESTSIGNING
                     )
                 except AntiCheatConfigTemplates.DoesNotExist:
                     testsigning_enabled = False
 
                 if testsigning_enabled:
-                    await self.kick(detection_messages[detection])
-                    return True
-            
+                    return detection_messages[detection]
+
             # Check for Allowed Server Plugins
             if detection == DetectionType.DLL_FOUND:
                 try:
-                    allowed_plugins = (
-                        await self._connected_server.game_server.get_config_by_id(
-                            config_ids.ALLOWED_FIVEM_PLUGINS
-                        )
+                    allowed_plugins = await server.game_server.get_config_by_id(
+                        config_ids.ALLOWED_FIVEM_PLUGINS
                     )
                 except AntiCheatConfigTemplates.DoesNotExist:
                     allowed_plugins = ""
 
                 if report["plugin"].strip().lower() in allowed_plugins.lower():
-                    await self.kick(utils.format_string(detection_messages[detection], report))
-                    return True
-                
-                logger.info(f"CHEATER REPORT! {self._hwid.computer_name} is flagged as {detection} in {self._connected_server.game_server.name} ({self._connected_server.game_server.ip})")
+                    return utils.format_string(detection_messages[detection], report)
+
+                logger.info(
+                    f"CHEATER REPORT! {self._hwid.computer_name} is flagged as {detection} in {self._connected_server.game_server.name} ({server.game_server.ip})"
+                )
         except Exception as err:
             logger.error(f"Unable to handle basic checks: {err}")
-        return False
+        return ""
 
-    async def request_screenshot(self) -> str:
+    async def request_screenshot(self, base64decode: bool = True) -> str:
         if self._connected_server:
-            logger.info(f"Screenshot requested of {self._hwid.username} from {self._connected_server.game_server.name} ({self._connected_server.game_server.ip})...")
+            logger.info(
+                f"Screenshot requested of {self._hwid.username} from {self._connected_server.game_server.name} ({self._connected_server.game_server.ip})..."
+            )
         else:
             logger.info(f"Screenshot requested of {self._hwid.username}")
         response_future = asyncio.get_event_loop().create_future()
-        self._pending_responses[SafeEnginePacketID.REQUEST_SCREENSHOT] = response_future
-        
-        await self.send(SafeEnginePacketID.REQUEST_SCREENSHOT, {})
-        response = await response_future
-        
-        if not response["success"]:
-            logger.warning(f"Failed to retreive screenshot from {self._hwid.username}. {response['message']}")
+        request_id = self.generate_request_id()
+
+        self._pending_responses[(SafeEnginePacketID.REQUEST_SCREENSHOT, request_id)] = (
+            response_future
+        )
+
+        await self.send(
+            SafeEnginePacketID.REQUEST_SCREENSHOT, {"request_id": request_id}
+        )
+        try:
+            response = await asyncio.wait_for(response_future, 35)
+        except asyncio.TimeoutError:
+            logger.error(
+                f"Failed to retreive screenshot from {self._hwid.username} {self.address}!"
+            )
+            self._pending_responses.pop(
+                (SafeEnginePacketID.REQUEST_SCREENSHOT, request_id), None
+            )
             return None
 
-        image_buffer = base64.b64decode(response["buffer"])
+        if not response["success"]:
+            logger.warning(
+                f"Failed to retreive screenshot from {self._hwid.username}. {response['message']}"
+            )
+            return None
+
+        logger.info(
+            f"Screenshot of {self._hwid.username} received successfully ({len(response['buffer'])} bytes)!"
+        )
+
+        return (
+            base64.b64decode(response["buffer"]) if base64decode else response["buffer"]
+        )
+
+    async def get_screenshot(self) -> str:
+        image_buffer = await self.request_screenshot(base64decode=True)
 
         image_path = None
         if image_buffer:
-            screenshots_directory = os.path.join(
-                settings.MEDIA_ROOT, "screenshot"
-            )
+            screenshots_directory = os.path.join(settings.MEDIA_ROOT, "screenshot")
             os.makedirs(screenshots_directory, exist_ok=True)
 
             image_path = os.path.join(
@@ -581,19 +687,157 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                 file.write(image_buffer)
 
         return f"{settings.MEDIA_URL}screenshot/{self._hwid.id}.png"
-    
+
     async def run_scanners(self, run: bool) -> bool:
         return
-        logger.info(f"Turning \"{self._hwid.username}\" engine scanners {'on' if run else 'off'}...")
+        logger.info(
+            f"Turning \"{self._hwid.username}\" engine scanners {'on' if run else 'off'}..."
+        )
         response_future = asyncio.get_event_loop().create_future()
-        self._pending_responses[SafeEnginePacketID.RUN_SCANNERS] = response_future        
+        request_id = self.generate_request_id()
 
-        await self.send(SafeEnginePacketID.RUN_SCANNERS, {"run": run})
+        self._pending_responses[(SafeEnginePacketID.RUN_SCANNERS, request_id)] = (
+            response_future
+        )
+
+        await self.send(
+            SafeEnginePacketID.RUN_SCANNERS, {"run": run, "request_id": request_id}
+        )
 
         try:
             response = await asyncio.wait_for(response_future, 12)
         except asyncio.TimeoutError:
-            logger.error(f"Failed to {'start' if run else 'shutdown'} engine scanners of {self._hwid.username} {self.address}!")
-            response_future.cancel()
+            logger.error(
+                f"Failed to {'start' if run else 'shutdown'} engine scanners of {self._hwid.username} {self.address}!"
+            )
+            self._pending_responses.pop(
+                (SafeEnginePacketID.RUN_SCANNERS, request_id), None
+            )
             return False
-        return response["success"]        
+        return response["success"]
+
+    async def shutdown(self) -> bool:
+        logger.info(f"Shutting down engine of {self._hwid.username} {self.address}...")
+        response_future = asyncio.get_event_loop().create_future()
+        request_id = self.generate_request_id()
+        self._pending_responses[(SafeEnginePacketID.ENGINE_SHUTDOWN, request_id)] = (
+            response_future
+        )
+
+        await self.send(SafeEnginePacketID.ENGINE_SHUTDOWN, {"request_id": request_id})
+
+        return True
+
+    async def request_debug_logs(self) -> str:
+        logger.info(
+            f"Debug logs requested from {self._hwid.username} {self.address}..."
+        )
+
+        response_future = asyncio.get_event_loop().create_future()
+        request_id = self.generate_request_id()
+        key = (SafeEnginePacketID.REQUEST_DEBUG_LOGS, request_id)
+
+        self._pending_responses[key] = response_future
+        await self.send(
+            SafeEnginePacketID.REQUEST_DEBUG_LOGS, {"request_id": request_id}
+        )
+
+        try:
+            waited = 0
+            interval = 0.5
+            max_wait = 30
+
+            while waited < max_wait:
+                if response_future.done():
+                    response = response_future.result()
+                    logger.info(
+                        f"Logs received from {self._hwid.username} {self.address} ({len(response['logs'])} bytes)"
+                    )
+                    return response["logs"]
+                await asyncio.sleep(interval)
+                waited += interval
+
+            raise asyncio.TimeoutError("Log request timed out")
+
+        except asyncio.CancelledError:
+            logger.warning(
+                f"Cancelled debug log request for {self._hwid.username} {self.address}"
+            )
+            return ""
+        except asyncio.TimeoutError:
+            logger.error(
+                f"Timeout while retrieving logs from {self._hwid.username} {self.address}"
+            )
+            return ""
+        finally:
+            self._pending_responses.pop(key, None)
+
+    async def request_file_upload(self, file_path: str) -> bytes:
+        logger.info(f"File upload requested of {self._hwid.username} ({file_path})...")
+        response_future = asyncio.get_event_loop().create_future()
+        request_id = self.generate_request_id()
+
+        self._pending_responses[
+            (SafeEnginePacketID.REQUEST_FILE_UPLOAD, request_id)
+        ] = response_future
+
+        await self.send(
+            SafeEnginePacketID.REQUEST_FILE_UPLOAD,
+            {"file_path": file_path, "request_id": request_id},
+        )
+
+        try:
+            response = await asyncio.wait_for(response_future, 120 * 2)
+        except asyncio.TimeoutError:
+            logger.error(
+                f"Failed to retreive file upload from {self._hwid.username} {self.address}!"
+            )
+            self._pending_responses.pop(
+                (SafeEnginePacketID.REQUEST_FILE_UPLOAD, request_id), None
+            )
+            return None
+
+        if not response["success"]:
+            logger.warning(
+                f"Failed to retreive file upload from {self._hwid.username}. {response['message']}"
+            )
+            return None
+
+        logger.info(
+            f"File upload of {self._hwid.username} received successfully ({len(response['buffer'])} bytes)!"
+        )
+
+        return base64.b64decode(response["buffer"])
+
+    async def get_bans(self) -> List[Ban]:
+        """
+        Retrieves the bans associated with the client's hardware ID.
+
+        Returns:
+            List[Ban]: A list of Ban objects associated with the client's hardware ID.
+        """
+        return await sync_to_async(list)(
+            Ban.objects.filter(hwid=self.hwid).order_by("banned_at")
+        )
+
+    async def get_last_ban(
+        self, game_server_consumer: Optional[SafeServerConsumer] = None
+    ) -> Optional[Ban]:
+        """
+        Retrieves the last ban associated with the client's hardware ID.
+
+        Returns:
+            Optional[Ban]: The last Ban object associated with the client's hardware ID, or None if no bans exist.
+        """
+        bans = await self.get_bans()
+        if not bans:
+            return None
+        for ban in reversed(bans):
+            if (
+                game_server_consumer
+                and ban.game_server != game_server_consumer.game_server
+            ):
+                continue
+            if not ban.is_expired and ban.active:
+                return ban
+        return None

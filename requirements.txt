@@ -20,3 +20,7 @@ django-simple-history
 whitenoise
 djangorestframework
 djangorestframework-simplejwt
+dj_rest_auth
+django-allauth
+django-cors-headers
+

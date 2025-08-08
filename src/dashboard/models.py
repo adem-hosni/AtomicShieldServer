@@ -54,6 +54,13 @@ class ServerSubscription(models.Model):
         verbose_name_plural = "subscriptions"
 
     @property
+    def is_used(self) -> bool:
+        """
+        Check if the subscription is used by a server.
+        """
+        return GameServer.objects.filter(subscriptions=self).exists()
+
+    @property
     def expires_at(self):
         if self.plan == 4:
             return timedelta(days=7)

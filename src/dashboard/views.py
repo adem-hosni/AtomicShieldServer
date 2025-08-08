@@ -245,7 +245,7 @@ def dashboard_overview(request: HttpRequest) -> JsonResponse:
             "id": subscription.id,
             "name": subscription.name,
             "plan": subscription.plan,
-            "status": "active" if subscription.is_valid_for_now() else "expired",
+            "status": "used" if subscription.is_used else "active" if subscription.is_valid_for_now() else "expired",
             "period": utils.represent_timedelta_string(subscription.expires_at),
         } for subscription in ServerSubscription.objects.filter(owner=request.user)
     ]
@@ -341,6 +341,11 @@ def add_server(request: HttpRequest) -> Response:
     if not subscription.is_valid_for_now():
         logger.warning(f"{request.user.username} trying to use expired subscription (subscription id: {subscription_id})!")
         return Response({"success": False, "message": "Expired Subscription"})
+    
+    # Check if the subscription is already used by a server
+    if subscription.is_used:
+        logger.warning(f"{request.user.username} trying to use an already used subscription (subscription id: {subscription_id})!")
+        return Response({"success": False, "message": "Subscription already used by a server"})
 
     # Check if the server address already used
     if GameServer.objects.filter(

@@ -33,8 +33,7 @@ class SignInView(APIView):
         return Response({
             "success": True,
             "data": {
-                "access": str(access),
-                "refresh": str(refresh),
+                "token": str(access),
                 "user": {
                     "id": user.id,
                     "username": user.username,

@@ -36,8 +36,12 @@ class SignInView(APIView):
                 "token": str(access),
                 "user": {
                     "id": user.id,
-                    "username": user.username,
+                    "name": user.username,
                     "email": user.email,
+                    "provider": "email",
+                    "isVerified": False,  # TODO
+                    "createdAt": user.date_joined.strftime("%d/%m/%Y, %H:%M:%S"),
+                    "lastLogin": user.last_login.strftime("%d/%m/%Y, %H:%M:%S")
                 },
             },
         })

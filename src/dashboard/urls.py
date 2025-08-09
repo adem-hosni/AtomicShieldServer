@@ -6,6 +6,10 @@ urlpatterns = [
     path("servers/add", views.add_server, name="add_server"),
     path("servers/", views.list_servers, name="list_server"),
     path("server/<int:server_id>", views.server_dashboard, name="list_server"),
+    path("server/<int:server_id>/bans", views.list_bans, name="list_bans"),
+    path("server/<int:server_id>/bans/unban", views.unban_player, name="unban_player"),
+    path("server/<int:server_id>/bans/ban", views.ban_player, name="ban_player"),
+    path("server/<int:server_id>/configurations", views.list_configurations, name="list_configurations"),
 
 
     path("main/", views.render_maindashboard, name="dashboard"),

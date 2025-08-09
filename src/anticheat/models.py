@@ -13,66 +13,89 @@ class AntiCheatConfigDataTypes(models.IntegerChoices):
     INTEGER = 3, "Integer"
 
 
-class AntiCheatConfigurationCategories(models.Model):
+class AntiCheatConfigurationCategory(models.Model):
     name = models.CharField(max_length=32)
-    description = models.TextField()
+    icon = models.CharField(max_length=32)
     server_type = models.IntegerField(
-        choices=ServerType, null=False, default=ServerType.FIVEM
+        choices=ServerType,
+        default=ServerType.FIVEM,
     )
 
     class Meta:
-        db_table = "anticheat_configuration_categories"
+        # db_table = "anticheat_configuration_categories"
         verbose_name = "Configuration Category"
         verbose_name_plural = "Configuration Categories"
 
-    def __str__(self) -> str:
+    def __str__(self):
         return self.name
 
 
-class AntiCheatConfigTemplates(models.Model):
-    name = models.CharField(max_length=64)
-    description = models.TextField(null=True, default=None, blank=True)
-    pseudo_name = models.CharField(max_length=32, unique=True)
-    server_type = models.IntegerField(
-        choices=ServerType, null=False, default=ServerType.FIVEM
-    )
-    config_type = models.IntegerField(
-        choices=AntiCheatConfigDataTypes,
-        null=False,
-        default=AntiCheatConfigDataTypes.BOOLEAN,
-    )
-    default_value = models.CharField(blank=True, max_length=512)
+class AntiCheatConfigSection(models.Model):
     category = models.ForeignKey(
-        AntiCheatConfigurationCategories,
+        AntiCheatConfigurationCategory,
         on_delete=models.CASCADE,
-        null=True,
-        related_name="configs",
+        related_name="sections",
     )
+    title = models.CharField(max_length=64)
+    subtitle = models.TextField(null=True, blank=True)
+    icon = models.CharField(max_length=64)
 
     class Meta:
-        db_table = "anticheat_config_templates"
-        verbose_name = "Configuration"
-        verbose_name_plural = "Configurations"
+        verbose_name = "Configuration Section"
+        verbose_name_plural = "Configuration Sections"
+
+    def __str__(self):
+        return f"{self.category.name} - {self.title}"
+
+
+class AntiCheatConfigTemplate(models.Model):
+    section = models.ForeignKey(
+        "anticheat.AntiCheatConfigSection",
+        on_delete=models.CASCADE,
+        related_name="configurations",
+    )
+    name = models.CharField(max_length=64)
+    subtitle = models.TextField(null=True, blank=True)
+    icon = models.CharField(max_length=64)
+    tip = models.TextField(null=True, blank=True)
+    pseudo_name = models.CharField(max_length=32, unique=True)
+
+    server_type = models.IntegerField(
+        choices=ServerType,
+        default=ServerType.FIVEM,
+    )
+
+    config_type = models.IntegerField(
+        choices=AntiCheatConfigDataTypes,
+        default=AntiCheatConfigDataTypes.BOOLEAN,
+    )
+
+    default_value = models.CharField(max_length=512, blank=True)
+
+    class Meta:
+        verbose_name = "Configuration Template"
+        verbose_name_plural = "Configuration Templates"
 
     def get_default_value(self) -> Union[bool, str, int]:
-        """Convert `default_value` to the correct type based on `config_type`."""
-        if self.config_type == 1:
+        """Convert default_value to the correct type."""
+        if self.config_type == AntiCheatConfigDataTypes.BOOLEAN:
             return self.default_value.strip().lower() in ("true", "1")
-        elif self.config_type == 2:
-            return self.default_value
-        elif self.config_type == 3:
-            return int(self.default_value)
-        # Handle other types
+        elif self.config_type == AntiCheatConfigDataTypes.INTEGER:
+            try:
+                return int(self.default_value)
+            except ValueError:
+                return 0
         return self.default_value
 
-    def __str__(self) -> str:
-        return self.name
+    def __str__(self):
+        return f"{self.name} ({self.get_config_type_display()})"
 
 
 class AntiCheatConfigurations(models.Model):
     config = models.JSONField(blank=False, default=dict)  # Json Dump
 
     class Meta:
+        db_table = "anticheat_configurations"
         verbose_name = "Server Configuration"
         verbose_name_plural = "Server Configurations"
 
@@ -327,7 +350,6 @@ class CrashReport(models.Model):
 
     class Meta:
         verbose_name = "Crash Report"
-    
+
     def __str__(self):
         return f"Crash Report {self.exception_code} ({self.id}) - {self.crash_by.username if self.crash_by else 'Unknown'}"
-

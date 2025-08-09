@@ -7,7 +7,7 @@ from anticheat.consumers.safe_server import SafeServerConsumer
 from django.contrib.auth.models import User
 from asgiref.sync import sync_to_async
 from guards import fivem_guard
-from anticheat.models import AntiCheatConfigurations, AntiCheatConfigTemplates
+from anticheat.models import AntiCheatConfigurations, AntiCheatConfigTemplate
 from shared.models import ServerType
 from typing import Dict, Any, Union, List
 
@@ -185,8 +185,8 @@ class GameServer(models.Model):
             return self.configurations.config[str(config_id)]
 
         try:
-            target_config = await AntiCheatConfigTemplates.objects.aget(id=config_id)
-        except AntiCheatConfigTemplates.DoesNotExist as err:
+            target_config = await AntiCheatConfigTemplate.objects.aget(id=config_id)
+        except AntiCheatConfigTemplate.DoesNotExist as err:
             raise ValueError(f"config id ({config_id}) does not exists!") from err
 
         return target_config.default_value
@@ -202,7 +202,7 @@ class GameServer(models.Model):
             server_configs = {}
 
         queryset = await sync_to_async(list)(
-            AntiCheatConfigTemplates.objects.filter(server_type=ServerType.FIVEM)
+            AntiCheatConfigTemplate.objects.filter(server_type=ServerType.FIVEM)
         )
 
         config_templates = {config.id: config.default_value for config in queryset}

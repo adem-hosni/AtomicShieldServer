@@ -3,7 +3,7 @@ import asyncio
 from asgiref.sync import sync_to_async
 import os
 import base64
-from anticheat.models import AntiCheatConfigTemplates
+from anticheat.models import AntiCheatConfigTemplate
 from time import time
 from datetime import timedelta, datetime
 from channels.generic.websocket import AsyncWebsocketConsumer
@@ -580,7 +580,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                                 config_ids.ALLOW_PROCESS_HACKER
                             )
                         )
-                    except AntiCheatConfigTemplates.DoesNotExist:
+                    except AntiCheatConfigTemplate.DoesNotExist:
                         processhacker_allowed = False
 
                     if not processhacker_allowed:
@@ -592,7 +592,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                     force_secureboot = await server.game_server.get_config_by_id(
                         config_ids.FORCE_SECUREBOOT
                     )
-                except AntiCheatConfigTemplates.DoesNotExist:
+                except AntiCheatConfigTemplate.DoesNotExist:
                     force_secureboot = False
                 if force_secureboot:
                     return detection_messages[detection]
@@ -603,7 +603,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                     testsigning_enabled = await server.game_server.get_config_by_id(
                         config_ids.FORCE_TESTSIGNING
                     )
-                except AntiCheatConfigTemplates.DoesNotExist:
+                except AntiCheatConfigTemplate.DoesNotExist:
                     testsigning_enabled = False
 
                 if testsigning_enabled:
@@ -615,7 +615,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                     allowed_plugins = await server.game_server.get_config_by_id(
                         config_ids.ALLOWED_FIVEM_PLUGINS
                     )
-                except AntiCheatConfigTemplates.DoesNotExist:
+                except AntiCheatConfigTemplate.DoesNotExist:
                     allowed_plugins = ""
 
                 if report["plugin"].strip().lower() in allowed_plugins.lower():

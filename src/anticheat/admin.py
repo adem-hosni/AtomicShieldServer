@@ -11,9 +11,10 @@ from django.utils.translation import gettext_lazy as _
 from django.utils.safestring import mark_safe
 from simple_history.admin import SimpleHistoryAdmin
 from .models import (
-    AntiCheatConfigTemplates,
+    AntiCheatConfigTemplate,
     AntiCheatConfigurations,
-    AntiCheatConfigurationCategories,
+    AntiCheatConfigurationCategory,
+    AntiCheatConfigSection,
     MaliciousSignatures,
     HWID,
     Ban,
@@ -148,7 +149,9 @@ class ClientHWIDAdmin(SimpleHistoryAdmin, ModelAdmin):
         valid_logs = []
         for (obj, _), result in zip(engines, results):
             if not isinstance(result, str):
-                logger.error(f"Error fetching logs for {obj.username}: (got {result.__class__.__name__})")
+                logger.error(
+                    f"Error fetching logs for {obj.username}: (got {result.__class__.__name__})"
+                )
                 continue
 
             if not result.strip():
@@ -187,7 +190,9 @@ class ClientHWIDAdmin(SimpleHistoryAdmin, ModelAdmin):
             f'attachment; filename="{len(valid_logs)}-debug-logs.zip"'
         )
         self.message_user(
-            request, f"{len(valid_logs)} debug logs downloaded as zip archive.", "success"
+            request,
+            f"{len(valid_logs)} debug logs downloaded as zip archive.",
+            "success",
         )
         return response
 
@@ -260,18 +265,44 @@ class ClientHWIDAdmin(SimpleHistoryAdmin, ModelAdmin):
 
 
 class AntiCheatConfigurationsAdmin(ModelAdmin):
-    list_display = ["id", "title", "description", "category"]
-    search_fields = ["id", "name", "description"]
-    list_display_links = list_display
-    list_filter = ["category", "config_type"]
+    list_display = (
+        "name",
+        "pseudo_name",
+        "config_type",
+        "section",
+        "server_type",
+        "default_value_preview",
+    )
+    list_filter = ("config_type", "server_type", "section__category")
+    search_fields = ("name", "pseudo_name", "default_value")
+    ordering = ("section__category__name", "section__title", "name")
+    list_per_page = 30
 
-    @admin.display(description="Title")
-    def title(self, obj: AntiCheatConfigTemplates):
-        return obj.name
+    fieldsets = (
+        (
+            "General Info",
+            {
+                "fields": ("name", "subtitle", "pseudo_name", "icon", "tip"),
+            },
+        ),
+        (
+            "Assignment",
+            {
+                "fields": ("section", "server_type", "config_type"),
+            },
+        ),
+        (
+            "Defaults",
+            {
+                "fields": ("default_value",),
+            },
+        ),
+    )
 
-    @admin.display(description="Description")
-    def description(self, obj: AntiCheatConfigTemplates):
-        return obj.description
+    @admin.display(description="Default Value")
+    def default_value_preview(self, obj):
+        val = obj.get_default_value()
+        return str(val) if val is not None else "-"
 
 
 class ServerAntiCheatConfiguration(ModelAdmin):
@@ -295,12 +326,27 @@ class AntiCheatConfigurationsCategoriesAdmin(ModelAdmin):
     list_display = ["category", "description"]
 
     @admin.display(description="Category")
-    def category(self, obj: AntiCheatConfigurationCategories):
+    def category(self, obj: AntiCheatConfigurationCategory):
         return obj.name
 
     @admin.display(description="Description")
-    def description(self, obj: AntiCheatConfigurationCategories):
+    def description(self, obj: AntiCheatConfigurationCategory):
         return obj.description
+
+
+class AntiCheatConfigSectionAdmin(ModelAdmin):
+    list_display = ["id", "name", "config_template", "category"]
+    search_fields = ["id", "name", "config_template__name"]
+    list_display_links = list_display
+    list_filter = ["category"]
+
+    @admin.display(description="Name")
+    def name(self, obj: AntiCheatConfigSection):
+        return obj.name
+
+    @admin.display(description="Template")
+    def config_template(self, obj: AntiCheatConfigSection):
+        return obj.config_template.name if obj.config_template else "No Template"
 
 
 class MaliciousSignaturesAdmin(ModelAdmin):
@@ -527,10 +573,11 @@ class CrashReportAdmin(ModelAdmin):
 
 
 admin.site.register(
-    AntiCheatConfigurationCategories, AntiCheatConfigurationsCategoriesAdmin
+    AntiCheatConfigurationCategory, AntiCheatConfigurationsCategoriesAdmin
 )
-admin.site.register(AntiCheatConfigTemplates, AntiCheatConfigurationsAdmin)
+admin.site.register(AntiCheatConfigTemplate, AntiCheatConfigurationsAdmin)
 admin.site.register(AntiCheatConfigurations, ServerAntiCheatConfiguration)
+admin.site.register(AntiCheatConfigSection, AntiCheatConfigSectionAdmin)
 admin.site.register(MaliciousSignatures, MaliciousSignaturesAdmin)
 admin.site.register(HWID, ClientHWIDAdmin)
 admin.site.register(Ban, BanAdminModel)

@@ -41,9 +41,9 @@ from .models import (
     ServerSubscription,
 )
 from anticheat.models import (
-    AntiCheatConfigTemplates,
+    AntiCheatConfigTemplate,
     AntiCheatConfigurations,
-    AntiCheatConfigurationCategories,
+    AntiCheatConfigurationCategory,
     Ban,
     DetectionReport,
 )
@@ -377,7 +377,7 @@ def add_server(request: HttpRequest) -> Response:
 
     # Create the server configs
     configurations = AntiCheatConfigurations()
-    for config in AntiCheatConfigTemplates.objects.filter(
+    for config in AntiCheatConfigTemplate.objects.filter(
         server_type=server_type
     ):
         configurations.config[config.id] = config.default_value
@@ -403,6 +403,60 @@ def add_server(request: HttpRequest) -> Response:
             "name": new_server.name,
         }
     })
+
+@login_required
+def render_maindashboard(request: HttpRequest) -> HttpResponse:
+    announcements = []
+    if request.method == "POST":
+        request_body = request.body.decode()
+
+        # check the request body health
+        if request_body:
+            try:
+                request_body = json.loads(request.body.decode())
+            except Exception as err:
+                logger.error(
+                    f"Failed to parse request body\nrequest body: {request_body}\nException: {err}"
+                )
+            if "seenAnnouncement" in request_body.keys():
+                announcement_id = int(request_body["seenAnnouncement"])
+                try:
+                    seen_announcement = Announcements.objects.get(id=announcement_id)
+                except Announcements.DoesNotExist:
+                    ...
+                else:
+                    seen_announcement.seens.add(request.user)
+                    seen_announcement.save()
+    else:
+        for announcement in Announcements.objects.all():
+            announcements.append(
+                {
+                    "date": announcement.date,
+                    "author": announcement.author,
+                    "title": announcement.title,
+                    "announcement": mark_safe(announcement.announcement),
+                    "dataid": announcement.id,
+                    "seen": announcement.seens.filter(id=request.user.id).exists(),
+                }
+            )
+        announcements.reverse()
+
+    bans = 0
+    for ban in Ban.objects.all():
+        if not ban.is_expired:
+            bans += 1
+
+    return render(
+        request,
+        "pages/dashboard/main.jinja",
+        {
+            "username": request.user.username,
+            "announcements": announcements,
+            "online_scanners": len(fivem_guard.engines),
+            "banned_players": bans,
+            "detection_count": DetectionReport.objects.count(),
+        },
+    )
 
 
 @api_view(["POST", "GET"])
@@ -503,60 +557,192 @@ def list_servers(request: HttpRequest) -> Response:
         "message": "Servers retrieved successfully."
     })
 
-@login_required
-def render_maindashboard(request: HttpRequest) -> HttpResponse:
-    announcements = []
-    if request.method == "POST":
-        request_body = request.body.decode()
+@api_view(["POST", "GET"])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+def list_bans(request: HttpRequest, server_id: int) -> Response:
+    try:
+        target_server = GameServer.objects.get(
+            owner=request.user, id=server_id
+        )
+    except GameServer.DoesNotExist:
+        logger.warning(f"{request.user.username} tried to access bans of a non-existing server ({server_id})!")
+        return Response({
+            "success": False,
+            "message": "The selected server does not exist or you do not have permission to access it."
+        })
+    except Exception:
+        logger.exception(f"An unexpected error occurred while accessing bans for server {server_id} for user {request.user.username}.")
+        return Response({
+            "success": False,
+            "message": "An unexpected error occurred while accessing the server."
+        })
 
-        # check the request body health
-        if request_body:
-            try:
-                request_body = json.loads(request.body.decode())
-            except Exception as err:
-                logger.error(
-                    f"Failed to parse request body\nrequest body: {request_body}\nException: {err}"
-                )
-            if "seenAnnouncement" in request_body.keys():
-                announcement_id = int(request_body["seenAnnouncement"])
-                try:
-                    seen_announcement = Announcements.objects.get(id=announcement_id)
-                except Announcements.DoesNotExist:
-                    ...
-                else:
-                    seen_announcement.seens.add(request.user)
-                    seen_announcement.save()
-    else:
-        for announcement in Announcements.objects.all():
-            announcements.append(
+    bans = Ban.objects.filter(game_server=target_server).order_by("-banned_at")
+    
+    return Response({
+        "success": True,
+        "data": {
+            "bans": [{
+                "id": f"#{ban.id}",
+                "banId": f"#{ban.id}",
+                "playerId": f"#{ban.hwid.id}",
+                "steamId": ban.hwid.steam,
+                "playerName": ban.hwid.username,
+                "evidenceUrl": (
+                    request.build_absolute_uri(ban.report.screenshot.url)
+                    if ban.report.screenshot else ""
+                ),
+                "bannedAt": ban.banned_at.strftime("%Y-%m-%d %H:%M:%S"),
+                "firstJoin": ban.banned_at.strftime("%Y-%m-%d %H:%M:%S"),  # TODOZ: Implement first join logic
+                "expiresAt": None,
+                "adminName": "zebi",
+                "reason": ban.reason,
+                "isActive": ban.active,
+                "evidence": True,
+                "status": "Peramnent",
+                "serverId": target_server.id,
+                "appealStatus": "approved",  # TODO: Implement appeal status logic
+                "report": {},
+            } for ban in bans],
+            "totalCount": bans.count(),
+            "activeCount": bans.filter(active=True).count(),
+        }
+    })
+
+
+@api_view(["POST"])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+def unban_player(request: HttpRequest, server_id: int) -> Response:
+    ban_id = request.data.get("banId", "").strip()
+    if "#" in ban_id:
+        ban_id = int(ban_id[1:])
+    try:
+        target_ban = Ban.objects.get(id=ban_id)
+    except Ban.DoesNotExist:
+        logger.warning(f"{request.user.username} tried to unban a non-existing ban ({ban_id})!")
+        return Response({
+            "success": False,
+            "message": "The ban does not exist or you do not have permission to access it."
+        })
+
+    if target_ban.game_server.id != server_id:
+        logger.warning(f"{request.user.username} tried to unban a ban from a different server (ban_id: {ban_id}, server_id: {server_id})!")
+        return Response({
+            "success": False,
+            "message": "The ban does not belong to the specified server."
+        })
+    
+    if not target_ban.active:
+        logger.info(f"{request.user.username} tried to unban an already inactive ban (ban_id: {ban_id})!")
+        return Response({
+            "success": True,
+            "message": "The ban is already inactive."
+        })
+
+    target_ban.active = False
+    target_ban.save()
+
+    logger.info(f"{request.user.username} successfully unbanned player {target_ban.hwid.username} (ban_id: {ban_id})!")
+    return Response({
+        "success": True,
+        "message": "Player unbanned successfully.",
+    })
+
+@api_view(["POST"])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+def ban_player(request: HttpRequest, server_id: int) -> Response:
+    ban_id = request.data.get("banId", "").strip()
+    
+    if "#" in ban_id:
+        ban_id = int(ban_id[1:])
+    try:
+        target_ban = Ban.objects.get(id=ban_id)
+    except Ban.DoesNotExist:
+        logger.warning(f"{request.user.username} tried to ban a non-existing ban ({ban_id})!")
+        return Response({
+            "success": False,
+            "message": "The ban does not exist or you do not have permission to access it."
+        })
+
+    if target_ban.game_server.id != server_id:
+        logger.warning(f"{request.user.username} tried to ban a ban from a different server (ban_id: {ban_id}, server_id: {server_id})!")
+        return Response({
+            "success": False,
+            "message": "The ban does not belong to the specified server."
+        })
+    
+    if target_ban.active:
+        logger.info(f"{request.user.username} tried to ban an already active ban (ban_id: {ban_id})!")
+        return Response({
+            "success": True,
+            "message": "The ban is already active."
+        })
+
+    target_ban.active = True
+    target_ban.save()
+
+    logger.info(f"{request.user.username} successfully banned player {target_ban.hwid.username} (ban_id: {ban_id})!")
+    return Response({
+        "success": True,
+        "message": "Player banned successfully.",
+    })
+
+
+@api_view(["GET"])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+def list_configurations(request: HttpRequest, server_id: int) -> Response:
+    try:
+        game_server = GameServer.objects.get(
+            owner=request.user, id=server_id
+        )
+    except GameServer.DoesNotExist:
+        logger.warning(f"{request.user.username} tried to access configurations of a non-existing server ({server_id})!")
+        return Response({
+            "success": False,
+            "message": "The selected server does not exist or you do not have permission to access it."
+        })
+    except Exception:
+        logger.exception(f"An unexpected error occurred while accessing configurations for server {server_id} for user {request.user.username}.")
+        return Response({
+            "success": False,
+            "message": "An unexpected error occurred while accessing the server."
+        })
+
+    return Response({
+        "success": True,
+        "data": {
+            "categories": [
                 {
-                    "date": announcement.date,
-                    "author": announcement.author,
-                    "title": announcement.title,
-                    "announcement": mark_safe(announcement.announcement),
-                    "dataid": announcement.id,
-                    "seen": announcement.seens.filter(id=request.user.id).exists(),
-                }
-            )
-        announcements.reverse()
-
-    bans = 0
-    for ban in Ban.objects.all():
-        if not ban.is_expired:
-            bans += 1
-
-    return render(
-        request,
-        "pages/dashboard/main.jinja",
-        {
-            "username": request.user.username,
-            "announcements": announcements,
-            "online_scanners": len(fivem_guard.engines),
-            "banned_players": bans,
-            "detection_count": DetectionReport.objects.count(),
+                    "id": category.id,
+                    "title": category.name,
+                    "sections": [
+                        {
+                            "id": section.id,
+                            "title": section.title,
+                            "subtitle": section.subtitle,
+                            "icon": section.icon,
+                            "configurations": [
+                                {
+                                    "id": config.id,
+                                    "type": config.config_type,
+                                    "title": config.name,
+                                    "subtitle": config.subtitle,
+                                    "tip": config.tip,
+                                    "value": game_server.configurations.config.get(config.id, config.default_value),
+                                    "icon": config.icon,
+                                } for config in section.configurations.all()
+                            ]
+                        } for section in category.sections.all()
+                    ]
+                } for category in AntiCheatConfigurationCategory.objects.filter(server_type=game_server.type)
+            ]
         },
-    )
-
+        "message": "Configurations retrieved successfully."
+    })
 
 @login_required
 def render_bans(request: HttpRequest) -> HttpResponse:
@@ -796,7 +982,7 @@ def render_servers(request: HttpRequest) -> HttpResponse:
 
                     # Create the server configs
                     configurations = AntiCheatConfigurations()
-                    for config in AntiCheatConfigTemplates.objects.filter(
+                    for config in AntiCheatConfigTemplate.objects.filter(
                         server_type=server_type
                     ):
                         configurations.config[config.id] = config.default_value
@@ -1121,7 +1307,7 @@ def render_configurations(request: HttpRequest) -> HttpResponse:
     server_configs = target_server.configurations.config
     configurations = []
 
-    for category in AntiCheatConfigurationCategories.objects.filter(
+    for category in AntiCheatConfigurationCategory.objects.filter(
         server_type=target_server.type
     ):
         configurations.append(

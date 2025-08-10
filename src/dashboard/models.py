@@ -354,3 +354,24 @@ class GameServerModerator(models.Model):
     class Meta:
         verbose_name = "Game Server Moderator"
         verbose_name_plural = "Game Server Moderators"
+
+
+class ModeratorInviteToken(models.Model):
+    invited_by = models.ForeignKey(GameServerModerator, on_delete=models.CASCADE, related_name="invite_tokens")
+    to = models.ForeignKey(User, on_delete=models.CASCADE, related_name="invite_tokens")
+    game_server = models.ForeignKey(GameServer, on_delete=models.DO_NOTHING, related_name="invite_tokens")
+    permissions = models.JSONField(default=[], blank=False)
+
+    invited_at = models.DateTimeField(null=True, auto_now_add=True)
+
+    @property
+    def is_expired(self) -> bool:
+        return (
+            self.invited_at.timestamp() + timedelta(days=7).total_seconds
+            < datetime.now().timestamp()
+        )
+
+
+    class Meta:
+        verbose_name = "Game Server Invite Token"
+        verbose_name_plural = "Game Server Invite Tokens"

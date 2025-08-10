@@ -16,7 +16,11 @@ from django.http import (
     JsonResponse,
 )
 import shutil
-from rest_framework.decorators import authentication_classes, permission_classes, api_view
+from rest_framework.decorators import (
+    authentication_classes,
+    permission_classes,
+    api_view,
+)
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.response import Response
@@ -97,13 +101,18 @@ def dashboard_callback(request: HttpRequest, context: Dict[str, Any]):
     seven_days_ago = now() - timedelta(days=7)
     total_subscriptions = ServerSubscription.objects.count()
     total_bans = all_bans.count()
-    
+
     bans_last_7_days = all_bans.filter(banned_at__gte=seven_days_ago).count()
-    subscriptions_last_7_days = ServerSubscription.objects.filter(started_at__gte=seven_days_ago).count()
+    subscriptions_last_7_days = ServerSubscription.objects.filter(
+        started_at__gte=seven_days_ago
+    ).count()
 
-    last_week_subs = (subscriptions_last_7_days / total_subscriptions) * 100 if total_subscriptions else 0
+    last_week_subs = (
+        (subscriptions_last_7_days / total_subscriptions) * 100
+        if total_subscriptions
+        else 0
+    )
     last_week_bans = (bans_last_7_days / total_bans) * 100 if total_bans else 0
-
 
     context.update(
         {
@@ -120,7 +129,9 @@ def dashboard_callback(request: HttpRequest, context: Dict[str, Any]):
                     ],
                 }
             ),
-            "progress": sorted(detections_stats, key=lambda x: x["value"], reverse=True),
+            "progress": sorted(
+                detections_stats, key=lambda x: x["value"], reverse=True
+            ),
             "detection_count": all_detections.count(),
             "stats": [
                 {
@@ -137,7 +148,7 @@ def dashboard_callback(request: HttpRequest, context: Dict[str, Any]):
                         f'<strong class="text-green-700 font-semibold dark:text-green-400">+{intcomma(f"{last_week_bans:.02f}")}%</strong>&nbsp;progress from last 7 days'
                     ),
                 },
-            ]
+            ],
         }
     )
     return context
@@ -159,7 +170,7 @@ def dashboard_overview(request: HttpRequest) -> JsonResponse:
             "text": "All Systems",
             "variant": "default",
             "pulse": True,
-        }
+        },
     }
 
     # Servers Data
@@ -173,29 +184,30 @@ def dashboard_overview(request: HttpRequest) -> JsonResponse:
         "trend": {
             "value": "+1 this week",
             "isPositive": True,
-        }
+        },
     }
 
     # Network Players
     network_players = {
         "value": fivem_guard.total_engines,
         "subtitle": "Across all servers",
-        "trend": {
-            "value": "+45 today",
-            "isPositive": True
-        }
+        "trend": {"value": "+45 today", "isPositive": True},
     }
 
     # Threat Level
-    threats_today = DetectionReport.objects.filter(detected_at__date=timezone.now().date()).count()
+    threats_today = DetectionReport.objects.filter(
+        detected_at__date=timezone.now().date()
+    ).count()
     threat_level = {
         "value": threats_today,
-        "subtitle": "No active threats" if threats_today == 0 else f"Active threats detected",
+        "subtitle": (
+            "No active threats" if threats_today == 0 else f"Active threats detected"
+        ),
         "badge": {
             "text": "SAFE" if threats_today == 0 else "ELEVATED",
             "variant": "outline" if threats_today == 0 else "destructive",
             "pulse": True,
-        }
+        },
     }
 
     dashboard_stats_data = {
@@ -205,24 +217,30 @@ def dashboard_overview(request: HttpRequest) -> JsonResponse:
         "threatLevel": threat_level,
     }
 
-    servers_data = [{
-        "id": server.id,
-        "name": server.name,
-        "description": "Server Description",
-        "playerCount": server.active_player_count,
-        "status": "Online" if server.is_online else "Offline",
-        "statusColor": "green" if server.is_online else "gray",
-        "imageUrl": 'server.configurations.config.get("server_image", "")',
-    } for server in user_servers]
+    servers_data = [
+        {
+            "id": server.id,
+            "name": server.name,
+            "description": "Server Description",
+            "playerCount": server.active_player_count,
+            "status": "Online" if server.is_online else "Offline",
+            "statusColor": "green" if server.is_online else "gray",
+            "imageUrl": 'server.configurations.config.get("server_image", "")',
+        }
+        for server in user_servers
+    ]
 
     # Select last detections
-    recent_security_events = DetectionReport.objects.order_by('-detected_at')[:5]
-    security_events_data = [{
-        "action": "Cheat Detection",
-        "user": event.hwid.username,
-        "time": event.detected_at.strftime("%Y-%m-%d %H:%M:%S"),
-        "severity": "high"
-    } for event in recent_security_events]
+    recent_security_events = DetectionReport.objects.order_by("-detected_at")[:5]
+    security_events_data = [
+        {
+            "action": "Cheat Detection",
+            "user": event.hwid.username,
+            "time": event.detected_at.strftime("%Y-%m-%d %H:%M:%S"),
+            "severity": "high",
+        }
+        for event in recent_security_events
+    ]
 
     # Threat assessment data
     threat_assessment_data = {
@@ -233,7 +251,9 @@ def dashboard_overview(request: HttpRequest) -> JsonResponse:
 
     # Global Stats
     global_stats_data = {
-        "totalBans24h": Ban.objects.filter(banned_at__date=timezone.now().date()).count(),
+        "totalBans24h": Ban.objects.filter(
+            banned_at__date=timezone.now().date()
+        ).count(),
         "kicks24h": 0,
         "warnings24h": 0,
         "cleanSessions": random.randint(50, 100),
@@ -245,9 +265,14 @@ def dashboard_overview(request: HttpRequest) -> JsonResponse:
             "id": subscription.id,
             "name": subscription.name,
             "plan": subscription.plan,
-            "status": "used" if subscription.is_used else "active" if subscription.is_valid_for_now() else "expired",
+            "status": (
+                "used"
+                if subscription.is_used
+                else "active" if subscription.is_valid_for_now() else "expired"
+            ),
             "period": utils.represent_timedelta_string(subscription.expires_at),
-        } for subscription in ServerSubscription.objects.filter(owner=request.user)
+        }
+        for subscription in ServerSubscription.objects.filter(owner=request.user)
     ]
 
     # Server Types
@@ -259,20 +284,23 @@ def dashboard_overview(request: HttpRequest) -> JsonResponse:
         }
     ]
 
-    return Response({
-        "success": True,
-        "message": "",
-        "error": "",
-        "data": {
-            "stats": dashboard_stats_data,
-            "servers": servers_data,
-            "recentActivity": security_events_data,
-            "threatAssessment": threat_assessment_data,
-            "globalStats": global_stats_data,
-            "subscriptions": subscriptions_data,
-            "serverTypes": server_types,
+    return Response(
+        {
+            "success": True,
+            "message": "",
+            "error": "",
+            "data": {
+                "stats": dashboard_stats_data,
+                "servers": servers_data,
+                "recentActivity": security_events_data,
+                "threatAssessment": threat_assessment_data,
+                "globalStats": global_stats_data,
+                "subscriptions": subscriptions_data,
+                "serverTypes": server_types,
+            },
         }
-    })
+    )
+
 
 @api_view(["POST", "GET"])
 @authentication_classes([JWTAuthentication])
@@ -288,12 +316,16 @@ def add_server(request: HttpRequest) -> Response:
     if isinstance(server_type, str) or isinstance(subscription_id, str):
         if not server_type.isnumeric():
             messages.error(request, "Invalid server type")
-            logger.warning(f"{request.user.username} trying to use an invalid server type ({server_type})!")
+            logger.warning(
+                f"{request.user.username} trying to use an invalid server type ({server_type})!"
+            )
             return Response({"success": False, "message": "Invalid server type"})
 
         if not subscription_id.isnumeric():
             messages.error(request, "Invalid Subscription")
-            logger.warning(f"{request.user.username} trying to use an invalid subscription id ({subscription_id})!")
+            logger.warning(
+                f"{request.user.username} trying to use an invalid subscription id ({subscription_id})!"
+            )
             return Response({"success": False, "message": "Invalid Subscription"})
 
         server_type = int(server_type)
@@ -302,13 +334,17 @@ def add_server(request: HttpRequest) -> Response:
     # Check if the port is of type string
     if isinstance(port, str):
         if not port.isnumeric():
-            logger.warning(f"{request.user.username} trying to use an invalid port ({port})!")
+            logger.warning(
+                f"{request.user.username} trying to use an invalid port ({port})!"
+            )
             return Response({"success": False, "message": "Invalid server port"})
         port = int(port)
 
     # Check port range (1 -> 65535)
     if not (port >= 1 and port <= 65535):
-        logger.warning(f"{request.user.username} trying to use an invalid port range ({port})!")
+        logger.warning(
+            f"{request.user.username} trying to use an invalid port range ({port})!"
+        )
         return Response({"success": False, "message": "Invalid port range"})
 
     if not len(name):
@@ -316,56 +352,73 @@ def add_server(request: HttpRequest) -> Response:
         return Response({"success": False, "message": "Invalid server name"})
 
     if len(name) > 64:
-        logger.warning(f"{request.user.username} trying to use a server name longer than 64 characters ({name})!")
-        return Response({"success": False, "message": "Server name must be less than 64 characters"})
+        logger.warning(
+            f"{request.user.username} trying to use a server name longer than 64 characters ({name})!"
+        )
+        return Response(
+            {"success": False, "message": "Server name must be less than 64 characters"}
+        )
 
     # Check if the ip is correct
     if not utils.isvalid_ip(ip):
-        logger.warning(f"{request.user.username} trying to use an invalid IPV4 IP ({ip})!")
+        logger.warning(
+            f"{request.user.username} trying to use an invalid IPV4 IP ({ip})!"
+        )
         return Response({"success": False, "message": "Invalid IPV4 IP"})
 
     # Check the selected subscription health
     try:
-        subscription = ServerSubscription.objects.get(
-            id=subscription_id
-        )
+        subscription = ServerSubscription.objects.get(id=subscription_id)
     except ServerSubscription.DoesNotExist:
-        logger.warning(f"{request.user.username} trying to use a non existing subscription (used subscription id: {subscription_id})!")
+        logger.warning(
+            f"{request.user.username} trying to use a non existing subscription (used subscription id: {subscription_id})!"
+        )
         return Response({"success": False, "message": "Invalid subscription selected"})
 
     # Check the subscription's owner
     if subscription.owner != request.user:
-        logger.warning(f"{request.user.username} trying to use {subscription.owner.username}'s subscription!")
+        logger.warning(
+            f"{request.user.username} trying to use {subscription.owner.username}'s subscription!"
+        )
         return Response({"success": False, "message": "Not your subscription!"})
 
     if not subscription.is_valid_for_now():
-        logger.warning(f"{request.user.username} trying to use expired subscription (subscription id: {subscription_id})!")
+        logger.warning(
+            f"{request.user.username} trying to use expired subscription (subscription id: {subscription_id})!"
+        )
         return Response({"success": False, "message": "Expired Subscription"})
-    
+
     # Check if the subscription is already used by a server
     if subscription.is_used:
-        logger.warning(f"{request.user.username} trying to use an already used subscription (subscription id: {subscription_id})!")
-        return Response({"success": False, "message": "Subscription already used by a server"})
+        logger.warning(
+            f"{request.user.username} trying to use an already used subscription (subscription id: {subscription_id})!"
+        )
+        return Response(
+            {"success": False, "message": "Subscription already used by a server"}
+        )
 
     # Check if the server address already used
-    if GameServer.objects.filter(
-        ip=ip, port=port, type=server_type
-    ).exists():
-        logger.warning(f"{request.user.username} trying to use an already used server address ({ip}:{port})!")
-        return Response({"success": False, "message": "Server Address Already been used!"})
+    if GameServer.objects.filter(ip=ip, port=port, type=server_type).exists():
+        logger.warning(
+            f"{request.user.username} trying to use an already used server address ({ip}:{port})!"
+        )
+        return Response(
+            {"success": False, "message": "Server Address Already been used!"}
+        )
 
     # Check if the server name exists in the owned servers
     if GameServer.objects.filter(
         name=name, owner=request.user, type=server_type
     ).exists():
-        logger.warning(f"{request.user.username} trying to use an already used server name ({name})!")
+        logger.warning(
+            f"{request.user.username} trying to use an already used server name ({name})!"
+        )
         return Response({"success": False, "message": "Server name already used!"})
 
-    if (
-        server_type != ServerType.FIVEM.value
-        and server_type != ServerType.FIVEM.value
-    ):
-        logger.warning(f"{request.user.username} trying to use an unsupported server type ({server_type})!")
+    if server_type != ServerType.FIVEM.value and server_type != ServerType.FIVEM.value:
+        logger.warning(
+            f"{request.user.username} trying to use an unsupported server type ({server_type})!"
+        )
         return Response({"success": False, "message": "Unsupported server type"})
 
     # Generate a license key for the server
@@ -377,9 +430,7 @@ def add_server(request: HttpRequest) -> Response:
 
     # Create the server configs
     configurations = AntiCheatConfigurations()
-    for config in AntiCheatConfigTemplate.objects.filter(
-        server_type=server_type
-    ):
+    for config in AntiCheatConfigTemplate.objects.filter(server_type=server_type):
         configurations.config[config.id] = config.default_value
     configurations.save()
 
@@ -397,12 +448,15 @@ def add_server(request: HttpRequest) -> Response:
     logger.info(
         f"Added New {ServerType(server_type)} Server {ip}:{port} from {request.user.username}, license key: ({license_key})"
     )
-    return Response({
-        "success": True,
-        "data": {
-            "name": new_server.name,
+    return Response(
+        {
+            "success": True,
+            "data": {
+                "name": new_server.name,
+            },
         }
-    })
+    )
+
 
 @login_required
 def render_maindashboard(request: HttpRequest) -> HttpResponse:
@@ -464,21 +518,27 @@ def render_maindashboard(request: HttpRequest) -> HttpResponse:
 @permission_classes([IsAuthenticated])
 def server_dashboard(request: HttpRequest, server_id: int) -> Response:
     try:
-        game_server = GameServer.objects.get(
-            owner=request.user, id=server_id
-        )
+        game_server = GameServer.objects.get(owner=request.user, id=server_id)
     except GameServer.DoesNotExist:
-        logger.warning(f"{request.user.username} tried to access a non-existing server ({server_id})!")
-        return Response({
-            "success": False,
-            "message": "The selected server does not exist or you do not have permission to access it."
-        })
+        logger.warning(
+            f"{request.user.username} tried to access a non-existing server ({server_id})!"
+        )
+        return Response(
+            {
+                "success": False,
+                "message": "The selected server does not exist or you do not have permission to access it.",
+            }
+        )
     except Exception:
-        logger.exception(f"An unexpected error occurred while accessing server {server_id} for user {request.user.username}.")
-        return Response({
-            "success": False,
-            "message": "An unexpected error occurred while accessing the server."
-        })
+        logger.exception(
+            f"An unexpected error occurred while accessing server {server_id} for user {request.user.username}."
+        )
+        return Response(
+            {
+                "success": False,
+                "message": "An unexpected error occurred while accessing the server.",
+            }
+        )
 
     server_info = {
         "id": game_server.id,
@@ -487,47 +547,59 @@ def server_dashboard(request: HttpRequest, server_id: int) -> Response:
         "description": "Server Description",
         "playerCount": game_server.active_player_count,
         "maxPlayers": game_server.active_player_count,
-        "uptime": 0
+        "uptime": 0,
     }
 
     server_stats = {
         "currentPlayers": {
             "value": game_server.active_player_count,
-            "trend": {
-                "value": "+5 today",
-                "isPositive": True
-            },
+            "trend": {"value": "+5 today", "isPositive": True},
         },
         "peakPlayers": {
             "value": game_server.active_player_count,  # TODO: This should be replaced with actual peak player count logic
-            "trend": {
-                "value": "+10 this week",
-                "isPositive": True
-            },
+            "trend": {"value": "+10 this week", "isPositive": True},
         },
         "totalBans": {
             "value": Ban.objects.filter(game_server=game_server).count(),
             "trend": {
                 "value": f"+{Ban.objects.filter(game_server=game_server, banned_at__date=timezone.now().date()).count()} today",
-                "isPositive": True
+                "isPositive": True,
             },
         },
     }
 
-    return Response({
-        "success": True,
-        "data": {
-            "serverInfo": server_info,
-            "stats": server_stats,
-            "license": {
-                "key": game_server.key,
-                "expirationDate": represent_timedelta_string(game_server.subscriptions.last().expires_at) if game_server.subscriptions.exists() else "N/A",
-                "daysUntilExpiration": game_server.subscriptions.last().expires_at.days if game_server.subscriptions.exists() else -1,
-                "status": "active" if game_server.subscriptions.exists() and game_server.subscriptions.last().is_valid_for_now() else "expired",
-            }
-        },
-        "message": "Server dashboard retrieved successfully."
-    })
+    return Response(
+        {
+            "success": True,
+            "data": {
+                "serverInfo": server_info,
+                "stats": server_stats,
+                "license": {
+                    "key": game_server.key,
+                    "expirationDate": (
+                        represent_timedelta_string(
+                            game_server.subscriptions.last().expires_at
+                        )
+                        if game_server.subscriptions.exists()
+                        else "N/A"
+                    ),
+                    "daysUntilExpiration": (
+                        game_server.subscriptions.last().expires_at.days
+                        if game_server.subscriptions.exists()
+                        else -1
+                    ),
+                    "status": (
+                        "active"
+                        if game_server.subscriptions.exists()
+                        and game_server.subscriptions.last().is_valid_for_now()
+                        else "expired"
+                    ),
+                },
+            },
+            "message": "Server dashboard retrieved successfully.",
+        }
+    )
+
 
 @api_view(["POST", "GET"])
 @authentication_classes([JWTAuthentication])
@@ -541,74 +613,97 @@ def list_servers(request: HttpRequest) -> Response:
     servers = []
 
     for server in game_servers:
-        servers.append({
-            "id": server.id,
-            "name": server.name,
-            "ip": server.ip,
-            "status": "active" if server.is_online else "inactive",
-            "subscriptionPlan": server.subscriptions.last().plan if server.subscriptions.exists() else "None",
-            "createdAt": "",
-            "imageUrl": ""
-        })
-    
-    return Response({
-        "success": True,
-        "data": {"servers": servers},
-        "message": "Servers retrieved successfully."
-    })
+        servers.append(
+            {
+                "id": server.id,
+                "name": server.name,
+                "ip": server.ip,
+                "status": "active" if server.is_online else "inactive",
+                "subscriptionPlan": (
+                    server.subscriptions.last().plan
+                    if server.subscriptions.exists()
+                    else "None"
+                ),
+                "createdAt": "",
+                "imageUrl": "",
+            }
+        )
+
+    return Response(
+        {
+            "success": True,
+            "data": {"servers": servers},
+            "message": "Servers retrieved successfully.",
+        }
+    )
+
 
 @api_view(["POST", "GET"])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 def list_bans(request: HttpRequest, server_id: int) -> Response:
     try:
-        target_server = GameServer.objects.get(
-            owner=request.user, id=server_id
-        )
+        target_server = GameServer.objects.get(owner=request.user, id=server_id)
     except GameServer.DoesNotExist:
-        logger.warning(f"{request.user.username} tried to access bans of a non-existing server ({server_id})!")
-        return Response({
-            "success": False,
-            "message": "The selected server does not exist or you do not have permission to access it."
-        })
+        logger.warning(
+            f"{request.user.username} tried to access bans of a non-existing server ({server_id})!"
+        )
+        return Response(
+            {
+                "success": False,
+                "message": "The selected server does not exist or you do not have permission to access it.",
+            }
+        )
     except Exception:
-        logger.exception(f"An unexpected error occurred while accessing bans for server {server_id} for user {request.user.username}.")
-        return Response({
-            "success": False,
-            "message": "An unexpected error occurred while accessing the server."
-        })
+        logger.exception(
+            f"An unexpected error occurred while accessing bans for server {server_id} for user {request.user.username}."
+        )
+        return Response(
+            {
+                "success": False,
+                "message": "An unexpected error occurred while accessing the server.",
+            }
+        )
 
     bans = Ban.objects.filter(game_server=target_server).order_by("-banned_at")
-    
-    return Response({
-        "success": True,
-        "data": {
-            "bans": [{
-                "id": f"#{ban.id}",
-                "banId": f"#{ban.id}",
-                "playerId": f"#{ban.hwid.id}",
-                "steamId": ban.hwid.steam,
-                "playerName": ban.hwid.username,
-                "evidenceUrl": (
-                    request.build_absolute_uri(ban.report.screenshot.url)
-                    if ban.report.screenshot else ""
-                ),
-                "bannedAt": ban.banned_at.strftime("%Y-%m-%d %H:%M:%S"),
-                "firstJoin": ban.banned_at.strftime("%Y-%m-%d %H:%M:%S"),  # TODOZ: Implement first join logic
-                "expiresAt": None,
-                "adminName": "zebi",
-                "reason": ban.reason,
-                "isActive": ban.active,
-                "evidence": True,
-                "status": "Peramnent",
-                "serverId": target_server.id,
-                "appealStatus": "approved",  # TODO: Implement appeal status logic
-                "report": {},
-            } for ban in bans],
-            "totalCount": bans.count(),
-            "activeCount": bans.filter(active=True).count(),
+
+    return Response(
+        {
+            "success": True,
+            "data": {
+                "bans": [
+                    {
+                        "id": f"#{ban.id}",
+                        "banId": f"#{ban.id}",
+                        "playerId": f"#{ban.hwid.id}",
+                        "steamId": ban.hwid.steam,
+                        "playerName": ban.hwid.username,
+                        "evidenceUrl": (
+                            request.build_absolute_uri(ban.report.screenshot.url)
+                            if ban.report.screenshot
+                            else ""
+                        ),
+                        "bannedAt": ban.banned_at.strftime("%Y-%m-%d %H:%M:%S"),
+                        "firstJoin": ban.banned_at.strftime(
+                            "%Y-%m-%d %H:%M:%S"
+                        ),  # TODOZ: Implement first join logic
+                        "expiresAt": None,
+                        "adminName": "zebi",
+                        "reason": ban.reason,
+                        "isActive": ban.active,
+                        "evidence": True,
+                        "status": "Peramnent",
+                        "serverId": target_server.id,
+                        "appealStatus": "approved",  # TODO: Implement appeal status logic
+                        "report": {},
+                    }
+                    for ban in bans
+                ],
+                "totalCount": bans.count(),
+                "activeCount": bans.filter(active=True).count(),
+            },
         }
-    })
+    )
 
 
 @api_view(["POST"])
@@ -621,74 +716,97 @@ def unban_player(request: HttpRequest, server_id: int) -> Response:
     try:
         target_ban = Ban.objects.get(id=ban_id)
     except Ban.DoesNotExist:
-        logger.warning(f"{request.user.username} tried to unban a non-existing ban ({ban_id})!")
-        return Response({
-            "success": False,
-            "message": "The ban does not exist or you do not have permission to access it."
-        })
+        logger.warning(
+            f"{request.user.username} tried to unban a non-existing ban ({ban_id})!"
+        )
+        return Response(
+            {
+                "success": False,
+                "message": "The ban does not exist or you do not have permission to access it.",
+            }
+        )
 
     if target_ban.game_server.id != server_id:
-        logger.warning(f"{request.user.username} tried to unban a ban from a different server (ban_id: {ban_id}, server_id: {server_id})!")
-        return Response({
-            "success": False,
-            "message": "The ban does not belong to the specified server."
-        })
-    
+        logger.warning(
+            f"{request.user.username} tried to unban a ban from a different server (ban_id: {ban_id}, server_id: {server_id})!"
+        )
+        return Response(
+            {
+                "success": False,
+                "message": "The ban does not belong to the specified server.",
+            }
+        )
+
     if not target_ban.active:
-        logger.info(f"{request.user.username} tried to unban an already inactive ban (ban_id: {ban_id})!")
-        return Response({
-            "success": True,
-            "message": "The ban is already inactive."
-        })
+        logger.info(
+            f"{request.user.username} tried to unban an already inactive ban (ban_id: {ban_id})!"
+        )
+        return Response({"success": True, "message": "The ban is already inactive."})
 
     target_ban.active = False
     target_ban.save()
 
-    logger.info(f"{request.user.username} successfully unbanned player {target_ban.hwid.username} (ban_id: {ban_id})!")
-    return Response({
-        "success": True,
-        "message": "Player unbanned successfully.",
-    })
+    logger.info(
+        f"{request.user.username} successfully unbanned player {target_ban.hwid.username} (ban_id: {ban_id})!"
+    )
+    return Response(
+        {
+            "success": True,
+            "message": "Player unbanned successfully.",
+        }
+    )
+
 
 @api_view(["POST"])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 def ban_player(request: HttpRequest, server_id: int) -> Response:
     ban_id = request.data.get("banId", "").strip()
-    
+
     if "#" in ban_id:
         ban_id = int(ban_id[1:])
     try:
         target_ban = Ban.objects.get(id=ban_id)
     except Ban.DoesNotExist:
-        logger.warning(f"{request.user.username} tried to ban a non-existing ban ({ban_id})!")
-        return Response({
-            "success": False,
-            "message": "The ban does not exist or you do not have permission to access it."
-        })
+        logger.warning(
+            f"{request.user.username} tried to ban a non-existing ban ({ban_id})!"
+        )
+        return Response(
+            {
+                "success": False,
+                "message": "The ban does not exist or you do not have permission to access it.",
+            }
+        )
 
     if target_ban.game_server.id != server_id:
-        logger.warning(f"{request.user.username} tried to ban a ban from a different server (ban_id: {ban_id}, server_id: {server_id})!")
-        return Response({
-            "success": False,
-            "message": "The ban does not belong to the specified server."
-        })
-    
+        logger.warning(
+            f"{request.user.username} tried to ban a ban from a different server (ban_id: {ban_id}, server_id: {server_id})!"
+        )
+        return Response(
+            {
+                "success": False,
+                "message": "The ban does not belong to the specified server.",
+            }
+        )
+
     if target_ban.active:
-        logger.info(f"{request.user.username} tried to ban an already active ban (ban_id: {ban_id})!")
-        return Response({
-            "success": True,
-            "message": "The ban is already active."
-        })
+        logger.info(
+            f"{request.user.username} tried to ban an already active ban (ban_id: {ban_id})!"
+        )
+        return Response({"success": True, "message": "The ban is already active."})
 
     target_ban.active = True
     target_ban.save()
 
-    logger.info(f"{request.user.username} successfully banned player {target_ban.hwid.username} (ban_id: {ban_id})!")
-    return Response({
-        "success": True,
-        "message": "Player banned successfully.",
-    })
+    logger.info(
+        f"{request.user.username} successfully banned player {target_ban.hwid.username} (ban_id: {ban_id})!"
+    )
+    return Response(
+        {
+            "success": True,
+            "message": "Player banned successfully.",
+        }
+    )
 
 
 @api_view(["GET"])
@@ -696,53 +814,74 @@ def ban_player(request: HttpRequest, server_id: int) -> Response:
 @permission_classes([IsAuthenticated])
 def list_configurations(request: HttpRequest, server_id: int) -> Response:
     try:
-        game_server = GameServer.objects.get(
-            owner=request.user, id=server_id
-        )
+        game_server = GameServer.objects.get(owner=request.user, id=server_id)
     except GameServer.DoesNotExist:
-        logger.warning(f"{request.user.username} tried to access configurations of a non-existing server ({server_id})!")
-        return Response({
-            "success": False,
-            "message": "The selected server does not exist or you do not have permission to access it."
-        })
+        logger.warning(
+            f"{request.user.username} tried to access configurations of a non-existing server ({server_id})!"
+        )
+        return Response(
+            {
+                "success": False,
+                "message": "The selected server does not exist or you do not have permission to access it.",
+            }
+        )
     except Exception:
-        logger.exception(f"An unexpected error occurred while accessing configurations for server {server_id} for user {request.user.username}.")
-        return Response({
-            "success": False,
-            "message": "An unexpected error occurred while accessing the server."
-        })
+        logger.exception(
+            f"An unexpected error occurred while accessing configurations for server {server_id} for user {request.user.username}."
+        )
+        return Response(
+            {
+                "success": False,
+                "message": "An unexpected error occurred while accessing the server.",
+            }
+        )
 
-    return Response({
-        "success": True,
-        "data": {
-            "categories": [
-                {
-                    "id": category.id,
-                    "title": category.name,
-                    "sections": [
+    return Response(
+        {
+            "success": True,
+            "data": {
+                "lastUpdated": "",
+                "updatedBy": "",
+                "anticheat": {
+                    "categories": [
                         {
-                            "id": section.id,
-                            "title": section.title,
-                            "subtitle": section.subtitle,
-                            "icon": section.icon,
-                            "configurations": [
+                            "id": category.id,
+                            "label": category.name,
+                            "description": "category.",
+                            "sections": [
                                 {
-                                    "id": config.id,
-                                    "type": config.config_type,
-                                    "title": config.name,
-                                    "subtitle": config.subtitle,
-                                    "tip": config.tip,
-                                    "value": game_server.configurations.config.get(config.id, config.default_value),
-                                    "icon": config.icon,
-                                } for config in section.configurations.all()
-                            ]
-                        } for section in category.sections.all()
+                                    "id": section.id,
+                                    "title": section.title,
+                                    "subtitle": section.subtitle,
+                                    "icon": section.icon,
+                                    "configurations": [
+                                        {
+                                            "id": str(config.id),
+                                            "type": config.config_type,
+                                            "title": config.name,
+                                            "subtitle": config.subtitle,
+                                            "tip": config.tip,
+                                            "value": game_server.configurations.config.get(
+                                                config.id, config.default_value
+                                            ),
+                                            "icon": config.icon,
+                                        }
+                                        for config in section.configurations.all()
+                                    ],
+                                }
+                                for section in category.sections.all()
+                            ],
+                        }
+                        for category in AntiCheatConfigurationCategory.objects.filter(
+                            server_type=game_server.type
+                        )
                     ]
-                } for category in AntiCheatConfigurationCategory.objects.filter(server_type=game_server.type)
-            ]
-        },
-        "message": "Configurations retrieved successfully."
-    })
+                },
+            },
+            "message": "Configurations retrieved successfully.",
+        }
+    )
+
 
 @login_required
 def render_bans(request: HttpRequest) -> HttpResponse:
@@ -814,8 +953,10 @@ def render_bans(request: HttpRequest) -> HttpResponse:
                     "status": (
                         2 if ban.is_expired else int(ban.active)
                     ),  # 0: Disabled, 1: Banned, 2: Expired
-                    "reason": ban.reason, 
-                    "screenshot_url": ban.report.screenshot.url if ban.report.screenshot else "",
+                    "reason": ban.reason,
+                    "screenshot_url": (
+                        ban.report.screenshot.url if ban.report.screenshot else ""
+                    ),
                     "license": ban.hwid.fivem_license,
                     "steam": ban.hwid.steam,
                     "discord_id": ban.hwid.discord_id,
@@ -1121,6 +1262,7 @@ def render_servers(request: HttpRequest) -> HttpResponse:
         },
     )
 
+
 @login_required
 def select_server(request: HttpRequest) -> HttpResponse:
     request_body: Dict[str, Union[bool, str]] = request.body.decode()
@@ -1163,7 +1305,6 @@ def select_server(request: HttpRequest) -> HttpResponse:
     request.session["selected_server"] = target_server.id
 
     return HttpResponse(json.dumps({"success": True}))
-
 
 
 @login_required
@@ -1354,21 +1495,28 @@ def render_quicksetup(request: HttpRequest) -> HttpResponse:
             messages.error(request, "Unsupported distribution!")
             return redirect(request.path)
 
-        distribution_path = os.path.join(dists_dir, target_dist, "download_template.zip")
+        distribution_path = os.path.join(
+            dists_dir, target_dist, "download_template.zip"
+        )
         if not os.path.isfile(distribution_path):
             messages.error(
                 request, f"Failed to download {target_dist.title()} distribution!"
             )
             return redirect(request.path)
-        
-        temp_zip_path = os.path.join(dists_dir, target_dist, f"temp-{random.randint(10, 100)}.zip")
+
+        temp_zip_path = os.path.join(
+            dists_dir, target_dist, f"temp-{random.randint(10, 100)}.zip"
+        )
         shutil.copyfile(distribution_path, temp_zip_path)
 
         if os.path.isfile(temp_zip_path):
             key_path = "AtomicShield/server.key"
-            
+
             if os.path.isfile(temp_zip_path):
-                with ZipFile(distribution_path, "r") as zip_read, ZipFile(temp_zip_path, "w") as zip_write:
+                with (
+                    ZipFile(distribution_path, "r") as zip_read,
+                    ZipFile(temp_zip_path, "w") as zip_write,
+                ):
                     for item in zip_read.infolist():
                         if item.filename != key_path:
                             zip_write.writestr(item, zip_read.read(item.filename))
@@ -1376,7 +1524,8 @@ def render_quicksetup(request: HttpRequest) -> HttpResponse:
                             server_key = "<YOUR ATOMICSHIELD SERVER KEY>"
                             try:
                                 target_server = GameServer.objects.get(
-                                    id=request.session.get("selected_server", -1), owner=request.user
+                                    id=request.session.get("selected_server", -1),
+                                    owner=request.user,
                                 )
                                 server_key = target_server.key
                             except GameServer.DoesNotExist:
@@ -1475,6 +1624,7 @@ def render_subscriptions(request: HttpRequest) -> HttpResponse:
             ]
         },
     )
+
 
 @login_required
 async def render_players(request: HttpRequest) -> HttpResponse:

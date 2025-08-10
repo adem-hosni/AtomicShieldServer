@@ -7,14 +7,19 @@ from simple_history.models import HistoricalRecords
 from typing import Union, Self, List, Tuple
 
 
-class AntiCheatConfigDataTypes(models.IntegerChoices):
-    BOOLEAN = 1, "Boolean"
-    STRING = 2, "String"
-    INTEGER = 3, "Integer"
+class AntiCheatConfigDataTypes(models.TextChoices):
+    BOOLEAN = "boolean", "Boolean"
+    STRING = "string", "String"
+    NUMBER = "number", "Number"
+    SELECT = "select", "Select"
+    FILE_UPLOAD = "file_upload", "File Upload"
+    FILE_EXPORT = "file_export", "File Export"
+    EMBEDJSON = "embed_json", "Embed Json"
 
 
 class AntiCheatConfigurationCategory(models.Model):
     name = models.CharField(max_length=32)
+    description = models.TextField()
     icon = models.CharField(max_length=32)
     server_type = models.IntegerField(
         choices=ServerType,
@@ -65,7 +70,7 @@ class AntiCheatConfigTemplate(models.Model):
         default=ServerType.FIVEM,
     )
 
-    config_type = models.IntegerField(
+    config_type = models.TextField(
         choices=AntiCheatConfigDataTypes,
         default=AntiCheatConfigDataTypes.BOOLEAN,
     )
@@ -80,7 +85,7 @@ class AntiCheatConfigTemplate(models.Model):
         """Convert default_value to the correct type."""
         if self.config_type == AntiCheatConfigDataTypes.BOOLEAN:
             return self.default_value.strip().lower() in ("true", "1")
-        elif self.config_type == AntiCheatConfigDataTypes.INTEGER:
+        elif self.config_type == AntiCheatConfigDataTypes.NUMBER:
             try:
                 return int(self.default_value)
             except ValueError:

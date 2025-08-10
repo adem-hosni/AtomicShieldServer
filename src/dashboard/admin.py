@@ -14,7 +14,7 @@ from django.contrib.auth.admin import (
     GroupAdmin as BaseGroupAdmin,
 )
 from .forms import SubscriptionCustomForm
-from .models import GameServer, Announcements, PatchNotes, ServerSubscription
+from .models import GameServer, Announcements, PatchNotes, ServerSubscription, GameServerModerator
 
 from unfold.admin import ModelAdmin
 from unfold.forms import AdminPasswordChangeForm, UserChangeForm, UserCreationForm
@@ -206,7 +206,50 @@ class ServerSubscriptionAdmin(ModelAdmin):
                 )
         super().save_model(request, obj, form, change)
 
+class GameServerModeratorAdmin(ModelAdmin):
+    list_display = ('user', 'status', 'last_login', 'permission_summary')
+    list_filter = ('status',)
+    search_fields = ('user__username', 'user__email')
+
+    @admin.display(description="Last Login")
+    def last_login(self, obj: GameServerModerator):
+        return obj.user.last_login
+
+    fieldsets = (
+        ('Platform Account', {
+            'fields': ('user', 'status', 'last_login', "game_server"),
+        }),
+        ('Dashboard Access', {
+            'classes': ('collapse',),
+            'fields': ('can_view_dashboard', 'can_view_analytics'),
+        }),
+        ('Player Moderation', {
+            'classes': ('collapse',),
+            'fields': ('can_kick_players', 'can_ban_players', 'can_view_anticheat_logs'),
+        }),
+        ('System Configuration', {
+            'classes': ('collapse',),
+            'fields': ('can_manage_configuration', 'can_manage_webhook_settings'),
+        }),
+        ('Advanced Features', {
+            'classes': ('collapse',),
+            'fields': ('can_access_interactive_map', 'can_access_multi_stream', 'can_manage_moderators'),
+        }),
+    )
+
+    readonly_fields = ('last_login',)
+
+    def permission_summary(self, obj):
+        perms = obj.permission_summary
+        if len(perms) > 3:
+            return ', '.join(perms[:3]) + f', +{len(perms) - 3} more'
+        return ', '.join(perms)
+
+    permission_summary.short_description = 'Permissions'
+
+
 admin.site.register(GameServer, GameServerAdmin)
 admin.site.register(Announcements, AnnouncementAdmin)
 admin.site.register(PatchNotes, PatchNotesAdmin)
 admin.site.register(ServerSubscription, ServerSubscriptionAdmin)
+admin.site.register(GameServerModerator, GameServerModeratorAdmin)

@@ -32,6 +32,7 @@ from django.contrib import messages
 from django.contrib.humanize.templatetags.humanize import intcomma
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
+from django.contrib.auth.models import User
 from guards import fivem_guard
 from utils import check_request_body_key, represent_timedelta_string
 from anticheat.models import Ban, DetectionReport, HWID
@@ -43,6 +44,7 @@ from .models import (
     ServerType,
     ServerStatus,
     ServerSubscription,
+    GameServerModerator,
 )
 from anticheat.models import (
     AntiCheatConfigTemplate,
@@ -174,7 +176,7 @@ def dashboard_overview(request: HttpRequest) -> JsonResponse:
     }
 
     # Servers Data
-    user_servers = GameServer.objects.filter(owner=request.user)
+    user_servers = GameServer.get_user_servers(request.user)
     servers_count = user_servers.count()
     online_servers_count = sum([server.is_online for server in user_servers])
 
@@ -518,7 +520,13 @@ def render_maindashboard(request: HttpRequest) -> HttpResponse:
 @permission_classes([IsAuthenticated])
 def server_dashboard(request: HttpRequest, server_id: int) -> Response:
     try:
-        game_server = GameServer.objects.get(owner=request.user, id=server_id)
+        game_server = GameServer.objects.get(
+            Q(id=server_id)
+            & (
+                Q(owner=request.user)
+                | Q(moderators__user=request.user, moderators__status="active")
+            )
+        )
     except GameServer.DoesNotExist:
         logger.warning(
             f"{request.user.username} tried to access a non-existing server ({server_id})!"
@@ -609,7 +617,7 @@ def list_servers(request: HttpRequest) -> Response:
     List all servers owned by the user.
     """
     user = request.user
-    game_servers = GameServer.objects.filter(owner=user)
+    game_servers = GameServer.get_user_servers(request.user)
     servers = []
 
     for server in game_servers:
@@ -643,7 +651,7 @@ def list_servers(request: HttpRequest) -> Response:
 @permission_classes([IsAuthenticated])
 def list_bans(request: HttpRequest, server_id: int) -> Response:
     try:
-        target_server = GameServer.objects.get(owner=request.user, id=server_id)
+        target_server = GameServer.get_for_user(server_id, request.user)
     except GameServer.DoesNotExist:
         logger.warning(
             f"{request.user.username} tried to access bans of a non-existing server ({server_id})!"
@@ -879,6 +887,200 @@ def list_configurations(request: HttpRequest, server_id: int) -> Response:
                 },
             },
             "message": "Configurations retrieved successfully.",
+        }
+    )
+
+
+@api_view(["POST"])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+def list_moderators(request: HttpRequest, server_id: int) -> Response:
+    try:
+        target_server = GameServer.get_for_user(server_id, request.user)
+    except GameServer.DoesNotExist:
+        logger.warning(
+            f"{request.user.username} tried to access bans of a non-existing server ({server_id})!"
+        )
+        return Response(
+            {
+                "success": False,
+                "message": "The selected server does not exist or you do not have permission to access it.",
+            }
+        )
+    except Exception:
+        logger.exception(
+            f"An unexpected error occurred while accessing bans for server {server_id} for user {request.user.username}."
+        )
+        return Response(
+            {
+                "success": False,
+                "message": "An unexpected error occurred while accessing the server.",
+            }
+        )
+
+    moderators = target_server.moderators.all()
+
+    return Response(
+        {
+            "success": True,
+            "message": "",
+            "data": {
+                "totalCount": moderators.count(),
+                "onlineCount": 0,
+                "moderators": [
+                    {
+                        "id": moderator.id,
+                        "username": moderator.user.username,
+                        "email": moderator.user.email,
+                        # "avatar": "",  # TODO
+                        "permissions": moderator.permission_summary,
+                        "lastLogin": moderator.user.last_login,
+                        "status": moderator.status,
+                        "joinedAt": moderator.added_at,
+                    }
+                    for moderator in moderators
+                ],
+            },
+        }
+    )
+
+
+@api_view(["PUT"])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+def update_moderators(request: HttpRequest, server_id: int, moderator_id) -> Response:
+    try:
+        target_server = GameServer.get_for_user(server_id, request.user)
+    except GameServer.DoesNotExist:
+        logger.warning(
+            f"{request.user.username} tried to access bans of a non-existing server ({server_id})!"
+        )
+        return Response(
+            {
+                "success": False,
+                "message": "The selected server does not exist or you do not have permission to access it.",
+            }
+        )
+    except Exception:
+        logger.exception(
+            f"An unexpected error occurred while accessing bans for server {server_id} for user {request.user.username}."
+        )
+        return Response(
+            {
+                "success": False,
+                "message": "An unexpected error occurred while accessing the server.",
+            }
+        )
+
+    if not target_server.has_permission_for(
+        request.user,
+        GameServerModerator.Permissions.CAN_MANAGE_MODERATORS
+    ):
+        logger.warning(
+            f"{request.user.username} wants to update moderator permissions with no permissions (given permissions: {" - ".join(request.data)})"
+        )
+        return Response(
+            {
+                "success": False,
+                "message": "You dont have an access to perform this operation",
+            }
+        )
+
+    try:
+        target_moderator = GameServerModerator.objects.get(
+            id=moderator_id, game_server=target_server
+        )
+    except GameServerModerator.DoesNotExist:
+        logger.warning(
+            f"{request.user.username} tried to update a non-existing moderator (moderator id: {moderator_id})!"
+        )
+        return Response(
+            {
+                "success": False,
+                "message": "Target moderator not found",
+            }
+        )
+
+    if target_moderator.user == target_server.owner:
+        logger.warning(
+            f"{request.user.username} tried to change server owner permissions"
+        )
+        return Response(
+            {"success": False, "message": "You cant change server owner permissions."}
+        )
+    
+    if request.user != target_server.owner:
+        if GameServerModerator.Permissions.CAN_MANAGE_MODERATORS.value in request.data:
+            logger.warning(f"{request.user} tried to change CAN_MANAGE_MODERATORS for {target_moderator.user}")
+            return Response(
+                {
+                    "success": False,
+                    "message": "Only Server Owner can change \"Manage Moderators\" permission"
+                }
+            )
+
+    # Clear current permissions to reset them
+    target_moderator.can_view_analytics = False
+    target_moderator.can_view_dashboard = False
+    target_moderator.can_kick_players = False
+    target_moderator.can_ban_players = False
+    target_moderator.can_view_anticheat_logs = False
+    target_moderator.can_manage_configuration = False
+    target_moderator.can_manage_webhook_settings = False
+    target_moderator.can_access_interactive_map = False
+    target_moderator.can_access_multi_stream = False
+    target_moderator.can_manage_moderators = False
+
+    for permission in request.data or []:
+        try:
+            existing_permission = "can_" + permission
+            setattr(target_moderator, existing_permission, True)
+        except AttributeError:
+            logger.warning(
+                f"{request.user.username} tried to update {target_moderator.user.username} permissions to a non-existing permission named {permission}"
+            )
+            return Response({"success": False, "message": "Invalid permissions"})
+
+    target_moderator.save()
+
+    logger.info(
+        f'{request.user.username} updated {target_moderator.user.username} permissions in "{target_server.name}"'
+    )
+
+    return Response(
+        {
+            "success": True,
+            "message": f"{target_moderator.user.username} permissions updated successfuly",
+        }
+    )
+
+@api_view(["GET", "POST"])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+def search_for_moderator(request: HttpRequest) -> Response:
+    search_term = request.GET.get("search", "").strip()
+    if not len(search_term):
+        return Response({
+            "success": True,
+            "data": []
+        })
+
+    matched_users = User.objects.filter(username__icontains=search_term)[:10]
+    return Response(
+        {
+            "success": True,
+            "message": "",
+            "data": [
+                {
+                    "id": user.id,
+                    "username": user.username,
+                    "email": "user.email",
+                    "avatar": "",  # TODO
+                    "permissions": [],
+                    "status": "active",
+                    "joinedAt": ""
+                } for user in matched_users
+            ]
         }
     )
 

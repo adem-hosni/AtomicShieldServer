@@ -1,6 +1,8 @@
+import logging
 from django.db import models
 from time import time
 from django.utils import timezone
+from django.db.models import Q
 from datetime import datetime, timedelta
 from utils import represent_timedelta_string
 from anticheat.consumers.safe_server import SafeServerConsumer
@@ -11,6 +13,8 @@ from anticheat.models import AntiCheatConfigurations, AntiCheatConfigTemplate
 from shared.models import ServerType
 from typing import Dict, Any, Union, List
 
+
+logger = logging.getLogger(__name__)
 
 class ServerStatus(models.IntegerChoices):
     unsubscribed = 1, "UnSubscribed"
@@ -134,6 +138,14 @@ class GameServer(models.Model):
         choices=ServerStatus.choices, null=False, default=ServerStatus.unsubscribed
     )
 
+    def has_permission_for(self, user: User, permission: Union[str, Any]):
+        try:
+            target_moderator = self.moderators.get(user__id=user.id)
+        except Exception as err:
+            logger.error(err)
+            return False
+        return str(permission) in target_moderator.permission_summary
+
     @property
     def key(self) -> str:
         try:
@@ -190,6 +202,24 @@ class GameServer(models.Model):
             raise ValueError(f"config id ({config_id}) does not exists!") from err
 
         return target_config.default_value
+    
+    @classmethod
+    def get_for_user(cls, server_id: int, user, **kwargs):
+        return cls.objects.get(
+            Q(id=server_id, **kwargs) & (
+                Q(owner=user) |
+                Q(moderators__user=user)
+            )
+        )
+
+    @classmethod
+    def get_user_servers(cls, user, **kwargs):
+        return cls.objects.filter(
+            Q(**kwargs) & (
+                Q(owner=user) |
+                Q(moderators__user=user)
+            )
+        )
 
     async def get_anticheat_configurations(self) -> Dict[str, Any]:
         try:
@@ -254,3 +284,73 @@ class PatchNotes(models.Model):
 
     def __str__(self) -> str:
         return self.title
+
+
+class GameServerModerator(models.Model):
+    STATUS_CHOICES = [
+        ('active', 'Active'),
+        ('suspended', 'Suspended'),
+    ]
+
+    class Permissions(models.TextChoices):
+        CAN_VIEW_DASHBOARD = "view_dashboard", "Can View Dashboard"
+        CAN_VIEW_ANALYTICS = "view_analytics", "Can View Analytics"
+        CAN_KICK_PLAYERS = "kick_players", "Can Kick Players"
+        CAN_BAN_PLAYERS = "ban_players", "Can Ban Players"
+        CAN_VIEW_ANTICHEAT_LOGS = "view_anticheat_logs", "Can View Anticheat Logs"
+        CAN_MANAGE_CONFIGURATION = "manage_configuration", "Can Manage Configuration"
+        CAN_MANAGE_WEBHOOK_SETTINGS = "manage_webhook_settings", "Can Manage Webhook Settings"
+        CAN_ACCESS_INTERACTIVE_MAP = "access_interactive_map", "Can Access Interactive Map"
+        CAN_ACCESS_MULTI_STREAM = "access_multi_stream", "Can Access Multi Stream"
+        CAN_MANAGE_MODERATORS = "manage_moderators", "Can Manage Moderators"
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='moderator_profile')
+    game_server = models.ForeignKey(GameServer, on_delete=models.DO_NOTHING, related_name="moderators")
+
+    can_view_dashboard = models.BooleanField(default=False)
+    can_view_analytics = models.BooleanField(default=False)
+    can_kick_players = models.BooleanField(default=False)
+    can_ban_players = models.BooleanField(default=False)
+    can_view_anticheat_logs = models.BooleanField(default=False)
+    can_manage_configuration = models.BooleanField(default=False)
+    can_manage_webhook_settings = models.BooleanField(default=False)
+    can_access_interactive_map = models.BooleanField(default=False)
+    can_access_multi_stream = models.BooleanField(default=False)
+    can_manage_moderators = models.BooleanField(default=False)
+
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='active')
+
+    added_at = models.DateTimeField(null=True, auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username} Moderator Profile"
+
+    @property
+    def permission_summary(self):
+        perms = []
+        if self.can_view_dashboard:
+            perms.append(GameServerModerator.Permissions.CAN_VIEW_DASHBOARD)
+        if self.can_view_analytics:
+            perms.append(GameServerModerator.Permissions.CAN_VIEW_ANALYTICS)
+        if self.can_kick_players:
+            perms.append(GameServerModerator.Permissions.CAN_KICK_PLAYERS)
+        if self.can_ban_players:
+            perms.append(GameServerModerator.Permissions.CAN_BAN_PLAYERS)
+        if self.can_view_anticheat_logs:
+            perms.append(GameServerModerator.Permissions.CAN_VIEW_ANTICHEAT_LOGS)
+        if self.can_manage_configuration:
+            perms.append(GameServerModerator.Permissions.CAN_MANAGE_CONFIGURATION)
+        if self.can_manage_webhook_settings:
+            perms.append(GameServerModerator.Permissions.CAN_MANAGE_WEBHOOK_SETTINGS)
+        if self.can_access_interactive_map:
+            perms.append(GameServerModerator.Permissions.CAN_ACCESS_INTERACTIVE_MAP)
+        if self.can_access_multi_stream:
+            perms.append(GameServerModerator.Permissions.CAN_ACCESS_MULTI_STREAM)
+        if self.can_manage_moderators:
+            perms.append(GameServerModerator.Permissions.CAN_MANAGE_MODERATORS)
+        return perms
+
+
+    class Meta:
+        verbose_name = "Game Server Moderator"
+        verbose_name_plural = "Game Server Moderators"

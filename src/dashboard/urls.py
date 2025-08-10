@@ -10,6 +10,9 @@ urlpatterns = [
     path("server/<int:server_id>/bans/unban", views.unban_player, name="unban_player"),
     path("server/<int:server_id>/bans/ban", views.ban_player, name="ban_player"),
     path("server/<int:server_id>/configurations", views.list_configurations, name="list_configurations"),
+    path("server/<int:server_id>/moderators", views.list_moderators, name="list_moderators"),
+    path("server/<int:server_id>/moderators/<int:moderator_id>/update", views.update_moderators, name="update_moderators"),
+    path("moderators", views.search_for_moderator, name="search_for_moderator"),
 
 
     path("main/", views.render_maindashboard, name="dashboard"),

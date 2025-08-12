@@ -36,11 +36,12 @@ if DEBUG:
 else:
     BIN_DIR = os.path.join(BASE_DIR.parent, "bin", "production")
 
-#ALLOWED_HOSTS = [
-#    "*",
-#    ".atomic-shield.com",
-#]
-ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
+ALLOWED_HOSTS = [
+   "*",
+   ".atomic-shield.com",
+   "127.0.0.1",
+   "localhost",
+]
 
 CSRF_TRUSTED_ORIGINS = (
     [
@@ -85,6 +86,7 @@ INSTALLED_APPS = [
     "allauth.account",
     "allauth.socialaccount",
     "allauth.socialaccount.providers.discord",
+    "allauth.socialaccount.providers.google",
     "rest_framework_simplejwt",
     "corsheaders",
 ]
@@ -202,7 +204,7 @@ DATABASES = {
         "ENGINE": "django.db.backends.mysql",
         "NAME": "atomicshield",
         "USER": "root",
-        "PASSWORD": "root",
+        "PASSWORD": "",
         "HOST": "localhost",
         "CONN_HEALTH_CHECKS": True,
         "OPTIONS": {

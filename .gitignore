@@ -137,3 +137,8 @@ GitHub.sublime-settings
 .history
 /src/staticfiles
 /src/media/detections/proofs
+
+
+DISCORD_CLIENT_ID=1404072529684861058
+DISCORD_CLIENT_SECRET=6GZ-gYHXbOxg4F3wWNh7o_hX8whrE0TC
+DISCORD_REDIRECT_URI=http://localhost:8080/auth/callback

@@ -36,13 +36,15 @@ if DEBUG:
 else:
     BIN_DIR = os.path.join(BASE_DIR.parent, "bin", "production")
 
-ALLOWED_HOSTS = [
-    "*",
-    ".atomic-shield.com",
-]
+#ALLOWED_HOSTS = [
+#    "*",
+#    ".atomic-shield.com",
+#]
+ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
 
 CSRF_TRUSTED_ORIGINS = (
     [
+        "http://localhost:8080",
         "https://atomic-shield.com",
         "https://www.atomic-shield.com",
     ]
@@ -117,9 +119,17 @@ AUTHENTICATION_BACKENDS = [
 CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:8080",
+    "http://localhost:8080"
 ]
+CORS_ALLOW_CREDENTIALS = True
 
+DISCORD_CLIENT_ID="1404072529684861058"
+DISCORD_CLIENT_SECRET="6GZ-gYHXbOxg4F3wWNh7o_hX8whrE0TC"
+DISCORD_REDIRECT_URI="http://localhost:8000/api/auth/discord/callback"
+
+GOOGLE_CLIENT_ID = "1091637385561-5l7jpbubori3m6jekd6nn1bu7g999p3f.apps.googleusercontent.com"
+GOOGLE_CLIENT_SECRET = "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"
+GOOGLE_REDIRECT_URI = "http://localhost:8000/api/auth/google/callback"
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
@@ -192,7 +202,7 @@ DATABASES = {
         "ENGINE": "django.db.backends.mysql",
         "NAME": "atomicshield",
         "USER": "root",
-        "PASSWORD": "",
+        "PASSWORD": "root",
         "HOST": "localhost",
         "CONN_HEALTH_CHECKS": True,
         "OPTIONS": {
@@ -462,5 +472,5 @@ if not DEBUG:
     SESSION_COOKIE_HTTPONLY = True
 
     CSRF_COOKIE_SECURE = True
-    CSRF_COOKIE_HTTPONLY = True
+    CSRF_COOKIE_HTTPONLY = False
     CSRF_USE_SESSIONS = True

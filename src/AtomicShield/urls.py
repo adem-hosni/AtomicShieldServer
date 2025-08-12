@@ -40,7 +40,8 @@ urlpatterns = [
     path("anticheat/", include("anticheat.urls")),
     path("api/", include("dashboard.urls")),
     path("resources/", include("resources.urls")),
-
+    path("api/auth/", include("authentication.urls")),
+ 
     path("sitemap.xml/", sitemap, {"sitemaps": sitemaps}, name="sitemap"),
     path("robots.txt/", TemplateView.as_view(template_name="meta/robots.txt", content_type="text/plain")),
     path(".well-known/security.txt/", TemplateView.as_view(template_name="meta/security.txt", content_type="text/plain")),

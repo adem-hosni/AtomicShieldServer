@@ -22,7 +22,7 @@ urlpatterns = [
     path("servers/select/", views.select_server, name="select_server"),
     path("configurations/", views.render_configurations),
     path("quicksetup/", views.render_quicksetup, name="quick_setup"),
-    path("subscriptions/", views.render_subscriptions),
+    path("subscriptions/", views.subscriptions_api),
     path("players/", views.render_players, name="players"),
     path("servers/refresh_key/", views.refresh_server_key, name="refresh_key"),
     path("checkserver/", views.check_server),

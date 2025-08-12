@@ -57,6 +57,8 @@ from .forms import AddServerForm
 import utils
 from typing import Dict, Union, Any
 from utils.aseclient import ASEQueryClient, ASEParser
+from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import ensure_csrf_cookie
 
 
 logger = logging.getLogger(__name__)
@@ -1755,77 +1757,53 @@ def render_quicksetup(request: HttpRequest) -> HttpResponse:
     )
 
 
-@login_required
-def render_subscriptions(request: HttpRequest) -> HttpResponse:
+#@login_required
+@require_http_methods(["GET", "POST"])
+def subscriptions_api(request):
     if request.method == "POST":
-        subscription_key = request.POST.get("key", "").strip()
-        if not len(subscription_key):
-            messages.error(request, "Empty Subscription Key")
-            return redirect(request.path)
+        try:
+            data = json.loads(request.body)
+            subscription_key = data.get("key", "").strip()
+        except Exception:
+            return JsonResponse({"success": False, "error": "Invalid JSON"}, status=400)
+
+        if not subscription_key:
+            return JsonResponse({"success": False, "error": "Empty Subscription Key"}, status=400)
 
         try:
             subscription = ServerSubscription.objects.get(key=subscription_key)
         except ServerSubscription.DoesNotExist:
-            logger.warning(
-                f'"{request.user.username}" trying to redeem incorrect subscription key!'
-            )
-            messages.error(request, "Invalid Redeemed Key.")
-            return redirect(request.path)
+            return JsonResponse({"success": False, "error": "Invalid Redeemed Key."}, status=404)
 
         if subscription.owner:
-            logger.warning(
-                f'"{request.user.username}" trying to redeem a subscription key used by "{subscription.owner.username}"'
-            )
-            messages.error(request, "Subscription Key already redeemed")
-            return redirect(request.path)
+            return JsonResponse({"success": False, "error": "Subscription Key already redeemed"}, status=400)
 
         if not subscription.is_valid_for_now():
-            logger.warning(
-                f'"{request.user.username}" trying to redeem expired subscription key!'
-            )
-            messages.error(request, "Expired Subscription")
-            return redirect(request.path)
+            return JsonResponse({"success": False, "error": "Expired Subscription"}, status=400)
 
         if subscription.game_servers.count():
-            logger.warning(
-                f'"{request.user.username}" trying to redeem used subscription key!'
-            )
-            messages.error(request, "This Subscription is already in-use.")
-            return redirect(request.path)
-
-        logger.info(
-            f'"{request.user.username}" reedemed "{subscription.name}" key ({subscription_key})'
-        )
+            return JsonResponse({"success": False, "error": "This Subscription is already in-use."}, status=400)
 
         subscription.owner = request.user
         subscription.started_at = now()
         subscription.save()
 
-        messages.success(request, "Key Reedemed Successfuly!")
+        return JsonResponse({"success": True, "message": "Key Redeemed Successfully!"})
 
-    return render(
-        request,
-        "pages/dashboard/subscriptions.jinja",
+    # GET method → return subscription data
+    subscriptions_data = [
         {
-            "subscriptions": [
-                {
-                    "type": subscription.type,
-                    "started_at": subscription.started_at,
-                    "expires_at": subscription.started_at + subscription.expires_at,
-                    "remaining": subscription.remaining,
-                    "name": subscription.name,
-                    "status": (
-                        2
-                        if not subscription.is_valid_for_now()
-                        else subscription.status
-                    ),
-                }
-                for subscription in ServerSubscription.objects.filter(
-                    owner=request.user
-                ).order_by("-started_at")
-            ]
-        },
-    )
+            "type": sub.type,
+            "started_at": sub.started_at,
+            "expires_at": sub.started_at + sub.expires_at,
+            "remaining": sub.remaining,
+            "name": sub.name,
+            "status": 2 if not sub.is_valid_for_now() else sub.status,
+        }
+        for sub in ServerSubscription.objects.filter(owner=request.user).order_by("-started_at")
+    ]
+
+    return JsonResponse({"subscriptions": subscriptions_data})
 
 
 @login_required

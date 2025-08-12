@@ -16,6 +16,7 @@ from typing import Dict, Any, Union, List
 
 logger = logging.getLogger(__name__)
 
+
 class ServerStatus(models.IntegerChoices):
     unsubscribed = 1, "UnSubscribed"
     online = 2, "Online"
@@ -166,11 +167,11 @@ class GameServer(models.Model):
                 latest_subscription.save()
         except ServerSubscription.DoesNotExist:
             ...
-    
+
     @property
     def is_online(self) -> bool:
         return fivem_guard.is_server_running(self.ip)
-    
+
     @property
     def active_players(self) -> List[SafeServerConsumer]:
         active_players = []
@@ -179,11 +180,10 @@ class GameServer(models.Model):
                 if engine.connected_server.game_server == self:
                     active_players.append(engine)
         return active_players
-    
+
     @property
     def active_player_count(self) -> int:
         return len(self.active_players)
-
 
     class Meta:
         db_table = "gameservers"
@@ -202,23 +202,17 @@ class GameServer(models.Model):
             raise ValueError(f"config id ({config_id}) does not exists!") from err
 
         return target_config.default_value
-    
+
     @classmethod
     def get_for_user(cls, server_id: int, user, **kwargs):
         return cls.objects.get(
-            Q(id=server_id, **kwargs) & (
-                Q(owner=user) |
-                Q(moderators__user=user)
-            )
+            Q(id=server_id, **kwargs) & (Q(owner=user) | Q(moderators__user=user))
         )
 
     @classmethod
     def get_user_servers(cls, user, **kwargs):
         return cls.objects.filter(
-            Q(**kwargs) & (
-                Q(owner=user) |
-                Q(moderators__user=user)
-            )
+            Q(**kwargs) & (Q(owner=user) | Q(moderators__user=user))
         )
 
     async def get_anticheat_configurations(self) -> Dict[str, Any]:
@@ -288,8 +282,8 @@ class PatchNotes(models.Model):
 
 class GameServerModerator(models.Model):
     STATUS_CHOICES = [
-        ('active', 'Active'),
-        ('suspended', 'Suspended'),
+        ("active", "Active"),
+        ("suspended", "Suspended"),
     ]
 
     class Permissions(models.TextChoices):
@@ -299,13 +293,23 @@ class GameServerModerator(models.Model):
         CAN_BAN_PLAYERS = "ban_players", "Can Ban Players"
         CAN_VIEW_ANTICHEAT_LOGS = "view_anticheat_logs", "Can View Anticheat Logs"
         CAN_MANAGE_CONFIGURATION = "manage_configuration", "Can Manage Configuration"
-        CAN_MANAGE_WEBHOOK_SETTINGS = "manage_webhook_settings", "Can Manage Webhook Settings"
-        CAN_ACCESS_INTERACTIVE_MAP = "access_interactive_map", "Can Access Interactive Map"
+        CAN_MANAGE_WEBHOOK_SETTINGS = (
+            "manage_webhook_settings",
+            "Can Manage Webhook Settings",
+        )
+        CAN_ACCESS_INTERACTIVE_MAP = (
+            "access_interactive_map",
+            "Can Access Interactive Map",
+        )
         CAN_ACCESS_MULTI_STREAM = "access_multi_stream", "Can Access Multi Stream"
         CAN_MANAGE_MODERATORS = "manage_moderators", "Can Manage Moderators"
 
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='moderator_profile')
-    game_server = models.ForeignKey(GameServer, on_delete=models.DO_NOTHING, related_name="moderators")
+    user = models.OneToOneField(
+        User, on_delete=models.CASCADE, related_name="moderator_profile"
+    )
+    game_server = models.ForeignKey(
+        GameServer, on_delete=models.DO_NOTHING, related_name="moderators"
+    )
 
     can_view_dashboard = models.BooleanField(default=False)
     can_view_analytics = models.BooleanField(default=False)
@@ -318,7 +322,7 @@ class GameServerModerator(models.Model):
     can_access_multi_stream = models.BooleanField(default=False)
     can_manage_moderators = models.BooleanField(default=False)
 
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='active')
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="active")
 
     added_at = models.DateTimeField(null=True, auto_now_add=True)
 
@@ -350,17 +354,19 @@ class GameServerModerator(models.Model):
             perms.append(GameServerModerator.Permissions.CAN_MANAGE_MODERATORS)
         return perms
 
-
     class Meta:
         verbose_name = "Game Server Moderator"
         verbose_name_plural = "Game Server Moderators"
 
 
 class ModeratorInviteToken(models.Model):
-    invited_by = models.ForeignKey(GameServerModerator, on_delete=models.CASCADE, related_name="invite_tokens")
+    invited_by = models.ForeignKey(
+        GameServerModerator, on_delete=models.CASCADE, related_name="invite_tokens"
+    )
     to = models.ForeignKey(User, on_delete=models.CASCADE, related_name="invite_tokens")
-    game_server = models.ForeignKey(GameServer, on_delete=models.DO_NOTHING, related_name="invite_tokens")
-    permissions = models.JSONField(default=[], blank=False)
+    permissions = models.JSONField(default=list, blank=False)
+    sent_to_email = models.BooleanField(default=False)
+    accepted = models.BooleanField(default=False)
 
     invited_at = models.DateTimeField(null=True, auto_now_add=True)
 
@@ -370,6 +376,20 @@ class ModeratorInviteToken(models.Model):
             self.invited_at.timestamp() + timedelta(days=7).total_seconds
             < datetime.now().timestamp()
         )
+
+    @classmethod
+    def generate(
+        cls,
+        invited_by: GameServerModerator,
+        to: User,
+        permissions: List[GameServerModerator.Permissions],
+    ):
+        generated_invites = cls.objects.filter(
+            invited_by=invited_by, to=to, permissions=permissions
+        )
+
+        if all([generated_invite.is_expired() for generated_invite in generated_invites]):
+            ...
 
 
     class Meta:

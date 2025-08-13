@@ -1757,38 +1757,37 @@ def render_quicksetup(request: HttpRequest) -> HttpResponse:
     )
 
 
-#@login_required
-@require_http_methods(["GET", "POST"])
+@api_view(["POST"])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
 def subscriptions_api(request):
-    if request.method == "POST":
-        try:
-            data = json.loads(request.body)
-            subscription_key = data.get("key", "").strip()
-        except Exception:
-            return JsonResponse({"success": False, "error": "Invalid JSON"}, status=400)
+    logger.info(f"Request method: {request.method}")
+    try:
+        subscription_key = request.data.get("key", "").strip() 
+        logger.info(subscription_key)    
+    except Exception:
+        return JsonResponse({"success": False, "error": "Invalid JSON"}, status=200)
 
-        if not subscription_key:
-            return JsonResponse({"success": False, "error": "Empty Subscription Key"}, status=400)
+    if not subscription_key:
+        return JsonResponse({"success": False, "error": "Empty Subscription Key"}, status=200)
 
-        try:
-            subscription = ServerSubscription.objects.get(key=subscription_key)
-        except ServerSubscription.DoesNotExist:
-            return JsonResponse({"success": False, "error": "Invalid Redeemed Key."}, status=404)
+    try:
+        subscription = ServerSubscription.objects.get(key=subscription_key)
+    except ServerSubscription.DoesNotExist:
+        return JsonResponse({"success": False, "error": "Invalid Redeemed Key."}, status=200)
 
-        if subscription.owner:
-            return JsonResponse({"success": False, "error": "Subscription Key already redeemed"}, status=400)
+    if subscription.owner:
+        return JsonResponse({"success": False, "error": "Subscription Key already redeemed"}, status=200)
 
-        if not subscription.is_valid_for_now():
-            return JsonResponse({"success": False, "error": "Expired Subscription"}, status=400)
+    if not subscription.is_valid_for_now():
+        return JsonResponse({"success": False, "error": "Expired Subscription"}, status=200)
 
-        if subscription.game_servers.count():
-            return JsonResponse({"success": False, "error": "This Subscription is already in-use."}, status=400)
+    if subscription.game_servers.count():
+        return JsonResponse({"success": False, "error": "This Subscription is already in-use."}, status=200)
 
-        subscription.owner = request.user
-        subscription.started_at = now()
-        subscription.save()
-
-        return JsonResponse({"success": True, "message": "Key Redeemed Successfully!"})
+    subscription.owner = request.user
+    subscription.started_at = now()
+    subscription.save()
 
     # GET method → return subscription data
     subscriptions_data = [
@@ -1803,7 +1802,8 @@ def subscriptions_api(request):
         for sub in ServerSubscription.objects.filter(owner=request.user).order_by("-started_at")
     ]
 
-    return JsonResponse({"subscriptions": subscriptions_data})
+    return Response({"success": True, "message": "Key Redeemed Successfully!", "subscriptions": subscriptions_data})
+
 
 
 @login_required

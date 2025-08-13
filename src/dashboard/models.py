@@ -251,17 +251,35 @@ class GameServer(models.Model):
 
     def __str__(self) -> str:
         return f"{self.name} ({self.id})"
-
-
 class Announcements(models.Model):
-    author = models.CharField(
-        max_length=32, default="AtomicShield Development Team", null=False
+    # Keep old string data
+    author_name = models.CharField(max_length=32, default="AtomicShield Development Team")
+
+    # New FK, nullable for now
+    author = models.ForeignKey(
+        User,
+        on_delete=models.SET_DEFAULT,
+        default=1,
+        null=True,
+        blank=True,
+        related_name="authored_announcements"
     )
+
     title = models.CharField(max_length=256, null=True)
     announcement = models.TextField()
     mention_everyone = models.BooleanField(default=False)
     date = models.DateTimeField(default=timezone.now, null=True, blank=True)
-    seens = models.ManyToManyField(User, blank=True)
+    seens = models.ManyToManyField(
+        User,
+        blank=True,
+        related_name="seen_announcements",
+    )
+    category = models.CharField(max_length=32, default="announcement")
+    is_pinned = models.BooleanField(default=False)
+    is_important = models.BooleanField(default=False)
+    read_time = models.CharField(max_length=32, default="2 min read")
+    views = models.PositiveIntegerField(default=0)
+    comments_count = models.PositiveIntegerField(default=0)
 
     class Meta:
         db_table = "announcements"
@@ -270,7 +288,6 @@ class Announcements(models.Model):
 
     def __str__(self) -> str:
         return self.title
-
 
 class PatchNotes(models.Model):
     author = models.CharField(

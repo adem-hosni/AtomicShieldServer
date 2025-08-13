@@ -1,4 +1,5 @@
 import logging
+import secrets
 from django.db import models
 from time import time
 from django.utils import timezone
@@ -11,7 +12,7 @@ from asgiref.sync import sync_to_async
 from guards import fivem_guard
 from anticheat.models import AntiCheatConfigurations, AntiCheatConfigTemplate
 from shared.models import ServerType
-from typing import Dict, Any, Union, List
+from typing import Dict, Any, Union, List, Optional
 
 
 logger = logging.getLogger(__name__)
@@ -140,6 +141,8 @@ class GameServer(models.Model):
     )
 
     def has_permission_for(self, user: User, permission: Union[str, Any]):
+        if user == self.owner:
+            return True
         try:
             target_moderator = self.moderators.get(user__id=user.id)
         except Exception as err:
@@ -206,13 +209,20 @@ class GameServer(models.Model):
     @classmethod
     def get_for_user(cls, server_id: int, user, **kwargs):
         return cls.objects.get(
-            Q(id=server_id, **kwargs) & (Q(owner=user) | Q(moderators__user=user))
+            Q(id=server_id, **kwargs) &
+            (
+                Q(owner=user) |
+                Q(moderators__user=user, moderators__status="active")
+            )
         )
 
     @classmethod
     def get_user_servers(cls, user, **kwargs):
         return cls.objects.filter(
-            Q(**kwargs) & (Q(owner=user) | Q(moderators__user=user))
+            Q(**kwargs) & (
+                Q(owner=user) |
+                Q(moderators__user=user, moderators__status="active")
+            )
         )
 
     async def get_anticheat_configurations(self) -> Dict[str, Any]:
@@ -360,22 +370,37 @@ class GameServerModerator(models.Model):
 
 
 class ModeratorInviteToken(models.Model):
+    class Status(models.IntegerChoices):
+        PENDING = 0, "pending"
+        ACCEPTED = 1, "accepted"
+        DECLINED = -1, "declined"
+
     invited_by = models.ForeignKey(
-        GameServerModerator, on_delete=models.CASCADE, related_name="invite_tokens"
+        User, on_delete=models.CASCADE, related_name="invite_tokens_sent"
     )
-    to = models.ForeignKey(User, on_delete=models.CASCADE, related_name="invite_tokens")
+    to = models.ForeignKey(
+        User, on_delete=models.DO_NOTHING, related_name="invite_tokens_received"
+    )
+    game_server = models.ForeignKey(
+        GameServer, on_delete=models.DO_NOTHING, related_name="invite_tokens"
+    )
     permissions = models.JSONField(default=list, blank=False)
     sent_to_email = models.BooleanField(default=False)
-    accepted = models.BooleanField(default=False)
+    status = models.IntegerField(choices=Status, default=Status.PENDING)
+    token = models.CharField(max_length=128, unique=True, db_index=True)
 
     invited_at = models.DateTimeField(null=True, auto_now_add=True)
 
     @property
     def is_expired(self) -> bool:
         return (
-            self.invited_at.timestamp() + timedelta(days=7).total_seconds
+            self.invited_at.timestamp() + timedelta(days=7).total_seconds()
             < datetime.now().timestamp()
         )
+    
+    @property
+    def status_text(self) -> str:
+        return "expired" if self.is_expired else self.get_status_display()
 
     @classmethod
     def generate(
@@ -383,14 +408,70 @@ class ModeratorInviteToken(models.Model):
         invited_by: GameServerModerator,
         to: User,
         permissions: List[GameServerModerator.Permissions],
+        server: Optional[GameServer] = None
     ):
-        generated_invites = cls.objects.filter(
-            invited_by=invited_by, to=to, permissions=permissions
+        # Normalize permissions to list of strings
+        normalized_perms = [
+            str(p.value) if hasattr(p, "value") else str(p).strip()
+            for p in (permissions or [])
+        ]
+
+        # Fetch all existing invite tokens matching invited_by, to, server, and permissions
+        existing_tokens = cls.objects.filter(
+            invited_by=invited_by,
+            to=to,
+            game_server=server,
+            permissions=normalized_perms,
+        ).order_by("-invited_at")
+
+        for token in existing_tokens:
+            if token.is_expired:
+                # Skip expired tokens
+                continue
+
+            if token.status == cls.Status.PENDING:
+                # Reuse pending token
+                return token
+
+            if token.status == cls.Status.ACCEPTED:
+                # Check if user is still active moderator on the server
+                still_moderator = GameServerModerator.objects.filter(
+                    user=to,
+                    game_server=server,
+                    status="active"
+                ).exists()
+
+                if still_moderator:
+                    # User still active mod, reuse accepted token
+                    return token
+                # else user left, continue to look for other tokens or create new
+
+            # For declined or any other status, just continue and ignore
+
+        # No valid token found — create a new one
+
+        # Generate unique token string
+        for _ in range(5):
+            candidate = secrets.token_urlsafe(32)
+            if not cls.objects.filter(token=candidate).exists():
+                token_str = candidate
+                break
+        else:
+            token_str = secrets.token_urlsafe(64)
+
+        # Create new invite token
+        new_token = cls.objects.create(
+            invited_by=invited_by,
+            to=to,
+            game_server=server,
+            permissions=normalized_perms,
+            token=token_str,
+            invited_at=timezone.now(),
+            sent_to_email=False,
+            status=cls.Status.PENDING,
         )
 
-        if all([generated_invite.is_expired() for generated_invite in generated_invites]):
-            ...
-
+        return new_token
 
     class Meta:
         verbose_name = "Game Server Invite Token"

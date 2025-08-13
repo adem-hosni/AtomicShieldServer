@@ -23,4 +23,5 @@ djangorestframework-simplejwt
 dj_rest_auth
 django-allauth
 django-cors-headers
-
+django_hosts
+simple_history

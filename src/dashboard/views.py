@@ -5,6 +5,7 @@ import json
 from zipfile import ZipFile
 from asgiref.sync import sync_to_async
 from django.shortcuts import render, redirect
+from django.shortcuts import get_object_or_404
 from django.conf import settings
 from django.urls import reverse
 from django.db.models import Q
@@ -45,6 +46,7 @@ from .models import (
     ServerStatus,
     ServerSubscription,
     GameServerModerator,
+    ModeratorInviteToken,
 )
 from anticheat.models import (
     AntiCheatConfigTemplate,
@@ -933,7 +935,7 @@ def list_moderators(request: HttpRequest, server_id: int) -> Response:
                     {
                         "id": moderator.id,
                         "username": moderator.user.username,
-                        "email": moderator.user.email,
+                        "email": "",
                         # "avatar": "",  # TODO
                         "permissions": moderator.permission_summary,
                         "lastLogin": moderator.user.last_login,
@@ -955,7 +957,7 @@ def update_moderators(request: HttpRequest, server_id: int, moderator_id) -> Res
         target_server = GameServer.get_for_user(server_id, request.user)
     except GameServer.DoesNotExist:
         logger.warning(
-            f"{request.user.username} tried to access bans of a non-existing server ({server_id})!"
+            f"{request.user.username} tried to access moderation of a non-existing server ({server_id})!"
         )
         return Response(
             {
@@ -975,8 +977,7 @@ def update_moderators(request: HttpRequest, server_id: int, moderator_id) -> Res
         )
 
     if not target_server.has_permission_for(
-        request.user,
-        GameServerModerator.Permissions.CAN_MANAGE_MODERATORS
+        request.user, GameServerModerator.Permissions.CAN_MANAGE_MODERATORS
     ):
         logger.warning(
             f"{request.user.username} wants to update moderator permissions with no permissions (given permissions: {" - ".join(request.data)})"
@@ -1010,14 +1011,16 @@ def update_moderators(request: HttpRequest, server_id: int, moderator_id) -> Res
         return Response(
             {"success": False, "message": "You cant change server owner permissions."}
         )
-    
+
     if request.user != target_server.owner:
         if GameServerModerator.Permissions.CAN_MANAGE_MODERATORS.value in request.data:
-            logger.warning(f"{request.user} tried to change CAN_MANAGE_MODERATORS for {target_moderator.user}")
+            logger.warning(
+                f"{request.user} tried to change CAN_MANAGE_MODERATORS for {target_moderator.user}"
+            )
             return Response(
                 {
                     "success": False,
-                    "message": "Only Server Owner can change \"Manage Moderators\" permission"
+                    "message": 'Only Server Owner can change "Manage Moderators" permission',
                 }
             )
 
@@ -1056,16 +1059,168 @@ def update_moderators(request: HttpRequest, server_id: int, moderator_id) -> Res
         }
     )
 
+@api_view(["POST"])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+def set_moderator_action(request: HttpRequest, server_id: int, moderator_id: int) -> Response:
+    try:
+        target_server = GameServer.get_for_user(server_id, request.user)
+    except GameServer.DoesNotExist:
+        logger.warning(
+            f"{request.user.username} tried to access moderation of a non-existing server ({server_id})!"
+        )
+        return Response(
+            {
+                "success": False,
+                "message": "The selected server does not exist or you do not have permission to access it.",
+            }
+        )
+    except Exception:
+        logger.exception(
+            f"An unexpected error occurred while accessing moderation for server {server_id} for user {request.user.username}."
+        )
+        return Response(
+            {
+                "success": False,
+                "message": "An unexpected error occurred while accessing the server.",
+            }
+        )
+
+    if not target_server.has_permission_for(
+        request.user, GameServerModerator.Permissions.CAN_MANAGE_MODERATORS
+    ):
+        logger.warning(
+            f"{request.user.username} wants to suspend moderator permissions with no permission"
+        )
+        return Response(
+            {
+                "success": False,
+                "message": "You dont have an access to perform this operation",
+            }
+        )
+
+    try:
+        target_moderator = GameServerModerator.objects.get(
+            id=moderator_id, game_server=target_server
+        )
+    except GameServerModerator.DoesNotExist:
+        logger.warning(
+            f"{request.user.username} tried to update a non-existing moderator (moderator id: {moderator_id})!"
+        )
+        return Response(
+            {
+                "success": False,
+                "message": "Target moderator not found",
+            }
+        )
+
+    if target_moderator.user == target_server.owner:
+        logger.warning(
+            f"{request.user.username} tried to suspend server owner"
+        )
+        return Response(
+            {"success": False, "message": "You cant suspend server owner."}
+        )
+    
+    match request.data.get("action"):
+        case "suspend":
+            target_moderator.status = "suspended"
+            target_moderator.save()
+        case "reactivate":
+            target_moderator.status = "activate"
+            target_moderator.save()
+        case "remove":
+            target_moderator.delete()
+
+
+    return Response(
+        {"success": True, "message": "Operation completed!"}
+    )
+
+
+@api_view(["POST"])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+def add_moderators(request: HttpRequest, server_id: int) -> Response:
+    try:
+        server = GameServer.get_for_user(server_id, request.user)
+    except GameServer.DoesNotExist:
+        logger.warning(
+            f"{request.user.username} tried to access bans of a non-existing server ({server_id})!"
+        )
+        return Response(
+            {
+                "success": False,
+                "message": "The selected server does not exist or you do not have permission to access it.",
+            }
+        )
+    except Exception:
+        logger.exception(
+            f"An unexpected error occurred while accessing bans for server {server_id} for user {request.user.username}."
+        )
+        return Response(
+            {
+                "success": False,
+                "message": "An unexpected error occurred while accessing the server.",
+            }
+        )
+
+    if not server.has_permission_for(
+        request.user, GameServerModerator.Permissions.CAN_MANAGE_MODERATORS
+    ):
+        logger.warning(
+            f"Permission denied for {request.user.username} to add new moderator"
+        )
+        return Response({"success": False, "message": "Permission denied."})
+
+    to_user_id = request.data.get("moderatorId", -1)
+    permissions = request.data.get("permissions", [])
+
+    if not len(permissions):
+        return Response(
+            {"success": False, "message": "Cant add a moderator with no permissions"}
+        )
+
+    if not to_user_id:
+        return Response(
+            {"success": False, "message": "Cannot retreive target moderator"}
+        )
+
+    if to_user_id:
+        try:
+            target_user = User.objects.get(id=to_user_id)
+        except User.DoesNotExist:
+            return Response({"success": False, "message": "Target moderator not found"})
+
+    if server.moderators.filter(user=target_user).exists():
+        return Response({"success": False, "message": "User is already a moderator."})
+
+
+    invite = ModeratorInviteToken.generate(
+        invited_by=request.user,
+        to=target_user,
+        permissions=permissions,
+        server=server
+    )
+
+    return Response(
+        {
+            "success": True,
+            "data": {
+                "inviteToken": invite.token,
+                "isSentToEmail": invite.sent_to_email,
+            },
+        }
+    )
+
+
 @api_view(["GET", "POST"])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 def search_for_moderator(request: HttpRequest) -> Response:
     search_term = request.GET.get("search", "").strip()
     if not len(search_term):
-        return Response({
-            "success": True,
-            "data": []
-        })
+        return Response({"success": True, "data": []})
 
     matched_users = User.objects.filter(username__icontains=search_term)[:10]
     return Response(
@@ -1076,15 +1231,109 @@ def search_for_moderator(request: HttpRequest) -> Response:
                 {
                     "id": user.id,
                     "username": user.username,
-                    "email": "user.email",
+                    "email": "",
                     "avatar": "",  # TODO
                     "permissions": [],
                     "status": "active",
-                    "joinedAt": ""
-                } for user in matched_users
-            ]
+                    "joinedAt": "",
+                }
+                for user in matched_users
+            ],
         }
     )
+
+@api_view(["POST"])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+def invite_moderator(request: HttpRequest) -> Response:
+    token = request.query_params.get("token")
+    if not token:
+        return Response({"success": False, "message": "Token parameter is required"})
+
+    try:
+        invite = ModeratorInviteToken.objects.get(token=token)
+    except ModeratorInviteToken.DoesNotExist:
+        return Response({"success": False, "message": "Invalid invite token"})
+
+    if invite.is_expired:
+        return Response({"success": False, "message": "Invite  has expired"})
+
+    if invite.status == ModeratorInviteToken.Status.ACCEPTED:
+        return Response({"success": False, "message": "Invite  already accepted"})
+
+    if invite.status == ModeratorInviteToken.Status.DECLINED:
+        return Response({"success": False, "message": "Invite  already declined"})
+
+    if request.user != invite.to:
+        return Response({"success": False, "message": "You are not authorized to accept this invite"})
+
+    return Response(
+        {
+            "success": True,
+            "message": "",
+            "data": {
+                "id": invite.id,
+                "inviterName": invite.invited_by.username,
+                "serverName": invite.game_server.name,
+                "permissions": invite.permissions,
+                "inviteToken": invite.token,
+                "expiresAt": (invite.invited_at + timedelta(days=7)).strftime("%d/%m/%Y, %H:%M:%S"),
+                "status": invite.status_text
+            }
+        }
+    )
+
+
+@api_view(["POST"])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+def mark_invite(request: HttpRequest) -> Response:
+    token = request.query_params.get("token")
+    if not token:
+        return Response({"success": False, "message": "Token parameter is required"})
+
+    try:
+        invite = ModeratorInviteToken.objects.get(token=token)
+    except ModeratorInviteToken.DoesNotExist:
+        return Response({"success": False, "message": "Invalid invite token"})
+
+    if invite.is_expired:
+        return Response({"success": False, "message": "Invite  has expired"})
+
+    if invite.status == ModeratorInviteToken.Status.ACCEPTED:
+        return Response({"success": False, "message": "Invite  already accepted"})
+
+    if invite.status == ModeratorInviteToken.Status.DECLINED:
+        return Response({"success": False, "message": "Invite already declined"})
+
+    if not "accepted" in request.data.keys():
+        return Response({"success": False, "message": "Invite request"})
+    
+    accepted = request.data.get("accepted")
+
+    invite.status = ModeratorInviteToken.Status.ACCEPTED if accepted else ModeratorInviteToken.Status.DECLINED
+    invite.save()
+
+    if accepted:
+        moderator, created = GameServerModerator.objects.get_or_create(
+            user=invite.to,
+            game_server=invite.game_server,
+            can_view_dashboard= "view_dashboard" in invite.permissions,
+            can_view_analytics= "view_analytics" in invite.permissions,
+            can_kick_players= "kick_players" in invite.permissions,
+            can_ban_players= "ban_players" in invite.permissions,
+            can_view_anticheat_logs= "view_anticheat_logs" in invite.permissions,
+            can_manage_configuration= "manage_configuration" in invite.permissions,
+            can_manage_webhook_settings= "manage_webhook_settings" in invite.permissions,
+            can_access_interactive_map= "access_interactive_map" in invite.permissions,
+            can_access_multi_stream= "access_multi_stream" in invite.permissions,
+            can_manage_moderators= "manage_moderators" in invite.permissions,
+            status="active",
+        )
+
+
+
+    return Response({"success": True, "message": "Invite accepted successfuly" if invite.status else "Invite declined successfuly"})
 
 
 @login_required
@@ -1757,7 +2006,7 @@ def render_quicksetup(request: HttpRequest) -> HttpResponse:
     )
 
 
-#@login_required
+# @login_required
 @require_http_methods(["GET", "POST"])
 def subscriptions_api(request):
     if request.method == "POST":
@@ -1768,21 +2017,33 @@ def subscriptions_api(request):
             return JsonResponse({"success": False, "error": "Invalid JSON"}, status=400)
 
         if not subscription_key:
-            return JsonResponse({"success": False, "error": "Empty Subscription Key"}, status=400)
+            return JsonResponse(
+                {"success": False, "error": "Empty Subscription Key"}, status=400
+            )
 
         try:
             subscription = ServerSubscription.objects.get(key=subscription_key)
         except ServerSubscription.DoesNotExist:
-            return JsonResponse({"success": False, "error": "Invalid Redeemed Key."}, status=404)
+            return JsonResponse(
+                {"success": False, "error": "Invalid Redeemed Key."}, status=404
+            )
 
         if subscription.owner:
-            return JsonResponse({"success": False, "error": "Subscription Key already redeemed"}, status=400)
+            return JsonResponse(
+                {"success": False, "error": "Subscription Key already redeemed"},
+                status=400,
+            )
 
         if not subscription.is_valid_for_now():
-            return JsonResponse({"success": False, "error": "Expired Subscription"}, status=400)
+            return JsonResponse(
+                {"success": False, "error": "Expired Subscription"}, status=400
+            )
 
         if subscription.game_servers.count():
-            return JsonResponse({"success": False, "error": "This Subscription is already in-use."}, status=400)
+            return JsonResponse(
+                {"success": False, "error": "This Subscription is already in-use."},
+                status=400,
+            )
 
         subscription.owner = request.user
         subscription.started_at = now()
@@ -1800,7 +2061,9 @@ def subscriptions_api(request):
             "name": sub.name,
             "status": 2 if not sub.is_valid_for_now() else sub.status,
         }
-        for sub in ServerSubscription.objects.filter(owner=request.user).order_by("-started_at")
+        for sub in ServerSubscription.objects.filter(owner=request.user).order_by(
+            "-started_at"
+        )
     ]
 
     return JsonResponse({"subscriptions": subscriptions_data})

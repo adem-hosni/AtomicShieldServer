@@ -12,7 +12,11 @@ urlpatterns = [
     path("server/<int:server_id>/configurations", views.list_configurations, name="list_configurations"),
     path("server/<int:server_id>/moderators", views.list_moderators, name="list_moderators"),
     path("server/<int:server_id>/moderators/<int:moderator_id>/update", views.update_moderators, name="update_moderators"),
+    path("server/<int:server_id>/moderators/<int:moderator_id>/action", views.set_moderator_action, name="set_moderator_action"),
+    path("server/<int:server_id>/moderators/add", views.add_moderators, name="add_moderators"),
     path("moderators", views.search_for_moderator, name="search_for_moderator"),
+    path("moderation/invite", views.invite_moderator, name="invite_moderator"),
+    path("moderation/invite/mark", views.mark_invite, name="mark_invite"),
 
 
     path("main/", views.render_maindashboard, name="dashboard"),

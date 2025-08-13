@@ -47,6 +47,7 @@ from .models import (
     ServerSubscription,
     GameServerModerator,
     ModeratorInviteToken,
+    AuditLogEntry,
 )
 from anticheat.models import (
     AntiCheatConfigTemplate,
@@ -464,8 +465,6 @@ def add_server(request: HttpRequest) -> Response:
     )
 
 
-
-
 @api_view(["POST", "GET"])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -490,33 +489,40 @@ def list_announcements(request: HttpRequest) -> HttpResponse:
                 ann.save()
                 return JsonResponse({"success": True})
             except Announcements.DoesNotExist:
-                return JsonResponse({"success": False, "error": "Announcement not found"}, status=404)
+                return JsonResponse(
+                    {"success": False, "error": "Announcement not found"}, status=404
+                )
 
-        return JsonResponse({"success": False, "error": "Missing seenAnnouncement field"}, status=400)
+        return JsonResponse(
+            {"success": False, "error": "Missing seenAnnouncement field"}, status=400
+        )
 
     elif request.method == "GET":
         announcements = []
         for ann in Announcements.objects.all().order_by("-date"):
-            announcements.append({
-                "id": str(ann.id),
-                "title": ann.title,
-                "content": ann.announcement,  # Could keep HTML/Markdown
-                "author": {
-                    "name": getattr(ann.author, "username", str(ann.author)),
-                    "role": getattr(ann.author, "role", "Official"),
-                    "avatar": getattr(ann.author, "avatar", None),
-                },
-                "publishedAt": ann.date.isoformat(),
-                "category": getattr(ann, "category", "announcement"),
-                "isPinned": getattr(ann, "is_pinned", False),
-                "isImportant": getattr(ann, "is_important", False),
-                "views": ann.seens.count(),
-            })
+            announcements.append(
+                {
+                    "id": str(ann.id),
+                    "title": ann.title,
+                    "content": ann.announcement,  # Could keep HTML/Markdown
+                    "author": {
+                        "name": getattr(ann.author, "username", str(ann.author)),
+                        "role": getattr(ann.author, "role", "Official"),
+                        "avatar": getattr(ann.author, "avatar", None),
+                    },
+                    "publishedAt": ann.date.isoformat(),
+                    "category": getattr(ann, "category", "announcement"),
+                    "isPinned": getattr(ann, "is_pinned", False),
+                    "isImportant": getattr(ann, "is_important", False),
+                    "views": ann.seens.count(),
+                }
+            )
 
         return JsonResponse({"success": True, "data": announcements}, safe=False)
 
     else:
         return JsonResponse({"error": "Method not allowed"}, status=405)
+
 
 @api_view(["POST", "GET"])
 @authentication_classes([JWTAuthentication])
@@ -697,7 +703,7 @@ def list_bans(request: HttpRequest, server_id: int) -> Response:
                         "bannedAt": ban.banned_at.strftime("%Y-%m-%d %H:%M:%S"),
                         "firstJoin": ban.banned_at.strftime(
                             "%Y-%m-%d %H:%M:%S"
-                        ),  # TODOZ: Implement first join logic
+                        ),  # TODO: Implement first join logic
                         "expiresAt": None,
                         "adminName": "zebi",
                         "reason": ban.reason,
@@ -721,6 +727,29 @@ def list_bans(request: HttpRequest, server_id: int) -> Response:
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 def unban_player(request: HttpRequest, server_id: int) -> Response:
+    try:
+        target_server = GameServer.get_for_user(server_id, request.user)
+    except GameServer.DoesNotExist:
+        logger.warning(
+            f"{request.user.username} tried to access bans of a non-existing server ({server_id})!"
+        )
+        return Response(
+            {
+                "success": False,
+                "message": "The selected server does not exist or you do not have permission to access it.",
+            }
+        )
+    except Exception:
+        logger.exception(
+            f"An unexpected error occurred while accessing bans for server {server_id} for user {request.user.username}."
+        )
+        return Response(
+            {
+                "success": False,
+                "message": "An unexpected error occurred while accessing the server.",
+            }
+        )
+
     ban_id = request.data.get("banId", "").strip()
     if "#" in ban_id:
         ban_id = int(ban_id[1:])
@@ -754,6 +783,19 @@ def unban_player(request: HttpRequest, server_id: int) -> Response:
         )
         return Response({"success": True, "message": "The ban is already inactive."})
 
+    AuditLogEntry.create_entry(
+        action=AuditLogEntry.Action.PLAYER_UNBANNED,
+        severity=AuditLogEntry.Severity.LOW,
+        actor=request.user,
+        target_object=target_ban.hwid,
+        game_server=target_server,
+        reviewed=True,
+        source="dashboard",
+        summary=f"Unban performed by {request.user}",
+        details=f"Player {target_ban.hwid.username} (ID: {target_ban.hwid.id}) was unbanned from server '{target_server.name}'",
+        category=AuditLogEntry.Category.MODERATION
+    )
+
     target_ban.active = False
     target_ban.save()
 
@@ -772,8 +814,30 @@ def unban_player(request: HttpRequest, server_id: int) -> Response:
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 def ban_player(request: HttpRequest, server_id: int) -> Response:
-    ban_id = request.data.get("banId", "").strip()
+    try:
+        target_server = GameServer.get_for_user(server_id, request.user)
+    except GameServer.DoesNotExist:
+        logger.warning(
+            f"{request.user.username} tried to access bans of a non-existing server ({server_id})!"
+        )
+        return Response(
+            {
+                "success": False,
+                "message": "The selected server does not exist or you do not have permission to access it.",
+            }
+        )
+    except Exception:
+        logger.exception(
+            f"An unexpected error occurred while accessing bans for server {server_id} for user {request.user.username}."
+        )
+        return Response(
+            {
+                "success": False,
+                "message": "An unexpected error occurred while accessing the server.",
+            }
+        )
 
+    ban_id = request.data.get("banId", "").strip()
     if "#" in ban_id:
         ban_id = int(ban_id[1:])
     try:
@@ -805,6 +869,19 @@ def ban_player(request: HttpRequest, server_id: int) -> Response:
             f"{request.user.username} tried to ban an already active ban (ban_id: {ban_id})!"
         )
         return Response({"success": True, "message": "The ban is already active."})
+
+    AuditLogEntry.create_entry(
+        action=AuditLogEntry.Action.PLAYER_BANNED,
+        severity=AuditLogEntry.Severity.LOW,
+        actor=request.user,
+        target_object=target_ban,
+        game_server=target_server,
+        reviewed=True,
+        source="dashboard",
+        summary=f"Ban performed by {request.user}",
+        details=f"Player {target_ban.hwid.username} (ID: {target_ban.hwid.id}) was banned from server '{target_server.name}'",
+        category=AuditLogEntry.Category.MODERATION
+    )
 
     target_ban.active = True
     target_ban.save()
@@ -1058,10 +1135,13 @@ def update_moderators(request: HttpRequest, server_id: int, moderator_id) -> Res
         }
     )
 
+
 @api_view(["POST"])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
-def set_moderator_action(request: HttpRequest, server_id: int, moderator_id: int) -> Response:
+def set_moderator_action(
+    request: HttpRequest, server_id: int, moderator_id: int
+) -> Response:
     try:
         target_server = GameServer.get_for_user(server_id, request.user)
     except GameServer.DoesNotExist:
@@ -1117,18 +1197,14 @@ def set_moderator_action(request: HttpRequest, server_id: int, moderator_id: int
         return Response(
             {
                 "success": False,
-                "message": "You cannot perform this operation on yourself"
+                "message": "You cannot perform this operation on yourself",
             }
         )
 
     if target_moderator.user == target_server.owner:
-        logger.warning(
-            f"{request.user.username} tried to suspend server owner"
-        )
-        return Response(
-            {"success": False, "message": "You cant suspend server owner."}
-        )
-    
+        logger.warning(f"{request.user.username} tried to suspend server owner")
+        return Response({"success": False, "message": "You cant suspend server owner."})
+
     match request.data.get("action"):
         case "suspend":
             target_moderator.status = "suspended"
@@ -1139,10 +1215,7 @@ def set_moderator_action(request: HttpRequest, server_id: int, moderator_id: int
         case "remove":
             target_moderator.delete()
 
-
-    return Response(
-        {"success": True, "message": "Operation completed!"}
-    )
+    return Response({"success": True, "message": "Operation completed!"})
 
 
 @api_view(["POST"])
@@ -1179,7 +1252,12 @@ def add_moderators(request: HttpRequest, server_id: int) -> Response:
         logger.warning(
             f"Permission denied for {request.user.username} to add new moderator with manage_moderators permission"
         )
-        return Response({"success": False, "message": "Only server owner can add moderators with 'manage moderators' permission"})
+        return Response(
+            {
+                "success": False,
+                "message": "Only server owner can add moderators with 'manage moderators' permission",
+            }
+        )
 
     if not len(permissions):
         return Response(
@@ -1200,12 +1278,8 @@ def add_moderators(request: HttpRequest, server_id: int) -> Response:
     if server.moderators.filter(user=target_user).exists():
         return Response({"success": False, "message": "User is already a moderator."})
 
-
     invite = ModeratorInviteToken.generate(
-        invited_by=request.user,
-        to=target_user,
-        permissions=permissions,
-        server=server
+        invited_by=request.user, to=target_user, permissions=permissions, server=server
     )
 
     return Response(
@@ -1213,7 +1287,6 @@ def add_moderators(request: HttpRequest, server_id: int) -> Response:
             "success": True,
             "data": {
                 "inviteToken": invite.token,
-                "isSentToEmail": invite.sent_to_email,
             },
         }
     )
@@ -1247,6 +1320,7 @@ def search_for_moderator(request: HttpRequest) -> Response:
         }
     )
 
+
 @api_view(["POST"])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -1270,7 +1344,12 @@ def invite_moderator(request: HttpRequest) -> Response:
         return Response({"success": False, "message": "Invite  already declined"})
 
     if request.user != invite.to:
-        return Response({"success": False, "message": "You are not authorized to accept this invite"})
+        return Response(
+            {
+                "success": False,
+                "message": "You are not authorized to accept this invite",
+            }
+        )
 
     return Response(
         {
@@ -1282,9 +1361,11 @@ def invite_moderator(request: HttpRequest) -> Response:
                 "serverName": invite.game_server.name,
                 "permissions": invite.permissions,
                 "inviteToken": invite.token,
-                "expiresAt": (invite.invited_at + timedelta(days=7)).strftime("%d/%m/%Y, %H:%M:%S"),
-                "status": invite.status_text
-            }
+                "expiresAt": (invite.invited_at + timedelta(days=7)).strftime(
+                    "%d/%m/%Y, %H:%M:%S"
+                ),
+                "status": invite.status_text,
+            },
         }
     )
 
@@ -1313,33 +1394,100 @@ def mark_invite(request: HttpRequest) -> Response:
 
     if not "accepted" in request.data.keys():
         return Response({"success": False, "message": "Invite request"})
-    
+
     accepted = request.data.get("accepted")
 
-    invite.status = ModeratorInviteToken.Status.ACCEPTED if accepted else ModeratorInviteToken.Status.DECLINED
+    invite.status = (
+        ModeratorInviteToken.Status.ACCEPTED
+        if accepted
+        else ModeratorInviteToken.Status.DECLINED
+    )
     invite.save()
 
     if accepted:
         moderator, created = GameServerModerator.objects.get_or_create(
             user=invite.to,
             game_server=invite.game_server,
-            can_view_dashboard= "view_dashboard" in invite.permissions,
-            can_view_analytics= "view_analytics" in invite.permissions,
-            can_kick_players= "kick_players" in invite.permissions,
-            can_ban_players= "ban_players" in invite.permissions,
-            can_view_anticheat_logs= "view_anticheat_logs" in invite.permissions,
-            can_manage_configuration= "manage_configuration" in invite.permissions,
-            can_manage_webhook_settings= "manage_webhook_settings" in invite.permissions,
-            can_access_interactive_map= "access_interactive_map" in invite.permissions,
-            can_access_multi_stream= "access_multi_stream" in invite.permissions,
-            can_manage_moderators= "manage_moderators" in invite.permissions,
+            can_view_dashboard="view_dashboard" in invite.permissions,
+            can_view_analytics="view_analytics" in invite.permissions,
+            can_kick_players="kick_players" in invite.permissions,
+            can_ban_players="ban_players" in invite.permissions,
+            can_view_anticheat_logs="view_anticheat_logs" in invite.permissions,
+            can_manage_configuration="manage_configuration" in invite.permissions,
+            can_manage_webhook_settings="manage_webhook_settings" in invite.permissions,
+            can_access_interactive_map="access_interactive_map" in invite.permissions,
+            can_access_multi_stream="access_multi_stream" in invite.permissions,
+            can_manage_moderators="manage_moderators" in invite.permissions,
             status="active",
         )
 
+    return Response(
+        {
+            "success": True,
+            "message": (
+                "Invite accepted successfuly"
+                if invite.status
+                else "Invite declined successfuly"
+            ),
+        }
+    )
 
 
-    return Response({"success": True, "message": "Invite accepted successfuly" if invite.status else "Invite declined successfuly"})
-
+@api_view(["GET"])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+def list_audit_logs(request: HttpRequest, server_id: int) -> Response:
+    search = request.query_params.get("search", "")
+    try:
+        server = GameServer.get_for_user(server_id, request.user)
+    except GameServer.DoesNotExist:
+        logger.warning(
+            f"{request.user.username} tried to access bans of a non-existing server ({server_id})!"
+        )
+        return Response(
+            {
+                "success": False,
+                "message": "The selected server does not exist or you do not have permission to access it.",
+            }
+        )
+    except Exception:
+        logger.exception(
+            f"An unexpected error occurred while accessing bans for server {server_id} for user {request.user.username}."
+        )
+        return Response(
+            {
+                "success": False,
+                "message": "An unexpected error occurred while accessing the server.",
+            }
+        )
+    
+    audit_logs = AuditLogEntry.objects.filter(game_server=server)
+    
+    return Response(
+        {
+            "success": True,
+            "message": "",
+            "data": {
+                "totalCount": len(audit_logs),
+                "logs": [
+                    {
+                        "id": audit_log.id,
+                        "timestamp": audit_log.timestamp.strftime("%d/%m/%Y, %H:%M:%S"),
+                        "user": audit_log.actor_username,
+                        "userId": audit_log.actor_object_id,
+                        "action": audit_log.get_action_display(),
+                        "target": str(audit_log.target_object),
+                        "details": audit_log.details,
+                        "severity": AuditLogEntry.Severity(audit_log.severity).label,
+                        "category": AuditLogEntry.Category(audit_log.category).name,
+                        "serverId": audit_log.game_server.id,
+                        "ipAddress": "",
+                        "serverName": audit_log.game_server.name,
+                    } for audit_log in audit_logs
+                ]
+            }
+        }
+    )
 
 @login_required
 def render_bans(request: HttpRequest) -> HttpResponse:
@@ -2010,32 +2158,44 @@ def render_quicksetup(request: HttpRequest) -> HttpResponse:
         },
     )
 
+
 @api_view(["POST"])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 def subscriptions_api(request):
     try:
-        subscription_key = request.data.get("key", "").strip() 
-        logger.info(subscription_key)    
+        subscription_key = request.data.get("key", "").strip()
+        logger.info(subscription_key)
     except Exception:
         return JsonResponse({"success": False, "error": "Invalid JSON"}, status=200)
 
     if not subscription_key:
-        return JsonResponse({"success": False, "error": "Empty Subscription Key"}, status=200)
+        return JsonResponse(
+            {"success": False, "error": "Empty Subscription Key"}, status=200
+        )
 
     try:
         subscription = ServerSubscription.objects.get(key=subscription_key)
     except ServerSubscription.DoesNotExist:
-        return JsonResponse({"success": False, "error": "Invalid Redeemed Key."}, status=200)
+        return JsonResponse(
+            {"success": False, "error": "Invalid Redeemed Key."}, status=200
+        )
 
     if subscription.owner:
-        return JsonResponse({"success": False, "error": "Subscription Key already redeemed"}, status=200)
+        return JsonResponse(
+            {"success": False, "error": "Subscription Key already redeemed"}, status=200
+        )
 
     if not subscription.is_valid_for_now():
-        return JsonResponse({"success": False, "error": "Expired Subscription"}, status=200)
+        return JsonResponse(
+            {"success": False, "error": "Expired Subscription"}, status=200
+        )
 
     if subscription.game_servers.count():
-        return JsonResponse({"success": False, "error": "This Subscription is already in-use."}, status=200)
+        return JsonResponse(
+            {"success": False, "error": "This Subscription is already in-use."},
+            status=200,
+        )
 
     subscription.owner = request.user
     subscription.started_at = now()
@@ -2051,10 +2211,18 @@ def subscriptions_api(request):
             "name": sub.name,
             "status": 2 if not sub.is_valid_for_now() else sub.status,
         }
-        for sub in ServerSubscription.objects.filter(owner=request.user).order_by("-started_at")
+        for sub in ServerSubscription.objects.filter(owner=request.user).order_by(
+            "-started_at"
+        )
     ]
 
-    return Response({"success": True, "message": "Key Redeemed Successfully!", "subscriptions": subscriptions_data})
+    return Response(
+        {
+            "success": True,
+            "message": "Key Redeemed Successfully!",
+            "subscriptions": subscriptions_data,
+        }
+    )
 
 
 @login_required

@@ -1,6 +1,9 @@
 import logging
 import secrets
 from django.db import models
+from django.conf import settings
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericForeignKey
 from time import time
 from django.utils import timezone
 from django.db.models import Q
@@ -390,7 +393,6 @@ class ModeratorInviteToken(models.Model):
         GameServer, on_delete=models.DO_NOTHING, related_name="invite_tokens"
     )
     permissions = models.JSONField(default=list, blank=False)
-    sent_to_email = models.BooleanField(default=False)
     status = models.IntegerField(choices=Status, default=Status.PENDING)
     token = models.CharField(max_length=128, unique=True, db_index=True)
 
@@ -481,3 +483,180 @@ class ModeratorInviteToken(models.Model):
     class Meta:
         verbose_name = "Game Server Invite Token"
         verbose_name_plural = "Game Server Invite Tokens"
+
+
+
+
+class AuditLogEntry(models.Model):
+    class Action(models.IntegerChoices):
+        PLAYER_BANNED = 1, "Player Banned"
+        PLAYER_KICKED = 2, "Player Kicked"
+        PLAYER_UNBANNED = 3, "Player Unbanned"
+        WARNING_ISSUED = 4, "Warning Issued"
+        CONFIG_CHANGED = 5, "Config Changed"
+        ADMIN_LOGIN = 6, "Admin Login"
+
+    class Severity(models.IntegerChoices):
+        LOW = 10, "Low"
+        MEDIUM = 20, "Medium"
+        HIGH = 30, "High"
+        CRITICAL = 40, "Critical"
+
+    class Category(models.IntegerChoices):
+        PLAYER = 1, "Player"
+        SERVER = 2, "Server"
+        SECURITY = 3, "Security"
+        SYSTEM = 4, "System"
+        MODERATION = 5, "Moderation"
+
+
+    timestamp = models.DateTimeField(default=timezone.now, db_index=True)
+    action = models.SmallIntegerField(choices=Action.choices, db_index=True)
+    severity = models.SmallIntegerField(choices=Severity.choices, db_index=True)
+
+    actor_content_type = models.ForeignKey(
+        ContentType, on_delete=models.SET_NULL, null=True, blank=True, related_name="actor_audit_entries"
+    )
+    actor_object_id = models.CharField(max_length=128, blank=True, null=True, db_index=True)
+    actor = GenericForeignKey("actor_content_type", "actor_object_id")
+
+    category = models.IntegerField(
+        choices=Category.choices,
+        default=Category.SYSTEM,
+        db_index=True,
+    )
+
+    summary = models.CharField(max_length=140, blank=True)
+    details = models.TextField(blank=True)
+
+    game_server = models.ForeignKey(GameServer, on_delete=models.DO_NOTHING, related_name="audit_logs", null=True)
+
+    target_content_type = models.ForeignKey(
+        ContentType, on_delete=models.SET_NULL, null=True, blank=True, related_name="audit_log_entries"
+    )
+    target_object_id = models.CharField(max_length=128, blank=True, null=True)
+    target_object = GenericForeignKey("target_content_type", "target_object_id")
+
+    metadata = models.JSONField(default=dict, blank=True, null=True)
+
+    source = models.CharField(max_length=32, default="system", db_index=True)
+    reviewed = models.BooleanField(default=False, db_index=True)
+
+    class Meta:
+        verbose_name = "Audit Log Entry"
+        verbose_name_plural = "Audit Log Entries"
+        ordering = ["-timestamp"]
+        indexes = [
+            models.Index(fields=["timestamp"]),
+            models.Index(fields=["action", "timestamp"]),
+            models.Index(fields=["severity", "timestamp"]),
+            models.Index(fields=["game_server", "timestamp"]),
+            models.Index(fields=["actor_object_id"]),
+            models.Index(fields=["category", "timestamp"]),
+        ]
+
+    def __str__(self):
+        return f"[{self.timestamp}] {self.get_action_display()} - {self.summary or (self.details[:50])}"
+
+    @property
+    def actor_username(self):
+        """
+        Runtime computed display name for the actor.
+        Falls back to metadata snapshot if present.
+        """
+        # prefer explicit metadata snapshot if present
+        snapshot = (self.metadata or {}).get("actor_snapshot")
+        if snapshot:
+            return snapshot
+
+        # try common attrs on the related object
+        try:
+            actor = self.actor  # triggers GenericForeignKey resolution
+            if actor is None:
+                return None
+            return getattr(actor, "username", None) or getattr(actor, "hwid", None) \
+                   or getattr(actor, "name", None) or getattr(actor, "label", None) or str(actor)
+        except Exception:
+            return None
+
+    def to_dict(self):
+        return {
+            "id": self.pk,
+            "timestamp": self.timestamp.isoformat(),
+            "action": self.action,
+            "action_label": self.get_action_display(),
+            "severity": self.severity,
+            "severity_label": self.get_severity_display(),
+            "actor_id": getattr(self.actor, "pk", None),
+            "actor_username": self.actor_username,
+            "summary": self.summary,
+            "details": self.details,
+            "game_server": self.game_server,
+            "category": self.category,
+            "target": {
+                "content_type": str(self.target_content_type) if self.target_content_type else None,
+                "object_id": self.target_object_id,
+            },
+            "metadata": self.metadata or {},
+            "source": self.source,
+            "reviewed": self.reviewed,
+        }
+
+    @classmethod
+    def create_entry(
+        cls,
+        *,
+        action: Action,
+        severity: Severity,
+        actor=None,
+        actor_username=None,  # optional snapshot — will be saved inside metadata, not as a new DB column
+        timestamp=None,
+        summary="",
+        details="",
+        game_server: GameServer=None,
+        target_object=None,
+        metadata=None,
+        source="system",
+        reviewed=False,
+        category: Category = None
+    ):
+        if timestamp is None:
+            timestamp = timezone.now()
+
+        actor_ct = None
+        actor_obj_id = None
+        if actor is not None:
+            try:
+                actor_ct = ContentType.objects.get_for_model(actor, for_concrete_model=False)
+                actor_obj_id = getattr(actor, "pk", str(actor))
+            except Exception:
+                actor_ct = None
+                actor_obj_id = str(actor)
+
+        target_ct = None
+        target_obj_id = None
+        if target_object is not None:
+            target_ct = ContentType.objects.get_for_model(target_object, for_concrete_model=False)
+            target_obj_id = getattr(target_object, "pk", None)
+
+        # ensure metadata is a dict and optionally store actor snapshot in metadata
+        meta = dict(metadata or {})
+        if actor_username:
+            meta["actor_snapshot"] = actor_username
+
+        return cls.objects.create(
+            action=action,
+            severity=severity,
+            timestamp=timestamp,
+            actor_content_type=actor_ct,
+            actor_object_id=str(actor_obj_id) if actor_obj_id is not None else None,
+            summary=summary,
+            details=details,
+            game_server=game_server,
+            target_content_type=target_ct,
+            target_object_id=str(target_obj_id) if target_obj_id is not None else None,
+            metadata=meta,
+            source=source,
+            reviewed=reviewed,
+            category=category
+        )

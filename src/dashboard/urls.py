@@ -17,6 +17,7 @@ urlpatterns = [
     path("moderators", views.search_for_moderator, name="search_for_moderator"),
     path("moderation/invite", views.invite_moderator, name="invite_moderator"),
     path("moderation/invite/mark", views.mark_invite, name="mark_invite"),
+    path("server/<int:server_id>/audit-logs", views.list_audit_logs, name="list_audit_logs"),
 
 
     path("main/", views.list_announcements, name="dashboard"),

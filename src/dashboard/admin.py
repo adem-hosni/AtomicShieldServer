@@ -1,5 +1,11 @@
+import json
 from django.db import models
 from django.db.models import Q
+from django.urls import reverse
+from django.utils.html import format_html
+from django.utils.safestring import mark_safe
+from django.http import HttpResponse
+from django.utils import timezone
 from logging import getLogger
 from django.contrib import admin
 from django.http import HttpRequest
@@ -21,6 +27,7 @@ from .models import (
     ServerSubscription,
     GameServerModerator,
     ModeratorInviteToken,
+    AuditLogEntry
 )
 
 from unfold.admin import ModelAdmin
@@ -292,13 +299,11 @@ class ModeratorInviteTokenAdmin(ModelAdmin):
         "invited_by",
         "to",
         "permissions_display",
-        "sent_to_email",
         "status",
         "invited_at",
         "is_expired",
     )
     list_filter = (
-        "sent_to_email",
         "status",
         "invited_at",
     )
@@ -316,6 +321,180 @@ class ModeratorInviteTokenAdmin(ModelAdmin):
         return ", ".join(obj.permissions) if obj.permissions else "(none)"
 
     permissions_display.short_description = "Permissions"
+
+
+@admin.register(AuditLogEntry)
+class AuditLogEntryAdmin(ModelAdmin):
+    list_display = (
+        "short_timestamp",
+        "action_label",
+        "severity_label",
+        "actor_display",
+        "game_server",
+        "summary_snippet",
+        "reviewed",
+    )
+
+    list_filter = ("action", "severity", "game_server", "source", "reviewed")
+    search_fields = ("summary", "details", "actor_object_id", "game_server", "metadata")
+    ordering = ("-timestamp",)
+    readonly_fields = (
+        "timestamp",
+        "action",
+        "severity",
+        "actor_display",
+        "target_display",
+        "metadata_pretty",
+    )
+
+    fields = (
+        ("timestamp", "action", "severity"),
+        "summary",
+        "details",
+        ("actor_display", "actor_object_id"),
+        ("target_display", "target_object_id"),
+        "server_instance",
+        "metadata_pretty",
+        ("source", "reviewed"),
+    )
+
+    list_per_page = 50
+    actions = ["mark_reviewed", "mark_unreviewed", "export_selected_as_json"]
+
+    def short_timestamp(self, obj):
+        return obj.timestamp.strftime("%Y-%m-%d %H:%M:%S") if obj.timestamp else ""
+
+    short_timestamp.short_description = "Timestamp"
+    short_timestamp.admin_order_field = "timestamp"
+
+    def action_label(self, obj):
+        return obj.get_action_display()
+    action_label.short_description = "Action"
+    action_label.admin_order_field = "action"
+
+    def severity_label(self, obj):
+        return obj.get_severity_display()
+    severity_label.short_description = "Severity"
+    severity_label.admin_order_field = "severity"
+
+    def actor_display(self, obj):
+        """
+        Show a readable actor label and link to its admin change page when possible.
+        Uses actor_content_type + actor_object_id.
+        """
+        try:
+            ct = getattr(obj, "actor_content_type", None)
+            aid = obj.actor_object_id
+            if ct and aid:
+                # Construct admin change URL: admin:{app_label}_{model}_change
+                # Many actor_object_id values are strings; pass directly.
+                app_label = ct.app_label
+                model_name = ct.model
+                try:
+                    url = reverse(f"admin:{app_label}_{model_name}_change", args=[aid])
+                    # Link text: try to show helpful label
+                    label = obj.actor_username or str(obj.actor) or f"{app_label}.{model_name}:{aid}"
+                    return format_html('<a href="{}">{}</a>', url, label)
+                except Exception:
+                    # If reverse fails, fallback to showing label without link
+                    return obj.actor_username or str(obj.actor) or aid
+            # fallback: display resolved GenericFK (may trigger query)
+            return obj.actor_username or (str(obj.actor) if obj.actor else "")
+        except Exception:
+            return ""
+    actor_display.short_description = "Actor"
+
+    def target_display(self, obj):
+        """
+        Similar to actor_display but for the target object.
+        """
+        try:
+            ct = getattr(obj, "target_content_type", None)
+            tid = obj.target_object_id
+            if ct and tid:
+                app_label = ct.app_label
+                model_name = ct.model
+                try:
+                    url = reverse(f"admin:{app_label}_{model_name}_change", args=[tid])
+                    label = f"{ct}: {tid}"
+                    return format_html('<a href="{}">{}</a>', url, label)
+                except Exception:
+                    return f"{ct}: {tid}"
+            return str(obj.target_object) if obj.target_object else ""
+        except Exception:
+            return ""
+    target_display.short_description = "Target"
+
+    def summary_snippet(self, obj):
+        s = (obj.summary or "") or ""
+        if len(s) > 80:
+            return s[:77] + "…"
+        return s
+    summary_snippet.short_description = "Summary"
+
+    def metadata_pretty(self, obj):
+        """
+        Pretty-printed JSON for the change view. Put this in readonly_fields.
+        """
+        data = obj.metadata or {}
+        try:
+            pretty = json.dumps(data, indent=2, ensure_ascii=False)
+        except Exception:
+            # fallback
+            pretty = str(data)
+        # Wrap in <pre> for monospace formatting; use mark_safe to allow HTML
+        return mark_safe(f'<pre style="white-space: pre-wrap; max-height: 400px; overflow:auto; background:#f7f7f7; padding:8px;">{pretty}</pre>')
+    metadata_pretty.short_description = "Metadata"
+
+    # --- Actions ---------------------------------------------------------
+    def mark_reviewed(self, request, queryset):
+        updated = queryset.update(reviewed=True)
+        self.message_user(request, f"Marked {updated} entries as reviewed.")
+    mark_reviewed.short_description = "Mark selected entries as reviewed"
+
+    def mark_unreviewed(self, request, queryset):
+        updated = queryset.update(reviewed=False)
+        self.message_user(request, f"Marked {updated} entries as unreviewed.")
+    mark_unreviewed.short_description = "Mark selected entries as unreviewed"
+
+    def export_selected_as_json(self, request, queryset):
+        """
+        Export the selected AuditLogEntry rows as a JSON attachment.
+        Uses the model's `to_dict()` if available, else falls back to manual serialization.
+        """
+        rows = []
+        for entry in queryset:
+            # Use to_dict() if implemented (your model has it), otherwise build minimal dict
+            try:
+                rows.append(entry.to_dict())
+            except Exception:
+                rows.append({
+                    "id": entry.pk,
+                    "timestamp": entry.timestamp.isoformat() if entry.timestamp else None,
+                    "action": entry.action,
+                    "severity": entry.severity,
+                    "actor_content_type": str(entry.actor_content_type) if entry.actor_content_type else None,
+                    "actor_object_id": entry.actor_object_id,
+                    "summary": entry.summary,
+                    "details": entry.details,
+                    "server_instance": entry.server_instance,
+                    "metadata": entry.metadata,
+                    "source": entry.source,
+                    "reviewed": entry.reviewed,
+                })
+
+        payload = json.dumps(rows, indent=2, ensure_ascii=False)
+        filename = f"auditlog_export_{timezone.now().strftime('%Y%m%d_%H%M%S')}.json"
+        resp = HttpResponse(payload, content_type="application/json; charset=utf-8")
+        resp["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return resp
+    export_selected_as_json.short_description = "Export selected as JSON"
+
+    class Media:
+        css = {
+            "all": ("admin/css/auditlog_admin.css",)
+        }
+        js = ("admin/js/auditlog_admin.js",)
 
 
 admin.site.register(GameServer, GameServerAdmin)

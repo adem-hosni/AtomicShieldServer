@@ -510,8 +510,7 @@ def render_maindashboard(request: HttpRequest) -> HttpResponse:
                 "category": getattr(ann, "category", "announcement"),
                 "isPinned": getattr(ann, "is_pinned", False),
                 "isImportant": getattr(ann, "is_important", False),
-                "readTime": getattr(ann, "read_time", "2 min read"),
-                "views": getattr(ann, "views", 0),
+                "views": ann.seens.count(),
                 "comments": getattr(ann, "comments_count", 0),
             })
 

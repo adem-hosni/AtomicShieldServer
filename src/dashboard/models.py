@@ -268,10 +268,6 @@ class Announcements(models.Model):
     category = models.CharField(max_length=32, default="announcement")
     is_pinned = models.BooleanField(default=False)
     is_important = models.BooleanField(default=False)
-    read_time = models.CharField(max_length=32, default="2 min read")
-    views = models.PositiveIntegerField(default=0)
-    comments_count = models.PositiveIntegerField(default=0)
-
 
     class Meta:
         db_table = "announcements"

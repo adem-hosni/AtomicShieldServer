@@ -146,8 +146,10 @@ class Release(models.Model):
     
     @property
     def file_size(self):
-        if self.file and self.file.name and self.file.storage.exists(self.file.name):
-            size_bytes = self.file.size
+        asset = self.assets.filter(is_primary=True).first() or self.assets.first()
+
+        if asset and asset.file and asset.file.name and asset.file.storage.exists(asset.file.name):
+            size_bytes = asset.file.size
             for unit in ["B", "KB", "MB", "GB", "TB"]:
                 if size_bytes < 1024:
                     return f"{size_bytes:.2f} {unit}"

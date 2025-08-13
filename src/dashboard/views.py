@@ -1389,7 +1389,7 @@ def download_assets_view(request: HttpRequest) -> Response:
                 "fileSizeMB": str(release.file_size),
                 "releaseDate": release.release_date.strftime("%Y-%m-%d"),
                 "platform": release.platform,
-                "format": release.format,
+                "format": release.format.upper().strip(),
                 "stability": release.stability,
                 "recommended": release.recommended,
                 "changelog": release.changelog,

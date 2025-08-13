@@ -464,60 +464,61 @@ def add_server(request: HttpRequest) -> Response:
     )
 
 
-@login_required
+
+
+@api_view(["POST", "GET"])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
 def render_maindashboard(request: HttpRequest) -> HttpResponse:
-    announcements = []
+    """
+    API endpoint to list announcements (GET) and mark them as seen (POST).
+    Returns data in the format expected by the React NewsPage.
+    """
+
     if request.method == "POST":
-        request_body = request.body.decode()
+        try:
+            data = json.loads(request.body.decode())
+        except Exception as err:
+            logger.error(f"Failed to parse request body: {err}")
+            return JsonResponse({"success": False, "error": "Invalid JSON"}, status=400)
 
-        # check the request body health
-        if request_body:
+        announcement_id = data.get("seenAnnouncement")
+        if announcement_id:
             try:
-                request_body = json.loads(request.body.decode())
-            except Exception as err:
-                logger.error(
-                    f"Failed to parse request body\nrequest body: {request_body}\nException: {err}"
-                )
-            if "seenAnnouncement" in request_body.keys():
-                announcement_id = int(request_body["seenAnnouncement"])
-                try:
-                    seen_announcement = Announcements.objects.get(id=announcement_id)
-                except Announcements.DoesNotExist:
-                    ...
-                else:
-                    seen_announcement.seens.add(request.user)
-                    seen_announcement.save()
+                ann = Announcements.objects.get(id=int(announcement_id))
+                ann.seens.add(request.user)
+                ann.save()
+                return JsonResponse({"success": True})
+            except Announcements.DoesNotExist:
+                return JsonResponse({"success": False, "error": "Announcement not found"}, status=404)
+
+        return JsonResponse({"success": False, "error": "Missing seenAnnouncement field"}, status=400)
+
+    elif request.method == "GET":
+        announcements = []
+        for ann in Announcements.objects.all().order_by("-date"):
+            announcements.append({
+                "id": str(ann.id),
+                "title": ann.title,
+                "content": ann.announcement,  # Could keep HTML/Markdown
+                "author": {
+                    "name": getattr(ann.author, "username", str(ann.author)),
+                    "role": getattr(ann.author, "role", "Official"),
+                    "avatar": getattr(ann.author, "avatar", None),
+                },
+                "publishedAt": ann.date.isoformat(),
+                "category": getattr(ann, "category", "announcement"),
+                "isPinned": getattr(ann, "is_pinned", False),
+                "isImportant": getattr(ann, "is_important", False),
+                "readTime": getattr(ann, "read_time", "2 min read"),
+                "views": getattr(ann, "views", 0),
+                "comments": getattr(ann, "comments_count", 0),
+            })
+
+        return JsonResponse({"success": True, "data": announcements}, safe=False)
+
     else:
-        for announcement in Announcements.objects.all():
-            announcements.append(
-                {
-                    "date": announcement.date,
-                    "author": announcement.author,
-                    "title": announcement.title,
-                    "announcement": mark_safe(announcement.announcement),
-                    "dataid": announcement.id,
-                    "seen": announcement.seens.filter(id=request.user.id).exists(),
-                }
-            )
-        announcements.reverse()
-
-    bans = 0
-    for ban in Ban.objects.all():
-        if not ban.is_expired:
-            bans += 1
-
-    return render(
-        request,
-        "pages/dashboard/main.jinja",
-        {
-            "username": request.user.username,
-            "announcements": announcements,
-            "online_scanners": len(fivem_guard.engines),
-            "banned_players": bans,
-            "detection_count": DetectionReport.objects.count(),
-        },
-    )
-
+        return JsonResponse({"error": "Method not allowed"}, status=405)
 
 @api_view(["POST", "GET"])
 @authentication_classes([JWTAuthentication])
@@ -2011,34 +2012,32 @@ def render_quicksetup(request: HttpRequest) -> HttpResponse:
         },
     )
 
-
 @api_view(["POST"])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 def subscriptions_api(request):
-    logger.info(f"Request method: {request.method}")
     try:
         subscription_key = request.data.get("key", "").strip() 
         logger.info(subscription_key)    
     except Exception:
         return JsonResponse({"success": False, "error": "Invalid JSON"}, status=200)
 
-        if not subscription_key:
-            return JsonResponse({"success": False, "error": "Empty Subscription Key"}, status=400)
+    if not subscription_key:
+        return JsonResponse({"success": False, "error": "Empty Subscription Key"}, status=200)
 
-        try:
-            subscription = ServerSubscription.objects.get(key=subscription_key)
-        except ServerSubscription.DoesNotExist:
-            return JsonResponse({"success": False, "error": "Invalid Redeemed Key."}, status=404)
+    try:
+        subscription = ServerSubscription.objects.get(key=subscription_key)
+    except ServerSubscription.DoesNotExist:
+        return JsonResponse({"success": False, "error": "Invalid Redeemed Key."}, status=200)
 
-        if subscription.owner:
-            return JsonResponse({"success": False, "error": "Subscription Key already redeemed"}, status=400)
+    if subscription.owner:
+        return JsonResponse({"success": False, "error": "Subscription Key already redeemed"}, status=200)
 
-        if not subscription.is_valid_for_now():
-            return JsonResponse({"success": False, "error": "Expired Subscription"}, status=400)
+    if not subscription.is_valid_for_now():
+        return JsonResponse({"success": False, "error": "Expired Subscription"}, status=200)
 
-        if subscription.game_servers.count():
-            return JsonResponse({"success": False, "error": "This Subscription is already in-use."}, status=400)
+    if subscription.game_servers.count():
+        return JsonResponse({"success": False, "error": "This Subscription is already in-use."}, status=200)
 
     subscription.owner = request.user
     subscription.started_at = now()
@@ -2054,13 +2053,10 @@ def subscriptions_api(request):
             "name": sub.name,
             "status": 2 if not sub.is_valid_for_now() else sub.status,
         }
-        for sub in ServerSubscription.objects.filter(owner=request.user).order_by(
-            "-started_at"
-        )
+        for sub in ServerSubscription.objects.filter(owner=request.user).order_by("-started_at")
     ]
 
     return Response({"success": True, "message": "Key Redeemed Successfully!", "subscriptions": subscriptions_data})
-
 
 
 @login_required

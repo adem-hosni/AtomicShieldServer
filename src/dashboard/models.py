@@ -254,8 +254,7 @@ class GameServer(models.Model):
 
 
 class Announcements(models.Model):
-    author = models.CharField(
-        max_length=32, default="AtomicShield Development Team", null=False)
+    author = models.ForeignKey(User, on_delete=models.DO_NOTHING, related_name="authored_announcements")
 
     title = models.CharField(max_length=256, null=True)
     announcement = models.TextField()

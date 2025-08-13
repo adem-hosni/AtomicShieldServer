@@ -1469,6 +1469,7 @@ def list_audit_logs(request: HttpRequest, server_id: int) -> Response:
             "message": "",
             "data": {
                 "totalCount": len(audit_logs),
+                "activeModerators": server.moderators.count(),
                 "logs": [
                     {
                         "id": audit_log.id,

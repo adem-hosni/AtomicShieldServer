@@ -1114,6 +1114,14 @@ def set_moderator_action(request: HttpRequest, server_id: int, moderator_id: int
             }
         )
 
+    if target_moderator.user == request.user:
+        return Response(
+            {
+                "success": False,
+                "message": "You cannot perform this operation on yourself"
+            }
+        )
+
     if target_moderator.user == target_server.owner:
         logger.warning(
             f"{request.user.username} tried to suspend server owner"
@@ -1165,16 +1173,14 @@ def add_moderators(request: HttpRequest, server_id: int) -> Response:
             }
         )
 
-    if not server.has_permission_for(
-        request.user, GameServerModerator.Permissions.CAN_MANAGE_MODERATORS
-    ):
-        logger.warning(
-            f"Permission denied for {request.user.username} to add new moderator"
-        )
-        return Response({"success": False, "message": "Permission denied."})
-
     to_user_id = request.data.get("moderatorId", -1)
     permissions = request.data.get("permissions", [])
+
+    if "manage_moderators" in permissions and request.user != server.owner:
+        logger.warning(
+            f"Permission denied for {request.user.username} to add new moderator with manage_moderators permission"
+        )
+        return Response({"success": False, "message": "Only server owner can add moderators with 'manage moderators' permission"})
 
     if not len(permissions):
         return Response(

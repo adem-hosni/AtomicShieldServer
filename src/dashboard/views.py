@@ -62,7 +62,9 @@ from typing import Dict, Union, Any
 from utils.aseclient import ASEQueryClient, ASEParser
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import ensure_csrf_cookie
+from rest_framework.parsers import JSONParser
 
+from .models import Release, ReleaseAsset
 
 logger = logging.getLogger(__name__)
 
@@ -1320,6 +1322,62 @@ def search_for_moderator(request: HttpRequest) -> Response:
         }
     )
 
+
+@api_view(["GET", "POST"])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+def download_assets_view(request: HttpRequest) -> Response:
+    """
+    GET  -> Return list of releases + their assets
+    POST -> Create a release (optional, admin use)
+    """
+    if request.method == "GET":
+        releases = Release.objects.all().prefetch_related("assets")
+        data = []
+        for release in releases:
+            data.append({
+                "id": release.id,
+                "version": release.version,
+                "title": release.title,
+                "description": release.description,
+                "fileSizeMB": str(release.file_size_mb),
+                "releaseDate": release.release_date.strftime("%Y-%m-%d"),
+                "platform": release.platform,
+                "format": release.format,
+                "stability": release.stability,
+                "recommended": release.recommended,
+                "changelog": release.changelog,
+                "assets": [
+                    {
+                        "id": asset.id,
+                        "label": asset.label,
+                        "url": asset.get_url(),
+                        "isPrimary": asset.is_primary
+                    }
+                    for asset in release.assets.all()
+                ]
+            })
+        return Response({"success": True, "data": data})
+
+    elif request.method == "POST":
+        data = JSONParser().parse(request)
+        try:
+            release = Release.objects.create(
+                version=data.get("version"),
+                title=data.get("title", ""),
+                description=data.get("description", ""),
+                file_size_mb=data.get("fileSizeMB"),
+                release_date=data.get("releaseDate"),
+                platform=data.get("platform", ""),
+                format=data.get("format", ""),
+                stability=data.get("stability", Release.Stability.STABLE),
+                recommended=data.get("recommended", False),
+                changelog=data.get("changelog", ""),
+            )
+                            
+            return Response({"success": True, "id": release.id}, status=200)
+        except Exception as e:
+            return Response({"success": False, "error": str(e)}, status=400)
 
 @api_view(["POST"])
 @authentication_classes([JWTAuthentication])

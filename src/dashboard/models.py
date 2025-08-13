@@ -122,6 +122,47 @@ class ServerSubscription(models.Model):
         return (
             self.name if not self.owner_id else f"{self.owner.username} - {self.name}"
         )
+    
+
+class Release(models.Model):
+    class Stability(models.TextChoices):
+        STABLE = "stable", "Stable"
+        BETA = "beta", "Beta"
+
+    version = models.CharField(max_length=32, unique=True)  # e.g. "v2.5.0"
+    title = models.CharField(max_length=200, blank=True)  # Optional heading text
+    description = models.TextField(blank=True)  # Short summary under version
+    file_size_mb = models.DecimalField(max_digits=6, decimal_places=2)  # e.g. 12.40
+    release_date = models.DateField(default=timezone.now)
+    platform = models.CharField(max_length=50, blank=True)  # e.g. "FiveM"
+    format = models.CharField(max_length=20, blank=True)  # e.g. "ZIP"
+    stability = models.CharField(
+        max_length=16, choices=Stability.choices, default=Stability.STABLE
+    )
+    recommended = models.BooleanField(default=False)
+    changelog = models.TextField(blank=True)  # Markdown/HTML for changelog
+
+    class Meta:
+        ordering = ["-release_date"]
+
+    def __str__(self):
+        return self.version
+
+
+class ReleaseAsset(models.Model):
+    release = models.ForeignKey(
+        Release, related_name="assets", on_delete=models.CASCADE
+    )
+    label = models.CharField(max_length=100, default="Download")  # e.g. "Download v2.5.0"
+    file = models.FileField(upload_to="releases/", blank=True, null=True)
+    external_url = models.URLField(blank=True)  # If hosted externally
+    is_primary = models.BooleanField(default=False)  # Main blue button in UI
+
+    def get_url(self):
+        return self.external_url or (self.file.url if self.file else "")
+
+    def __str__(self):
+        return f"{self.release.version} - {self.label}"
 
 
 class GameServer(models.Model):
@@ -502,7 +543,6 @@ class ModeratorInviteToken(models.Model):
             permissions=normalized_perms,
             token=token_str,
             invited_at=timezone.now(),
-            sent_to_email=False,
             status=cls.Status.PENDING,
         )
 

@@ -19,6 +19,7 @@ urlpatterns = [
     path("moderation/invite/mark", views.mark_invite, name="mark_invite"),
     path("server/<int:server_id>/audit-logs", views.list_audit_logs, name="list_audit_logs"),
 
+    path("download-assets/", views.list_announcements, name="dashboard"),
 
     path("main/", views.list_announcements, name="dashboard"),
     path("bans/", views.render_bans),

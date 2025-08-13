@@ -31,7 +31,7 @@ from .models import (
 )
 from .models import Release, ReleaseAsset
 
-from unfold.admin import ModelAdmin
+from unfold.admin import ModelAdmin, TabularInline
 from unfold.forms import AdminPasswordChangeForm, UserChangeForm, UserCreationForm
 from guards import fivem_guard
 
@@ -155,7 +155,7 @@ class AnnouncementAdmin(ModelAdmin):
         return obj.seens.count()
 
 
-class ReleaseAssetInline(admin.TabularInline):
+class ReleaseAssetInline(TabularInline):
     model = ReleaseAsset
     extra = 1
     fields = ("label", "file", "external_url", "is_primary")
@@ -163,7 +163,7 @@ class ReleaseAssetInline(admin.TabularInline):
 
 
 @admin.register(Release)
-class ReleaseAdmin(admin.ModelAdmin):
+class ReleaseAdmin(ModelAdmin):
     list_display = ("version", "release_date", "stability", "recommended")
     list_filter = ("stability", "recommended")  # removed 'secret'
     search_fields = ("version", "title", "description")
@@ -171,7 +171,7 @@ class ReleaseAdmin(admin.ModelAdmin):
 
 
 @admin.register(ReleaseAsset)
-class ReleaseAssetAdmin(admin.ModelAdmin):
+class ReleaseAssetAdmin(ModelAdmin):
     list_display = ("label", "release", "is_primary")
     list_filter = ("is_primary",)  # comma makes it a tuple
     search_fields = ("label",)

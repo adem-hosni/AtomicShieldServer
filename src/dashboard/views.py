@@ -469,7 +469,7 @@ def add_server(request: HttpRequest) -> Response:
 @api_view(["POST", "GET"])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
-def render_maindashboard(request: HttpRequest) -> HttpResponse:
+def list_announcements(request: HttpRequest) -> HttpResponse:
     """
     API endpoint to list announcements (GET) and mark them as seen (POST).
     Returns data in the format expected by the React NewsPage.
@@ -510,9 +510,7 @@ def render_maindashboard(request: HttpRequest) -> HttpResponse:
                 "category": getattr(ann, "category", "announcement"),
                 "isPinned": getattr(ann, "is_pinned", False),
                 "isImportant": getattr(ann, "is_important", False),
-                "readTime": getattr(ann, "read_time", "2 min read"),
-                "views": getattr(ann, "views", 0),
-                "comments": getattr(ann, "comments_count", 0),
+                "views": ann.seens.count(),
             })
 
         return JsonResponse({"success": True, "data": announcements}, safe=False)

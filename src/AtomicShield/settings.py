@@ -202,7 +202,7 @@ DATABASES = {
         "ENGINE": "django.db.backends.mysql",
         "NAME": "atomicshield",
         "USER": "root",
-        "PASSWORD": "root",
+        "PASSWORD": "",
         "HOST": "localhost",
         "CONN_HEALTH_CHECKS": True,
         "OPTIONS": {
@@ -472,5 +472,5 @@ if not DEBUG:
     SESSION_COOKIE_HTTPONLY = True
 
     CSRF_COOKIE_SECURE = True
-    CSRF_COOKIE_HTTPONLY = False
+    CSRF_COOKIE_HTTPONLY = True
     CSRF_USE_SESSIONS = True

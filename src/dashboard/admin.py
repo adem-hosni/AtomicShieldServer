@@ -153,7 +153,6 @@ class AnnouncementAdmin(ModelAdmin):
     def display_views(self, obj: Announcements):
         return obj.seens.count()
 
-
 class PatchNotesAdmin(ModelAdmin):
     list_display = ["patchnote", "author", "description", "display_views"]
     list_display_links = list_display
@@ -167,7 +166,7 @@ class PatchNotesAdmin(ModelAdmin):
 
     @admin.display(description="Patchnote")
     def patchnote(self, obj: PatchNotes):
-        return obj.title
+        return obj.version  # or f"{obj.version} - {obj.author}"
 
     @admin.display(description="Author")
     def author(self, obj: PatchNotes):
@@ -176,11 +175,10 @@ class PatchNotesAdmin(ModelAdmin):
     @admin.display(description="Description")
     def description(self, obj: PatchNotes):
         return mark_safe(
-            obj.patchnotes[:128] + "..."
-            if len(obj.patchnotes) > 128
-            else obj.patchnotes
+            obj.description[:128] + "..." if len(obj.description) > 128 else obj.description
         )
 
+        
     @admin.display(description="Viewed by")
     def display_views(self, obj: Announcements):
         return obj.seens.count()

@@ -1386,7 +1386,7 @@ def download_assets_view(request: HttpRequest) -> Response:
                 "version": release.version,
                 "title": release.title,
                 "description": release.description,
-                "fileSizeMB": str(release.file_size_mb),
+                "fileSizeMB": str(release.file_size),
                 "releaseDate": release.release_date.strftime("%Y-%m-%d"),
                 "platform": release.platform,
                 "format": release.format,

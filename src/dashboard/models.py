@@ -132,8 +132,7 @@ class Release(models.Model):
     version = models.CharField(max_length=32, unique=True)  # e.g. "v2.5.0"
     title = models.CharField(max_length=200, blank=True)  # Optional heading text
     description = models.TextField(blank=True)  # Short summary under version
-    file_size_mb = models.DecimalField(max_digits=6, decimal_places=2)  # e.g. 12.40
-    release_date = models.DateField(default=timezone.now)
+    release_date = models.DateTimeField(null=True, auto_now_add=True)
     platform = models.CharField(max_length=50, blank=True)  # e.g. "FiveM"
     format = models.CharField(max_length=20, blank=True)  # e.g. "ZIP"
     stability = models.CharField(
@@ -144,9 +143,25 @@ class Release(models.Model):
 
     class Meta:
         ordering = ["-release_date"]
+    
+    @property
+    def file_size(self):
+        if self.file and self.file.name and self.file.storage.exists(self.file.name):
+            size_bytes = self.file.size
+            for unit in ["B", "KB", "MB", "GB", "TB"]:
+                if size_bytes < 1024:
+                    return f"{size_bytes:.2f} {unit}"
+                size_bytes /= 1024
+        return "No file"
+
+    class Meta:
+        ordering = ["-release_date"]
+        verbose_name = "Release"
+        verbose_name_plural = "Releases"
+
 
     def __str__(self):
-        return self.version
+        return f"{self.title} - {self.version} ({self.platform or 'Unknown Platform'})"
 
 
 class ReleaseAsset(models.Model):

@@ -251,19 +251,11 @@ class GameServer(models.Model):
 
     def __str__(self) -> str:
         return f"{self.name} ({self.id})"
-class Announcements(models.Model):
-    # Keep old string data
-    author_name = models.CharField(max_length=32, default="AtomicShield Development Team")
 
-    # New FK, nullable for now
-    author = models.ForeignKey(
-        User,
-        on_delete=models.SET_DEFAULT,
-        default=1,
-        null=True,
-        blank=True,
-        related_name="authored_announcements"
-    )
+
+class Announcements(models.Model):
+    author = models.CharField(
+        max_length=32, default="AtomicShield Development Team", null=False)
 
     title = models.CharField(max_length=256, null=True)
     announcement = models.TextField()
@@ -280,6 +272,7 @@ class Announcements(models.Model):
     read_time = models.CharField(max_length=32, default="2 min read")
     views = models.PositiveIntegerField(default=0)
     comments_count = models.PositiveIntegerField(default=0)
+
 
     class Meta:
         db_table = "announcements"

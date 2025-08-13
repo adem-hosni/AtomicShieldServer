@@ -29,6 +29,7 @@ from .models import (
     ModeratorInviteToken,
     AuditLogEntry
 )
+from .models import Release, ReleaseAsset
 
 from unfold.admin import ModelAdmin
 from unfold.forms import AdminPasswordChangeForm, UserChangeForm, UserCreationForm
@@ -152,6 +153,29 @@ class AnnouncementAdmin(ModelAdmin):
     @admin.display(description="Viewed by")
     def display_views(self, obj: Announcements):
         return obj.seens.count()
+
+
+class ReleaseAssetInline(admin.TabularInline):
+    model = ReleaseAsset
+    extra = 1
+    fields = ("label", "file", "external_url", "is_primary")
+    show_change_link = True
+
+
+@admin.register(Release)
+class ReleaseAdmin(admin.ModelAdmin):
+    list_display = ("version", "release_date", "stability", "recommended")
+    list_filter = ("stability", "recommended")  # removed 'secret'
+    search_fields = ("version", "title", "description")
+    inlines = [ReleaseAssetInline]
+
+
+@admin.register(ReleaseAsset)
+class ReleaseAssetAdmin(admin.ModelAdmin):
+    list_display = ("label", "release", "is_primary")
+    list_filter = ("is_primary",)  # comma makes it a tuple
+    search_fields = ("label",)
+
 
 class PatchNotesAdmin(ModelAdmin):
     list_display = ["patchnote", "author", "description", "display_views"]

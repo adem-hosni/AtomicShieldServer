@@ -19,7 +19,7 @@ urlpatterns = [
     path("moderation/invite/mark", views.mark_invite, name="mark_invite"),
 
 
-    path("main/", views.render_maindashboard, name="dashboard"),
+    path("main/", views.list_announcements, name="dashboard"),
     path("bans/", views.render_bans),
     path("patch-notes/", views.render_patchnotes, name="patchnotes"),
     path("servers/", views.render_servers, name="servers"),

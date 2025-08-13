@@ -55,6 +55,7 @@ from anticheat.models import (
     AntiCheatConfigurationCategory,
     Ban,
     DetectionReport,
+    FalsePositiveReport
 )
 from .forms import AddServerForm
 import utils
@@ -715,6 +716,7 @@ def list_bans(request: HttpRequest, server_id: int) -> Response:
                         "serverId": target_server.id,
                         "appealStatus": "approved",  # TODO: Implement appeal status logic
                         "report": {},
+                        "reportedAsFalsePositive": FalsePositiveReport.objects.filter(ban=ban).exists()
                     }
                     for ban in bans
                 ],
@@ -895,6 +897,50 @@ def ban_player(request: HttpRequest, server_id: int) -> Response:
         {
             "success": True,
             "message": "Player banned successfully.",
+        }
+    )
+
+
+@api_view(["POST"])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+def report_false_positive(request: HttpRequest, server_id: int, ban_id: int) -> Response:
+    try:
+        target_ban = Ban.objects.get(id=ban_id)
+    except Ban.DoesNotExist:
+        logger.warning(
+            f"{request.user.username} tried to report a non-existing ban ({ban_id})!"
+        )
+        return Response(
+            {
+                "success": False,
+                "message": "The ban does not exist or you do not have permission to access it.",
+            }
+        )
+    
+    reason = request.data.get("reason").strip()
+    if not len(reason):
+        return Response(
+            {
+                "success": False,
+                "message": "No Reason Provided"
+            }
+        )
+
+    if FalsePositiveReport.objects.filter(ban=target_ban).exists():
+        return Response(
+            {
+                "success": False,
+                "message": "This ban already reported!"
+            }
+        )
+
+    logger.info(f"False Positive reported from {request.user} for {target_ban}")    
+    FalsePositiveReport.objects.create(ban=target_ban, reported_by=request.user, reason=reason)
+    return Response(
+        {
+            "success": True,
+            "message": "Ban reported successfuly!"
         }
     )
 
@@ -1358,26 +1404,6 @@ def download_assets_view(request: HttpRequest) -> Response:
                 ]
             })
         return Response({"success": True, "data": data})
-
-    elif request.method == "POST":
-        data = JSONParser().parse(request)
-        try:
-            release = Release.objects.create(
-                version=data.get("version"),
-                title=data.get("title", ""),
-                description=data.get("description", ""),
-                file_size_mb=data.get("fileSizeMB"),
-                release_date=data.get("releaseDate"),
-                platform=data.get("platform", ""),
-                format=data.get("format", ""),
-                stability=data.get("stability", Release.Stability.STABLE),
-                recommended=data.get("recommended", False),
-                changelog=data.get("changelog", ""),
-            )
-                            
-            return Response({"success": True, "id": release.id}, status=200)
-        except Exception as e:
-            return Response({"success": False, "error": str(e)}, status=400)
 
 @api_view(["POST"])
 @authentication_classes([JWTAuthentication])

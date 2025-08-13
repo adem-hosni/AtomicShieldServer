@@ -9,6 +9,7 @@ urlpatterns = [
     path("server/<int:server_id>/bans", views.list_bans, name="list_bans"),
     path("server/<int:server_id>/bans/unban", views.unban_player, name="unban_player"),
     path("server/<int:server_id>/bans/ban", views.ban_player, name="ban_player"),
+    path("server/<int:server_id>/bans/<int:ban_id>/report-false-positive", views.report_false_positive, name="report_false_positive"),
     path("server/<int:server_id>/configurations", views.list_configurations, name="list_configurations"),
     path("server/<int:server_id>/moderators", views.list_moderators, name="list_moderators"),
     path("server/<int:server_id>/moderators/<int:moderator_id>/update", views.update_moderators, name="update_moderators"),

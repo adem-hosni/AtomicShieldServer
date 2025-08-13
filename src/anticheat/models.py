@@ -5,6 +5,7 @@ from django.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator
 from simple_history.models import HistoricalRecords
 from typing import Union, Self, List, Tuple
+from django.conf import settings
 
 
 class AntiCheatConfigDataTypes(models.TextChoices):
@@ -212,6 +213,47 @@ class Ban(models.Model):
 
     def __str__(self) -> str:
         return f"{self.hwid.username} - {int(self.duration.total_seconds() / 3600)}h"
+
+
+class FalsePositiveReport(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending Review"
+        APPROVED = "approved", "Approved (False Positive)"
+
+    ban = models.ForeignKey(
+        Ban,
+        on_delete=models.DO_NOTHING,
+        related_name="false_positive_reports"
+    )
+
+    reported_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.DO_NOTHING,
+        related_name="false_positive_reports"
+    )
+
+    reason = models.TextField()
+
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING
+    )
+
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="false_positive_reviews"
+    )
+
+    reviewed_at = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"False Positive Report for Ban #{self.ban_id} - {self.get_status_display()}"
+
 
 
 class Warning(models.Model):

@@ -1,4 +1,5 @@
 from shared.models import ServerType
+from django.utils import timezone
 from datetime import datetime
 from shared.enums import DetectionType
 from django.db import models
@@ -219,6 +220,7 @@ class FalsePositiveReport(models.Model):
     class Status(models.TextChoices):
         PENDING = "pending", "Pending Review"
         APPROVED = "approved", "Approved (False Positive)"
+        REJECTED = "rejected", "Rejected"
 
     ban = models.ForeignKey(
         Ban,
@@ -250,6 +252,16 @@ class FalsePositiveReport(models.Model):
 
     reviewed_at = models.DateTimeField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def mark_reviewed(self, status, reviewer):
+        """Convenience method for setting review details."""
+        if status not in dict(self.Status.choices):
+            raise ValueError(f"Invalid status: {status}")
+        self.status = status
+        self.reviewed_by = reviewer
+        self.reviewed_at = timezone.now()
+        self.save()
+
 
     def __str__(self):
         return f"False Positive Report for Ban #{self.ban_id} - {self.get_status_display()}"

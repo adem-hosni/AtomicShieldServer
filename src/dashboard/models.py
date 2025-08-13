@@ -13,6 +13,7 @@ from guards import fivem_guard
 from anticheat.models import AntiCheatConfigurations, AntiCheatConfigTemplate
 from shared.models import ServerType
 from typing import Dict, Any, Union, List, Optional
+from django.core.exceptions import ValidationError
 
 
 logger = logging.getLogger(__name__)
@@ -281,23 +282,50 @@ class Announcements(models.Model):
     def __str__(self) -> str:
         return self.title
 
+def validate_max_4(value):
+    """Ensure no more than 4 items in the list."""
+    if len(value) > 4:
+        raise ValidationError("You can only have up to 4 title entries.")
+
 class PatchNotes(models.Model):
-    author = models.CharField(
-        max_length=32, default="AtomicShield Development Team", null=False
-    )
-    title = models.CharField(max_length=32, null=False)
-    patchnotes = models.TextField(blank=False)
+    RELEASE_TYPE_CHOICES = [
+        ("major", "Major"),
+        ("minor", "Minor"),
+        ("patch", "Patch"),
+    ]
+
+    STATUS_TAGS_CHOICES = [
+        ("stable", "Stable"),
+        ("breaking", "Breaking Changes"),
+        ("beta", "Beta"),
+    ]
+    title = models.CharField(max_length=255)  # no unique=True
+
+    # Main content fields
+    version = models.CharField(max_length=16, null=False)  # e.g. "v2.5.0"
+    release_type = models.CharField(max_length=10, choices=RELEASE_TYPE_CHOICES)
+    status_tags = models.JSONField(default=list, blank=True)  # e.g. ["stable", "breaking"]
+    
+    # Content structure matching your image
+    highlights = models.JSONField(default=list)  # List of highlight strings
+    description = models.TextField(blank=True)  # Long expandable content
+    
+    # Author information
+    author = models.CharField(max_length=64, default="AtomicShield Team", null=False)
+    
+    # Metadata
     mention_everyone = models.BooleanField(default=False)
-    date = models.DateTimeField(auto_now_add=True, null=True)
+    date = models.DateTimeField(default=timezone.now)
     seens = models.ManyToManyField(User, blank=True)
 
     class Meta:
         db_table = "patchnotes"
         verbose_name = "Patchnote"
+        verbose_name_plural = "Patchnotes"
+        ordering = ["-date"]
 
-    def __str__(self) -> str:
-        return self.title
-
+    def __str__(self):
+        return f"{self.version} - {self.author}"
 
 class GameServerModerator(models.Model):
     STATUS_CHOICES = [

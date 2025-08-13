@@ -1428,47 +1428,59 @@ def render_bans(request: HttpRequest) -> HttpResponse:
     )
 
 
-@login_required
+@api_view(["POST", "GET"])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
 def render_patchnotes(request: HttpRequest) -> HttpResponse:
-    patchnotes = []
+    """
+    API endpoint to list patch notes (GET) and mark them as seen (POST).
+    Returns data in JSON format similar to announcements.
+    """
     if request.method == "POST":
-        request_body = request.body.decode()
+        try:
+            request_body = json.loads(request.body.decode())
+            patchnote_id = request_body.get("seenPatchNote")
+            
+            if not patchnote_id:
+                return JsonResponse({"success": False, "error": "Missing seenPatchNote field"}, status=400)
+                
+            seen_patchnote = PatchNotes.objects.get(id=int(patchnote_id))
+            seen_patchnote.seens.add(request.user)
+            return JsonResponse({"success": True})
+            
+        except json.JSONDecodeError as err:
+            logger.error(f"Failed to parse request body: {err}")
+            return JsonResponse({"success": False, "error": "Invalid JSON"}, status=400)
+        except PatchNotes.DoesNotExist:
+            return JsonResponse({"success": False, "error": "Patch note not found"}, status=404)
+        except Exception as e:
+            logger.error(f"Unexpected error: {e}")
+            return JsonResponse({"success": False, "error": "Internal server error"}, status=500)
 
-        # check the request body health
-        if request_body:
-            try:
-                request_body = json.loads(request.body.decode())
-            except Exception as err:
-                logger.error(
-                    f"Failed to parse request body\nrequest body: {request_body}\nException: {err}"
-                )
-            if "seenPatchNote" in request_body.keys():
-                patchnote_id = int(request_body["seenPatchNote"])
-                try:
-                    seen_patchnote = PatchNotes.objects.get(id=patchnote_id)
-                except PatchNotes.DoesNotExist:
-                    ...
-                else:
-                    seen_patchnote.seens.add(request.user)
-                    seen_patchnote.save()
-    else:
-        for patchnote in PatchNotes.objects.all():
-            patchnotes.append(
-                {
-                    "date": patchnote.date,
-                    "author": patchnote.author,
-                    "title": patchnote.title,
-                    "patchnotes": mark_safe(patchnote.patchnotes),
-                    "dataid": patchnote.id,
-                    "seen": patchnote.seens.filter(id=request.user.id).exists(),
-                }
-            )
-        patchnotes.reverse()
+    elif request.method == "GET":
+        patchnotes_data = []
+        for patchnote in PatchNotes.objects.all().order_by("-date"):
+            patchnotes_data.append({
+                "id": str(patchnote.id),
+                "title": patchnote.title,  # Can be a list of up to 4
+                "version": patchnote.version,
+                "releaseType": patchnote.release_type,
+                "statusTags": patchnote.status_tags,
+                "highlights": patchnote.highlights,
+                "description": patchnote.description or "",
+                "author": {
+                    "name": patchnote.author,
+                    "role": "Developer",
+                    "avatar": None
+                },
+                "publishedAt": patchnote.date.isoformat(),
+                "seen": patchnote.seens.filter(id=request.user.id).exists(),
+            })
 
-    return render(
-        request, "pages/dashboard/patchnotes.jinja", {"patchnotes": patchnotes}
-    )
+        return JsonResponse({"success": True, "data": patchnotes_data}, safe=False)
 
+
+    return JsonResponse({"error": "Method not allowed"}, status=405)
 
 @login_required
 def render_servers(request: HttpRequest) -> HttpResponse:

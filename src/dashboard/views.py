@@ -2202,32 +2202,38 @@ def check_server(request: HttpRequest) -> HttpResponse:
 @permission_classes([IsAuthenticated])
 def refresh_server_key(request: HttpRequest) -> HttpResponse:
     if request.method == "POST":
-        request_body = request.POST
-
-        if len(request_body.keys()) != 2:
+        try:
+            request_body = json.loads(request.body.decode())
+        except json.JSONDecodeError:
             return HttpResponse(json.dumps({"success": False}))
 
-        if not "server" in request_body.keys():
+        # Ensure "serverId" exists
+        if "serverId" not in request_body:
             return HttpResponse(json.dumps({"success": False}))
 
         try:
             target_server = GameServer.objects.get(
-                owner=request.user, id=int(request_body["server"])
+                owner=request.user,
+                id=int(request_body["serverId"])
             )
         except GameServer.DoesNotExist:
             return HttpResponse(json.dumps({"success": False}))
 
+        # Generate a new key
         new_key = utils.generate_key(5)
         if new_key == target_server.key:
             new_key = utils.generate_key(5)
+
         target_server.key = new_key
+        target_server.save()
 
         logger.info(
-            f'"{request.user.username}" has refreshed his server "{target_server.name}" key'
+            f'"{request.user.username}" has refreshed their server "{target_server.name}" key'
         )
-        messages.success(request, "Key refreshed Successfuly!")
 
-        return redirect(reverse("servers"))
+        messages.success(request, "Key refreshed successfully!")
+
+        return HttpResponse(json.dumps({"success": True}))
 
     return HttpResponse(json.dumps({"success": False}))
 
@@ -2374,12 +2380,65 @@ def render_quicksetup(request: HttpRequest) -> HttpResponse:
             "dists": dists,
         },
     )
-
-
-@api_view(["POST"])
+@api_view(["POST", "GET"])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 def subscriptions_api(request):
+    if request.method == "GET":
+        subscriptions_data = [
+            {
+                "type": sub.type,
+                "started_at": sub.started_at,
+                "expires_at": sub.started_at + sub.expires_at,
+                "remaining": sub.remaining,
+                "name": sub.name,
+                "key": sub.key,
+                "status": 2 if not sub.is_valid_for_now() else sub.status,
+            }
+            for sub in ServerSubscription.objects.filter(owner=request.user).order_by(
+                "-started_at"
+            )
+        ]
+        return Response({"success": True, "subscriptions": subscriptions_data})
+
+    if request.data.get("key", "").strip().lower() == "trial":
+        if request.user.subscriptions.filter(plan=ServerSubscription.Plans.FREE).exists():
+            return JsonResponse(
+                {"success": False, "error": "Trial already used."}, status=200
+            )
+
+        request.user.subscriptions.create(
+            plan=ServerSubscription.Plans.FREE,
+            type=ServerType.FIVEM,
+            owner=request.user,
+            started_at=now(),
+        )
+        logger.info(f"Created free subscription for user \"{request.user.username}\"")
+
+        subscriptions_data = [
+            {
+                "type": sub.type,
+                "started_at": sub.started_at,
+                "expires_at": sub.started_at + sub.expires_at,
+                "remaining": sub.remaining,
+                "name": sub.name,
+                "key": getattr(sub, "key", None),
+                "status": 2 if not sub.is_valid_for_now() else sub.status,
+            }
+            for sub in ServerSubscription.objects.filter(owner=request.user).order_by(
+                "-started_at"
+            )
+        ]
+        return JsonResponse(
+            {
+                "success": True,
+                "message": "Trial subscription created successfully!",
+                "subscriptions": subscriptions_data,
+            },
+            status=200,
+        )
+
+    # POST logic (redeem subscription key)
     try:
         subscription_key = request.data.get("key", "").strip()
         logger.info(subscription_key)
@@ -2418,7 +2477,7 @@ def subscriptions_api(request):
     subscription.started_at = now()
     subscription.save()
 
-    # GET method → return subscription data
+    # Return updated subscriptions after redeeming
     subscriptions_data = [
         {
             "type": sub.type,

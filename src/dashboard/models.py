@@ -36,8 +36,8 @@ class ServerSubscription(models.Model):
     class Plans(models.IntegerChoices):
         BASIC = 1, "Basic"
         PRO = 2, "Pro"
-        ENTREPRISE = 3, "Entreprise"
-        FREE = 4, "Free"
+        FREE = 3, "FREE"
+        ENTREPRISE = 4, "Entreprise"
         LIFETIME = 5, "Lifetime"
 
     # name = models.TextField(null=True)
@@ -72,11 +72,16 @@ class ServerSubscription(models.Model):
 
     @property
     def expires_at(self):
-        if self.plan == 4:
-            return timedelta(days=7)
-        elif self.plan == 5:
-            return timedelta(weeks=9999)
-        return timedelta(days=(30 if self.plan == 1 else 90))
+        if self.plan == self.Plans.BASIC:
+            return timedelta(days=30)
+        elif self.plan == self.Plans.PRO:
+            return timedelta(days=90)
+        elif self.plan == self.Plans.FREE:
+            return timedelta(days=3)
+        elif self.plan in (self.Plans.ENTREPRISE, self.Plans.LIFETIME):
+            return timedelta(days=9999)
+        return timedelta(days=0)
+
 
     @property
     def name(self):

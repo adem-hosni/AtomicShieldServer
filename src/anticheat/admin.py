@@ -7,6 +7,7 @@ from django.contrib import admin
 from django.http import HttpRequest
 from unfold.admin import ModelAdmin
 from django.contrib.admin import SimpleListFilter
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.utils.safestring import mark_safe
 from simple_history.admin import SimpleHistoryAdmin
@@ -602,6 +603,25 @@ class FalsePositiveReportAdmin(ModelAdmin):
             "fields": ("created_at",),
         }),
     )
+
+    actions = ["approve_reports", "reject_reports"]
+
+    def approve_reports(self, request, queryset):
+        queryset.update(
+            status=FalsePositiveReport.Status.APPROVED,
+            reviewed_by=request.user,
+            reviewed_at=timezone.now()
+        )
+    approve_reports.short_description = "Mark selected reports as Approved"
+
+    def reject_reports(self, request, queryset):
+        queryset.update(
+            status=FalsePositiveReport.Status.REJECTED,
+            reviewed_by=request.user,
+            reviewed_at=timezone.now()
+        )
+    reject_reports.short_description = "Mark selected reports as Rejected"
+
 
 
 admin.site.register(

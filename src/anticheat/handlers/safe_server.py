@@ -15,6 +15,7 @@ from django.db.models import Q
 from ..models import Ban
 from dashboard.models import ServerSubscription
 from shared.enums import unstrict_detection_types, DetectionType
+from dashboard.models import AuditLogEntry
 from ..consumers.safe_server import SafeServerConsumer
 from .. import config_ids
 import logging
@@ -139,6 +140,17 @@ async def handle_network_join(
     fivem_guard.add_safe_server(consumer)
     logger.info(
         f'"{consumer.game_server.name}" {consumer.address} joined AtomicShield Servers Network!'
+    )
+
+    AuditLogEntry.create_entry(
+        action=AuditLogEntry.Action.SERVER_START,
+        severity=AuditLogEntry.Severity.LOW,
+        actor=request.user,
+        game_server=consumer.game_server,
+        reviewed=True,
+        summary="Server Start",
+        details=f"Server Started",
+        category=AuditLogEntry.Category.SERVER
     )
 
     return await consumer.send(
@@ -308,12 +320,32 @@ async def handle_request_player_join(
 
         await engine.hwid.asave()
 
+    AuditLogEntry.create_entry(
+        action=AuditLogEntry.Action.PLAYER_REQUEST_JOIN,
+        severity=AuditLogEntry.Severity.LOW,
+        actor=request.user,
+        game_server=consumer.game_server,
+        reviewed=True,
+        summary="Player Request Join",
+        details=f"{request['name']} connection {'accepted' if response["join"] else 'rejected'} with message: {response["message"]}",
+        category=AuditLogEntry.Category.PLAYER
+    )
+
     return await consumer.send(
         SafeServerPacketID.REQUEST_PLAYER_JOIN, {"ip": request["ip"], **response}
     )
 
 
 async def handle_server_disconnect(consumer: SafeServerConsumer):
+    AuditLogEntry.create_entry(
+        action=AuditLogEntry.Action.ANTICHEAT_SHUTDOWN,
+        severity=AuditLogEntry.Severity.MEDIUM,
+        game_server=consumer.game_server,
+        reviewed=True,
+        summary="AntiCheat Shutdown",
+        details="AntiCheat Shutdowned",
+        category=AuditLogEntry.Category.SERVER
+    )
     logger.info(
         f"{consumer.game_server.name} {consumer.address} disconnected from AtomicShield servers network."
     )
@@ -329,6 +361,16 @@ async def handle_player_quit(consumer: SafeServerConsumer, request: Dict[str, An
 
     if not check_request_body_key(request, "reason", str):
         return
+
+    AuditLogEntry.create_entry(
+        action=AuditLogEntry.Action.PLAYER_QUIT,
+        severity=AuditLogEntry.Severity.LOW,
+        game_server=consumer.game_server,
+        reviewed=True,
+        summary="Player Quit",
+        details=f"{request['name']} quited with reason: {request['reason']}",
+        category=AuditLogEntry.Category.PLAYER
+    )
 
     player_engine = fivem_guard.get_scanner_by_ip(request["player_ip"])
     if not player_engine and not fivem_guard.get_engine_by_24subnet(request["player_ip"]):

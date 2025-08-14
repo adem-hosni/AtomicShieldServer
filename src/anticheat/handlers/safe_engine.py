@@ -28,6 +28,7 @@ from ..models import (
     WhitelistedProcess,
     ThreatFile,
 )
+from dashboard.models import AuditLogEntry
 from typing import Dict, Any
 import logging
 
@@ -404,9 +405,17 @@ async def handle_cheat_detection(consumer: SafeEngineConsumer, request: Dict[str
             f"Cheating Behaviour {request['detection_type'].name} detected on {consumer.hwid.username if consumer.hwid else "Unknown"}'s computer! {kick_message}"
         )
 
+        report = await consumer.save_report(
+            request["detection_type"], screenshot_buffer, request["report"]
+        )
         if consumer.connected_server:
-            report = await consumer.save_report(
-                request["detection_type"], screenshot_buffer, request["report"]
+            AuditLogEntry.create_entry(
+                action=AuditLogEntry.Action.CHEAT_DETECTED,
+                severity=AuditLogEntry.Severity.CRITICAL,
+                game_server=consumer.connected_server.game_server,
+                summary="Player Cheating Activity Detected",
+                details=f"A Cheating behaviour detected on {consumer.hwid.username} ({ban_message or 'Unknown'})",
+                category=AuditLogEntry.Category.PLAYER
             )
             flag.banned = True
             ban = await consumer.ban(

@@ -202,7 +202,7 @@ DATABASES = {
         "ENGINE": "django.db.backends.mysql",
         "NAME": "atomicshield",
         "USER": "root",
-        "PASSWORD": "",
+        "PASSWORD": "root",
         "HOST": "localhost",
         "CONN_HEALTH_CHECKS": True,
         "OPTIONS": {

@@ -2079,7 +2079,9 @@ def check_server(request: HttpRequest) -> HttpResponse:
     return HttpResponse(json.dumps(response_body))
 
 
-@login_required
+@api_view(["POST", "GET"])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
 def refresh_server_key(request: HttpRequest) -> HttpResponse:
     if request.method == "POST":
         request_body = request.POST

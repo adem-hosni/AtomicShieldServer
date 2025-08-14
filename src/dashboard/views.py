@@ -458,6 +458,20 @@ def add_server(request: HttpRequest) -> Response:
     logger.info(
         f"Added New {ServerType(server_type)} Server {ip}:{port} from {request.user.username}, license key: ({license_key})"
     )
+
+    AuditLogEntry.create_entry(
+        action=AuditLogEntry.Action.PLAYER_UNBANNED,
+        severity=AuditLogEntry.Severity.LOW,
+        actor=request.user,
+        game_server=new_server,
+        reviewed=True,
+        source="dashboard",
+        summary=f"Server Created!",
+        details=f"Server created by {request.user}",
+        category=AuditLogEntry.Category.MODERATION
+    )
+
+
     return Response(
         {
             "success": True,
@@ -936,7 +950,21 @@ def report_false_positive(request: HttpRequest, server_id: int, ban_id: int) -> 
         )
 
     logger.info(f"False Positive reported from {request.user} for {target_ban}")    
-    FalsePositiveReport.objects.create(ban=target_ban, reported_by=request.user, reason=reason)
+    report = FalsePositiveReport.objects.create(ban=target_ban, reported_by=request.user, reason=reason)
+
+    AuditLogEntry.create_entry(
+        action=AuditLogEntry.Action.FALSE_POSITIVE_REPORT,
+        severity=AuditLogEntry.Severity.LOW,
+        actor=request.user,
+        target_object=report,
+        game_server=target_ban.game_server,
+        reviewed=True,
+        source="dashboard",
+        summary="False Positive Report",
+        details=f"{request.user} Reported a false positive for {target_ban.hwid.username}",
+        category=AuditLogEntry.Category.MODERATION
+    )
+
     return Response(
         {
             "success": True,
@@ -1172,6 +1200,19 @@ def update_moderators(request: HttpRequest, server_id: int, moderator_id) -> Res
 
     target_moderator.save()
 
+    AuditLogEntry.create_entry(
+        action=AuditLogEntry.Action.MODERATOR_UPDATE,
+        severity=AuditLogEntry.Severity.LOW,
+        actor=request.user,
+        target_object=target_moderator,
+        game_server=target_server,
+        reviewed=True,
+        source="dashboard",
+        summary="Moderator Update",
+        details=f"{request.user} updated {target_moderator} permissions ({', '.join(request.data)})",
+        category=AuditLogEntry.Category.MODERATION
+    )
+
     logger.info(
         f'{request.user.username} updated {target_moderator.user.username} permissions in "{target_server.name}"'
     )
@@ -1257,10 +1298,47 @@ def set_moderator_action(
         case "suspend":
             target_moderator.status = "suspended"
             target_moderator.save()
+            
+            AuditLogEntry.create_entry(
+                action=AuditLogEntry.Action.MODERATOR_SUSPEND,
+                severity=AuditLogEntry.Severity.MEDIUM,
+                actor=request.user,
+                target_object=target_moderator,
+                game_server=target_server,
+                reviewed=True,
+                source="dashboard",
+                summary="Moderator Suspend",
+                details=f"{request.user} suspended {target_moderator}",
+                category=AuditLogEntry.Category.MODERATION
+            )
         case "reactivate":
             target_moderator.status = "activate"
             target_moderator.save()
+            AuditLogEntry.create_entry(
+                action=AuditLogEntry.Action.MODERATOR_REACTIVATE,
+                severity=AuditLogEntry.Severity.LOW,
+                actor=request.user,
+                target_object=target_moderator,
+                game_server=target_server,
+                reviewed=True,
+                source="dashboard",
+                summary=f"Moderator Reactivation",
+                details=f"{request.user} reactivated {target_moderator}",
+                category=AuditLogEntry.Category.MODERATION
+            )
         case "remove":
+            AuditLogEntry.create_entry(
+                action=AuditLogEntry.Action.MODERATOR_REMOVE,
+                severity=AuditLogEntry.Severity.MEDIUM,
+                actor=request.user,
+                target_object=target_moderator,
+                game_server=target_server,
+                reviewed=True,
+                source="dashboard",
+                summary=f"Moderator Removed",
+                details=f"{request.user} removed {target_moderator}",
+                category=AuditLogEntry.Category.MODERATION
+            )
             target_moderator.delete()
 
     return Response({"success": True, "message": "Operation completed!"})
@@ -1329,6 +1407,20 @@ def add_moderators(request: HttpRequest, server_id: int) -> Response:
     invite = ModeratorInviteToken.generate(
         invited_by=request.user, to=target_user, permissions=permissions, server=server
     )
+
+    AuditLogEntry.create_entry(
+        action=AuditLogEntry.Action.MODERATOR_INVITE_REQUEST,
+        severity=AuditLogEntry.Severity.LOW,
+        actor=request.user,
+        target_object=target_user,
+        game_server=server,
+        reviewed=True,
+        source="dashboard",
+        summary=f"Unban performed by {request.user}",
+        details=f"{request.user} invited {target_user} to {server.name}",
+        category=AuditLogEntry.Category.MODERATION
+    )
+
 
     return Response(
         {
@@ -1504,6 +1596,32 @@ def mark_invite(request: HttpRequest) -> Response:
             can_manage_moderators="manage_moderators" in invite.permissions,
             status="active",
         )
+        AuditLogEntry.create_entry(
+            action=AuditLogEntry.Action.MODERATOR_INVITE_ACCEPT,
+            severity=AuditLogEntry.Severity.LOW,
+            actor=request.user,
+            target_object=invite,
+            game_server=invite.game_server,
+            reviewed=True,
+            source="dashboard",
+            summary="Moderator Invite Accepted",
+            details=f"{request.user} Accepted {invite.invited_by} invite",
+            category=AuditLogEntry.Category.MODERATION
+        )
+    else:
+        AuditLogEntry.create_entry(
+            action=AuditLogEntry.Action.MODERATOR_INVITE_REJECT,
+            severity=AuditLogEntry.Severity.LOW,
+            actor=request.user,
+            target_object=invite,
+            game_server=invite.game_server,
+            reviewed=True,
+            source="dashboard",
+            summary="Moderator Invite Rejected",
+            details=f"{request.user} Rejected {invite.invited_by} invite",
+            category=AuditLogEntry.Category.MODERATION
+        )
+
 
     return Response(
         {

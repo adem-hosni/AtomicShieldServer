@@ -15,7 +15,7 @@ class AntiCheatConfigDataTypes(models.TextChoices):
     NUMBER = "number", "Number"
     SELECT = "select", "Select"
     FILE_UPLOAD = "file_upload", "File Upload"
-    FILE_EXPORT = "file_export", "File Export"
+    FILE_EXPORT = "export_json", "File Export"
     EMBEDJSON = "embed_json", "Embed Json"
 
 

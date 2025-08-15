@@ -46,6 +46,7 @@ class AntiCheatConfigSection(models.Model):
     title = models.CharField(max_length=64)
     subtitle = models.TextField(null=True, blank=True)
     icon = models.CharField(max_length=64)
+    tooltip = models.CharField(max_length=128, blank=True)
 
     class Meta:
         verbose_name = "Configuration Section"
@@ -76,6 +77,7 @@ class AntiCheatConfigTemplate(models.Model):
         choices=AntiCheatConfigDataTypes,
         default=AntiCheatConfigDataTypes.BOOLEAN,
     )
+    extra = models.JSONField(default=dict, blank=False)
 
     default_value = models.CharField(max_length=512, blank=True)
 

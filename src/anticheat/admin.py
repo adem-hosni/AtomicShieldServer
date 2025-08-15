@@ -266,6 +266,7 @@ class ClientHWIDAdmin(SimpleHistoryAdmin, ModelAdmin):
         model = HWID
 
 
+@admin.register(AntiCheatConfigTemplate)
 class AntiCheatConfigurationsAdmin(ModelAdmin):
     list_display = (
         "name",
@@ -280,26 +281,23 @@ class AntiCheatConfigurationsAdmin(ModelAdmin):
     ordering = ("section__category__name", "section__title", "name")
     list_per_page = 30
 
+    # Use django-unfold to collapse sections
     fieldsets = (
-        (
-            "General Info",
-            {
-                "fields": ("name", "subtitle", "pseudo_name", "icon", "tip"),
-            },
-        ),
-        (
-            "Assignment",
-            {
-                "fields": ("section", "server_type", "config_type"),
-            },
-        ),
-        (
-            "Defaults",
-            {
-                "fields": ("default_value",),
-            },
-        ),
+        ("General Info", {"fields": ("name", "subtitle", "pseudo_name", "icon", "tip")}),
+        ("Assignment", {"fields": ("section", "server_type", "config_type")}),
+        ("Defaults", {"fields": ("default_value",)}),
     )
+
+    conditional_fields = {
+        'config_type': {
+            'server_type': {
+                'fivem': 'boolean,number',
+                'ragemp': 'string'
+            }
+        }
+    }
+    extra = 1
+    show_change_link = True
 
     @admin.display(description="Default Value")
     def default_value_preview(self, obj):
@@ -325,7 +323,9 @@ class ServerAntiCheatConfiguration(ModelAdmin):
 
 
 class AntiCheatConfigurationsCategoriesAdmin(ModelAdmin):
-    list_display = ["category", "description"]
+    list_display = ["id", "category", "description"]
+    list_display_links = list_display
+    search_fields = list_display
 
     @admin.display(description="Category")
     def category(self, obj: AntiCheatConfigurationCategory):
@@ -337,18 +337,10 @@ class AntiCheatConfigurationsCategoriesAdmin(ModelAdmin):
 
 
 class AntiCheatConfigSectionAdmin(ModelAdmin):
-    list_display = ["id", "name", "config_template", "category"]
-    search_fields = ["id", "name", "config_template__name"]
+    list_display = ["id", "title", "subtitle", "category__name"]
+    search_fields = ["id", "title", "subtitle"]
     list_display_links = list_display
     list_filter = ["category"]
-
-    @admin.display(description="Name")
-    def name(self, obj: AntiCheatConfigSection):
-        return obj.name
-
-    @admin.display(description="Template")
-    def config_template(self, obj: AntiCheatConfigSection):
-        return obj.config_template.name if obj.config_template else "No Template"
 
 
 class MaliciousSignaturesAdmin(ModelAdmin):
@@ -627,7 +619,6 @@ class FalsePositiveReportAdmin(ModelAdmin):
 admin.site.register(
     AntiCheatConfigurationCategory, AntiCheatConfigurationsCategoriesAdmin
 )
-admin.site.register(AntiCheatConfigTemplate, AntiCheatConfigurationsAdmin)
 admin.site.register(AntiCheatConfigurations, ServerAntiCheatConfiguration)
 admin.site.register(AntiCheatConfigSection, AntiCheatConfigSectionAdmin)
 admin.site.register(MaliciousSignatures, MaliciousSignaturesAdmin)

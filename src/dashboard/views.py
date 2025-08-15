@@ -1009,15 +1009,17 @@ def list_configurations(request: HttpRequest, server_id: int) -> Response:
                 "anticheat": {
                     "categories": [
                         {
-                            "id": category.id,
+                            "id": str(category.id),
                             "label": category.name,
-                            "description": "category.",
+                            "description": category.description,
+                            "icon": category.icon[0].upper() + category.icon[1:],
                             "sections": [
                                 {
                                     "id": section.id,
                                     "title": section.title,
                                     "subtitle": section.subtitle,
                                     "icon": section.icon,
+                                    "tooltip": section.tooltip,
                                     "configurations": [
                                         {
                                             "id": str(config.id),
@@ -1029,6 +1031,7 @@ def list_configurations(request: HttpRequest, server_id: int) -> Response:
                                                 config.id, config.default_value
                                             ),
                                             "icon": config.icon,
+                                            "extra": config.extra,
                                         }
                                         for config in section.configurations.all()
                                     ],

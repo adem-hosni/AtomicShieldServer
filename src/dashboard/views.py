@@ -4,7 +4,7 @@ import logging
 import json
 import base64
 from zipfile import ZipFile
-from asgiref.sync import sync_to_async
+from asgiref.sync import async_to_sync
 from django.shortcuts import render, redirect
 from django.shortcuts import get_object_or_404
 from django.conf import settings
@@ -2539,132 +2539,119 @@ def subscriptions_api(request):
     )
 
 
-@login_required
-async def render_players(request: HttpRequest) -> HttpResponse:
+
+@api_view(["POST", "GET"])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+def render_players(request, server_id):
     players = []
     message = ""
+
+    # Get the server object
     try:
-        server_id = await sync_to_async(request.session.get)("selected_server", -1)
-        target_server = await GameServer.objects.aget(
-            owner=request.user,
-            id=server_id,
+        target_server = GameServer.get_for_user(
+            server_id,
+            request.user
         )
     except GameServer.DoesNotExist:
-        messages.error(request, "The selected server does not exists!")
-    else:
-        server = fivem_guard.get_server_by_ip(target_server.ip)
-        if server:
-            players = (await server.request_status())["players"]
-        else:
+        return Response({
+            "success": False,
+            "message": "The selected server does not exist!",
+            "players": [],
+        })
+
+    # Get the FiveM server
+    server = fivem_guard.get_server_by_ip(target_server.ip)
+    if server:
+        try:
+            status = async_to_sync(server.request_status)()
+            players = status.get("players", [])
+        except Exception as e:
+            logger.error(f"Failed to get server status: {e}")
             message = "Server is offline"
+    else:
+        message = "Server is offline"
 
+    # -------------------
+    # POST actions
+    # -------------------
     if request.method == "POST":
-        response = {"success": False, "message": ""}
-        request_body: Dict[str, Union[bool, str]] = request.body.decode()
-
-        # Check the request_body is a json
-        if request_body:
-            try:
-                request_body = json.loads(request.body.decode())
-            except Exception as err:
-                logger.error(
-                    f"Failed to parse request body\nrequest body: {request_body}\nException: {err}"
-                )
-                return HttpResponse(json.dumps({"success": False}))
+        response: Dict[str, Union[bool, str]] = {"success": False, "message": ""}
+        try:
+            request_body: Dict[str, Union[str, bool]] = json.loads(request.body.decode())
+        except Exception as err:
+            logger.error(f"Failed to parse request body: {err}")
+            return Response({"success": False, "message": "Invalid JSON"})
 
         player_id = request_body.get("playerid")
-        if player_id:
-            player_ip = None
-            for player in players:
-                if player["id"] == player_id:
-                    player_ip = player["ip"]
-                    break
-            if player_ip:
-                engine = fivem_guard.get_scanner_by_ip(player_ip)
-                if engine:
-                    match request_body.get("type"):
-                        case "request_screenshot":
-                            image_path = await engine.get_screenshot()
-                            if image_path:
-                                logger.info(
-                                    f"Successfuly screenshot requested from {engine.hwid.username}"
-                                )
-                                response["success"] = True
-                                response["url"] = image_path
-                            else:
-                                response["message"] = (
-                                    "Cannot retreive screenshot from the target player!"
-                                )
-                                # messages.error(request, "Cannot retreive screenshot from the target player!")
-
-                        case "kick":
-                            if not (await engine.kick()):
-                                response["message"] = (
-                                    "Player is not connected to your server."
-                                )
-
-                        case _:
-                            response["message"] = "Invalid data requested!"
-                else:
-                    response["message"] = "Cannot retreive the target player!"
-
-            else:
-                response["message"] = "Cannot retreive the target player!"
-        else:
+        if not player_id:
             response["message"] = "Invalid player!"
-        return JsonResponse(response)
+            return Response(response)
 
+        player_ip = next((p["ip"] for p in players if p["id"] == player_id), None)
+        if not player_ip:
+            response["message"] = "Cannot retrieve the target player!"
+            return Response(response)
+
+        engine = fivem_guard.get_scanner_by_ip(player_ip)
+        if not engine:
+            response["message"] = "Cannot retrieve the target player!"
+            return Response(response)
+
+        action_type = request_body.get("type")
+        if action_type == "request_screenshot":
+            try:
+                image_path = async_to_sync(engine.get_screenshot)()
+                if image_path:
+                    logger.info(f"Successfully requested screenshot from {engine.hwid.username}")
+                    response.update({"success": True, "url": image_path})
+                else:
+                    response["message"] = "Cannot retrieve screenshot from the player!"
+            except Exception as e:
+                logger.error(f"Screenshot error: {e}")
+                response["message"] = "Failed to retrieve screenshot!"
+        elif action_type == "kick":
+            try:
+                kicked = async_to_sync(engine.kick)()
+                if kicked:
+                    response["success"] = True
+                else:
+                    response["message"] = "Player is not connected to your server."
+            except Exception as e:
+                logger.error(f"Kick error: {e}")
+                response["message"] = "Failed to kick the player!"
+        else:
+            response["message"] = "Invalid action requested!"
+
+        return Response(response)
+
+    # -------------------
+    # GET players list with search & pagination
+    # -------------------
     current_page = int(request.GET.get("page", 1)) - 1
-
-    searched_players = []
     search_text = request.GET.get("search", "").strip()
-    if len(search_text):
-        for index in range(len(players) - 1, -1, -1):
-            player = players[index]
-            if (
-                search_text.lower() in player["name"].lower()
-                or search_text in player["id"]
-            ):
-                searched_players.append(player)
 
-    if len(search_text.strip()):
-        players = searched_players
-
-    page_size = len(players) if len(players) < 35 else 35
-
-    max_pages = len(players) // page_size if len(players) > page_size else len(players)
-
-    if len(search_text):
+    if search_text:
+        players = [
+            p for p in players
+            if search_text.lower() in p["name"].lower() or search_text in p["id"]
+        ]
         current_page = 0
 
-    if current_page < 0:
-        current_page = 0
-    if current_page > max_pages:
-        current_page = max_pages
+    page_size = min(len(players), 35) if players else 35
+    max_pages = max(1, -(-len(players) // page_size))  # ceil division
 
-    players_to_show = players[
-        page_size * current_page : (page_size * current_page) + page_size
-    ]
+    current_page = max(0, min(current_page, max_pages - 1))
+    players_to_show = players[page_size * current_page: page_size * (current_page + 1)]
 
-    # Increment the current_page for the ui
-    current_page += 1
-
-    return await sync_to_async(render)(
-        request,
-        "pages/dashboard/players.jinja",
-        {
-            "players": players_to_show,
-            "pages": len(players_to_show),
-            "current_page": current_page,
-            "show_previous": current_page > 1,
-            "show_next": current_page < max_pages,
-            "current_page": current_page,
-            "page_range": range(1, max_pages + 1),
-            "max_pages": max_pages,
-            "message": (
-                "No Online Players to show"
-                if not len(players_to_show) and not len(message)
-                else message
-            ),
-        },
-    )
+    return Response({
+        "success": True,
+        "message": "No Online Players to show" if not players_to_show and not message else message,
+        "data": {        "players": players_to_show,
+        "pages": max_pages,
+        "current_page": current_page + 1,
+        "show_previous": current_page > 0,
+        "show_next": current_page + 1 < max_pages,
+        "page_range": list(range(1, max_pages + 1)),
+        "max_pages": max_pages,}
+    })

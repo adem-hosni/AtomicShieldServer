@@ -707,6 +707,68 @@ class AuditLogEntry(models.Model):
         }
 
     @classmethod
+    async def acreate_entry(
+        cls,
+        *,
+        action,
+        severity,
+        actor=None,
+        actor_username=None,
+        timestamp=None,
+        summary="",
+        details="",
+        game_server=None,
+        target_object=None,
+        metadata=None,
+        source="system",
+        reviewed=False,
+        category=None
+    ):
+        if timestamp is None:
+            timestamp = timezone.now()
+
+        @sync_to_async
+        def _get_ct_and_id(obj):
+            if obj is None:
+                return None, None
+            try:
+                ct = ContentType.objects.get_for_model(obj, for_concrete_model=False)
+                obj_id = getattr(obj, "pk", str(obj))
+            except Exception:
+                ct = None
+                obj_id = str(obj)
+            return ct, obj_id
+
+        @sync_to_async
+        def _create():
+            return cls.objects.create(
+                action=action,
+                severity=severity,
+                timestamp=timestamp,
+                actor_content_type=actor_ct,
+                actor_object_id=str(actor_obj_id) if actor_obj_id is not None else None,
+                summary=summary,
+                details=details,
+                game_server=game_server,
+                target_content_type=target_ct,
+                target_object_id=str(target_obj_id) if target_obj_id is not None else None,
+                metadata=meta,
+                source=source,
+                reviewed=reviewed,
+                category=category
+            )
+
+        actor_ct, actor_obj_id = await _get_ct_and_id(actor)
+        target_ct, target_obj_id = await _get_ct_and_id(target_object)
+
+        meta = dict(metadata or {})
+        if actor_username:
+            meta["actor_snapshot"] = actor_username
+
+        return await _create()
+
+
+    @classmethod
     def create_entry(
         cls,
         *,

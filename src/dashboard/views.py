@@ -2,6 +2,7 @@ import os
 import random
 import logging
 import json
+import base64
 from zipfile import ZipFile
 from asgiref.sync import sync_to_async
 from django.shortcuts import render, redirect
@@ -9,6 +10,7 @@ from django.shortcuts import get_object_or_404
 from django.conf import settings
 from django.urls import reverse
 from django.db.models import Q
+from django.core.files.base import ContentFile
 from django.http import (
     HttpRequest,
     HttpResponse,
@@ -55,7 +57,7 @@ from anticheat.models import (
     AntiCheatConfigurationCategory,
     Ban,
     DetectionReport,
-    FalsePositiveReport
+    FalsePositiveReport,
 )
 from .forms import AddServerForm
 import utils
@@ -235,7 +237,11 @@ def dashboard_overview(request: HttpRequest) -> JsonResponse:
             "playerCount": server.active_player_count,
             "status": "Online" if server.is_online else "Offline",
             "statusColor": "green" if server.is_online else "gray",
-            "imageUrl": 'server.configurations.config.get("server_image", "")',
+            "imageUrl": (
+                request.build_absolute_uri(server.configurations.server_image.url)
+                if server.configurations.server_image
+                else ""
+            ),
         }
         for server in user_servers
     ]
@@ -316,6 +322,7 @@ def dashboard_overview(request: HttpRequest) -> JsonResponse:
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 def add_server(request: HttpRequest) -> Response:
+
     ip = request.data.get("serverIp", "").strip()
     port = "80"
     name = str(request.data.get("serverName", "")).strip()
@@ -455,6 +462,17 @@ def add_server(request: HttpRequest) -> Response:
     )
     new_server.subscriptions.add(subscription)
     request.session["selected_server"] = new_server.id
+
+    image_base64 = request.data.get("serverImage")
+    if image_base64:
+        format, imgstr = image_base64.split(";base64,")
+        ext = format.split("/")[-1]  # png, jpeg, etc.
+
+        img_data = base64.b64decode(imgstr)
+        new_server.configurations.server_image.save(
+            f"{new_server.id}.{ext}", ContentFile(img_data), save=True
+        )
+
     logger.info(
         f"Added New {ServerType(server_type)} Server {ip}:{port} from {request.user.username}, license key: ({license_key})"
     )
@@ -468,9 +486,8 @@ def add_server(request: HttpRequest) -> Response:
         source="dashboard",
         summary=f"Server Created!",
         details=f"Server created by {request.user}",
-        category=AuditLogEntry.Category.MODERATION
+        category=AuditLogEntry.Category.MODERATION,
     )
-
 
     return Response(
         {
@@ -659,7 +676,11 @@ def list_servers(request: HttpRequest) -> Response:
                     else "None"
                 ),
                 "createdAt": "",
-                "imageUrl": "",
+                "imageUrl": (
+                    request.build_absolute_uri(server.configurations.server_image.url)
+                    if server.configurations.server_image
+                    else ""
+                ),
             }
         )
 
@@ -730,7 +751,9 @@ def list_bans(request: HttpRequest, server_id: int) -> Response:
                         "serverId": target_server.id,
                         "appealStatus": "approved",  # TODO: Implement appeal status logic
                         "report": {},
-                        "reportedAsFalsePositive": FalsePositiveReport.objects.filter(ban=ban).exists()
+                        "reportedAsFalsePositive": FalsePositiveReport.objects.filter(
+                            ban=ban
+                        ).exists(),
                     }
                     for ban in bans
                 ],
@@ -811,7 +834,7 @@ def unban_player(request: HttpRequest, server_id: int) -> Response:
         source="dashboard",
         summary=f"Unban performed by {request.user}",
         details=f"Player {target_ban.hwid.username} (ID: {target_ban.hwid.id}) was unbanned from server '{target_server.name}'",
-        category=AuditLogEntry.Category.MODERATION
+        category=AuditLogEntry.Category.MODERATION,
     )
 
     target_ban.active = False
@@ -898,7 +921,7 @@ def ban_player(request: HttpRequest, server_id: int) -> Response:
         source="dashboard",
         summary=f"Ban performed by {request.user}",
         details=f"Player {target_ban.hwid.username} (ID: {target_ban.hwid.id}) was banned from server '{target_server.name}'",
-        category=AuditLogEntry.Category.MODERATION
+        category=AuditLogEntry.Category.MODERATION,
     )
 
     target_ban.active = True
@@ -918,7 +941,9 @@ def ban_player(request: HttpRequest, server_id: int) -> Response:
 @api_view(["POST"])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
-def report_false_positive(request: HttpRequest, server_id: int, ban_id: int) -> Response:
+def report_false_positive(
+    request: HttpRequest, server_id: int, ban_id: int
+) -> Response:
     try:
         target_ban = Ban.objects.get(id=ban_id)
     except Ban.DoesNotExist:
@@ -931,26 +956,18 @@ def report_false_positive(request: HttpRequest, server_id: int, ban_id: int) -> 
                 "message": "The ban does not exist or you do not have permission to access it.",
             }
         )
-    
+
     reason = request.data.get("reason").strip()
     if not len(reason):
-        return Response(
-            {
-                "success": False,
-                "message": "No Reason Provided"
-            }
-        )
+        return Response({"success": False, "message": "No Reason Provided"})
 
     if FalsePositiveReport.objects.filter(ban=target_ban).exists():
-        return Response(
-            {
-                "success": False,
-                "message": "This ban already reported!"
-            }
-        )
+        return Response({"success": False, "message": "This ban already reported!"})
 
-    logger.info(f"False Positive reported from {request.user} for {target_ban}")    
-    report = FalsePositiveReport.objects.create(ban=target_ban, reported_by=request.user, reason=reason)
+    logger.info(f"False Positive reported from {request.user} for {target_ban}")
+    report = FalsePositiveReport.objects.create(
+        ban=target_ban, reported_by=request.user, reason=reason
+    )
 
     AuditLogEntry.create_entry(
         action=AuditLogEntry.Action.FALSE_POSITIVE_REPORT,
@@ -962,15 +979,10 @@ def report_false_positive(request: HttpRequest, server_id: int, ban_id: int) -> 
         source="dashboard",
         summary="False Positive Report",
         details=f"{request.user} Reported a false positive for {target_ban.hwid.username}",
-        category=AuditLogEntry.Category.MODERATION
+        category=AuditLogEntry.Category.MODERATION,
     )
 
-    return Response(
-        {
-            "success": True,
-            "message": "Ban reported successfuly!"
-        }
-    )
+    return Response({"success": True, "message": "Ban reported successfuly!"})
 
 
 @api_view(["GET"])
@@ -1006,43 +1018,51 @@ def list_configurations(request: HttpRequest, server_id: int) -> Response:
             "data": {
                 "lastUpdated": "",
                 "updatedBy": "",
-                "anticheat": {
-                    "categories": [
-                        {
-                            "id": str(category.id),
-                            "label": category.name,
-                            "description": category.description,
-                            "icon": category.icon[0].upper() + category.icon[1:],
-                            "sections": [
-                                {
-                                    "id": section.id,
-                                    "title": section.title,
-                                    "subtitle": section.subtitle,
-                                    "icon": section.icon,
-                                    "tooltip": section.tooltip,
-                                    "configurations": [
-                                        {
-                                            "id": str(config.id),
-                                            "type": config.config_type,
-                                            "title": config.name,
-                                            "subtitle": config.subtitle,
-                                            "tip": config.tip,
-                                            "value": game_server.configurations.config.get(
-                                                config.id, config.default_value
-                                            ),
-                                            "icon": config.icon,
-                                            "extra": config.extra,
-                                        }
-                                        for config in section.configurations.all()
-                                    ],
-                                }
-                                for section in category.sections.all()
-                            ],
-                        }
-                        for category in AntiCheatConfigurationCategory.objects.filter(
-                            server_type=game_server.type
-                        )
-                    ]
+                "configs": {
+                    "static": {
+                        "serverName": game_server.name,
+                        "imageUrl": request.build_absolute_uri(
+                            game_server.configurations.server_image.url
+                        ) if game_server.configurations.server_image else "",
+                    },
+                    "dynamic": {
+                        "categories": [
+                            {
+                                "id": str(category.id),
+                                "label": category.name,
+                                "description": category.description,
+                                "icon": category.icon[0].upper() + category.icon[1:],
+                                "sections": [
+                                    {
+                                        "id": section.id,
+                                        "title": section.title,
+                                        "subtitle": section.subtitle,
+                                        "icon": section.icon,
+                                        "tooltip": section.tooltip,
+                                        "configurations": [
+                                            {
+                                                "id": str(config.id),
+                                                "type": config.config_type,
+                                                "title": config.name,
+                                                "subtitle": config.subtitle,
+                                                "tip": config.tip,
+                                                "value": game_server.configurations.config.get(
+                                                    config.id, config.default_value
+                                                ),
+                                                "icon": config.icon,
+                                                "extra": config.extra,
+                                            }
+                                            for config in section.configurations.all()
+                                        ],
+                                    }
+                                    for section in category.sections.all()
+                                ],
+                            }
+                            for category in AntiCheatConfigurationCategory.objects.filter(
+                                server_type=game_server.type
+                            )
+                        ]
+                    },
                 },
             },
             "message": "Configurations retrieved successfully.",
@@ -1213,7 +1233,7 @@ def update_moderators(request: HttpRequest, server_id: int, moderator_id) -> Res
         source="dashboard",
         summary="Moderator Update",
         details=f"{request.user} updated {target_moderator} permissions ({', '.join(request.data)})",
-        category=AuditLogEntry.Category.MODERATION
+        category=AuditLogEntry.Category.MODERATION,
     )
 
     logger.info(
@@ -1301,7 +1321,7 @@ def set_moderator_action(
         case "suspend":
             target_moderator.status = "suspended"
             target_moderator.save()
-            
+
             AuditLogEntry.create_entry(
                 action=AuditLogEntry.Action.MODERATOR_SUSPEND,
                 severity=AuditLogEntry.Severity.MEDIUM,
@@ -1312,7 +1332,7 @@ def set_moderator_action(
                 source="dashboard",
                 summary="Moderator Suspend",
                 details=f"{request.user} suspended {target_moderator}",
-                category=AuditLogEntry.Category.MODERATION
+                category=AuditLogEntry.Category.MODERATION,
             )
         case "reactivate":
             target_moderator.status = "activate"
@@ -1327,7 +1347,7 @@ def set_moderator_action(
                 source="dashboard",
                 summary=f"Moderator Reactivation",
                 details=f"{request.user} reactivated {target_moderator}",
-                category=AuditLogEntry.Category.MODERATION
+                category=AuditLogEntry.Category.MODERATION,
             )
         case "remove":
             AuditLogEntry.create_entry(
@@ -1340,7 +1360,7 @@ def set_moderator_action(
                 source="dashboard",
                 summary=f"Moderator Removed",
                 details=f"{request.user} removed {target_moderator}",
-                category=AuditLogEntry.Category.MODERATION
+                category=AuditLogEntry.Category.MODERATION,
             )
             target_moderator.delete()
 
@@ -1421,9 +1441,8 @@ def add_moderators(request: HttpRequest, server_id: int) -> Response:
         source="dashboard",
         summary=f"Unban performed by {request.user}",
         details=f"{request.user} invited {target_user} to {server.name}",
-        category=AuditLogEntry.Category.MODERATION
+        category=AuditLogEntry.Category.MODERATION,
     )
-
 
     return Response(
         {
@@ -1476,29 +1495,32 @@ def download_assets_view(request: HttpRequest) -> Response:
         releases = Release.objects.all().prefetch_related("assets")
         data = []
         for release in releases:
-            data.append({
-                "id": release.id,
-                "version": release.version,
-                "title": release.title,
-                "description": release.description,
-                "fileSizeMB": str(release.file_size),
-                "releaseDate": release.release_date.strftime("%Y-%m-%d"),
-                "platform": release.platform,
-                "format": release.format.upper().strip(),
-                "stability": release.stability,
-                "recommended": release.recommended,
-                "changelog": release.changelog,
-                "assets": [
-                    {
-                        "id": asset.id,
-                        "label": asset.label,
-                        "url": asset.get_url(),
-                        "isPrimary": asset.is_primary
-                    }
-                    for asset in release.assets.all()
-                ]
-            })
+            data.append(
+                {
+                    "id": release.id,
+                    "version": release.version,
+                    "title": release.title,
+                    "description": release.description,
+                    "fileSizeMB": str(release.file_size),
+                    "releaseDate": release.release_date.strftime("%Y-%m-%d"),
+                    "platform": release.platform,
+                    "format": release.format.upper().strip(),
+                    "stability": release.stability,
+                    "recommended": release.recommended,
+                    "changelog": release.changelog,
+                    "assets": [
+                        {
+                            "id": asset.id,
+                            "label": asset.label,
+                            "url": asset.get_url(),
+                            "isPrimary": asset.is_primary,
+                        }
+                        for asset in release.assets.all()
+                    ],
+                }
+            )
         return Response({"success": True, "data": data})
+
 
 @api_view(["POST"])
 @authentication_classes([JWTAuthentication])
@@ -1609,7 +1631,7 @@ def mark_invite(request: HttpRequest) -> Response:
             source="dashboard",
             summary="Moderator Invite Accepted",
             details=f"{request.user} Accepted {invite.invited_by} invite",
-            category=AuditLogEntry.Category.MODERATION
+            category=AuditLogEntry.Category.MODERATION,
         )
     else:
         AuditLogEntry.create_entry(
@@ -1622,9 +1644,8 @@ def mark_invite(request: HttpRequest) -> Response:
             source="dashboard",
             summary="Moderator Invite Rejected",
             details=f"{request.user} Rejected {invite.invited_by} invite",
-            category=AuditLogEntry.Category.MODERATION
+            category=AuditLogEntry.Category.MODERATION,
         )
-
 
     return Response(
         {
@@ -1665,9 +1686,9 @@ def list_audit_logs(request: HttpRequest, server_id: int) -> Response:
                 "message": "An unexpected error occurred while accessing the server.",
             }
         )
-    
+
     audit_logs = AuditLogEntry.objects.filter(game_server=server)
-    
+
     return Response(
         {
             "success": True,
@@ -1689,11 +1710,13 @@ def list_audit_logs(request: HttpRequest, server_id: int) -> Response:
                         "serverId": audit_log.game_server.id,
                         "ipAddress": "",
                         "serverName": audit_log.game_server.name,
-                    } for audit_log in audit_logs
-                ]
-            }
+                    }
+                    for audit_log in audit_logs
+                ],
+            },
         }
     )
+
 
 @login_required
 def render_bans(request: HttpRequest) -> HttpResponse:
@@ -1792,47 +1815,56 @@ def render_patchnotes(request: HttpRequest) -> HttpResponse:
         try:
             request_body = json.loads(request.body.decode())
             patchnote_id = request_body.get("seenPatchNote")
-            
+
             if not patchnote_id:
-                return JsonResponse({"success": False, "error": "Missing seenPatchNote field"}, status=400)
-                
+                return JsonResponse(
+                    {"success": False, "error": "Missing seenPatchNote field"},
+                    status=400,
+                )
+
             seen_patchnote = PatchNotes.objects.get(id=int(patchnote_id))
             seen_patchnote.seens.add(request.user)
             return JsonResponse({"success": True})
-            
+
         except json.JSONDecodeError as err:
             logger.error(f"Failed to parse request body: {err}")
             return JsonResponse({"success": False, "error": "Invalid JSON"}, status=400)
         except PatchNotes.DoesNotExist:
-            return JsonResponse({"success": False, "error": "Patch note not found"}, status=404)
+            return JsonResponse(
+                {"success": False, "error": "Patch note not found"}, status=404
+            )
         except Exception as e:
             logger.error(f"Unexpected error: {e}")
-            return JsonResponse({"success": False, "error": "Internal server error"}, status=500)
+            return JsonResponse(
+                {"success": False, "error": "Internal server error"}, status=500
+            )
 
     elif request.method == "GET":
         patchnotes_data = []
         for patchnote in PatchNotes.objects.all().order_by("-date"):
-            patchnotes_data.append({
-                "id": str(patchnote.id),
-                "title": patchnote.title,  # Can be a list of up to 4
-                "version": patchnote.version,
-                "releaseType": patchnote.release_type,
-                "statusTags": patchnote.status_tags,
-                "highlights": patchnote.highlights,
-                "description": patchnote.description or "",
-                "author": {
-                    "name": patchnote.author,
-                    "role": "Developer",
-                    "avatar": None
-                },
-                "publishedAt": patchnote.date.isoformat(),
-                "seen": patchnote.seens.filter(id=request.user.id).exists(),
-            })
+            patchnotes_data.append(
+                {
+                    "id": str(patchnote.id),
+                    "title": patchnote.title,  # Can be a list of up to 4
+                    "version": patchnote.version,
+                    "releaseType": patchnote.release_type,
+                    "statusTags": patchnote.status_tags,
+                    "highlights": patchnote.highlights,
+                    "description": patchnote.description or "",
+                    "author": {
+                        "name": patchnote.author,
+                        "role": "Developer",
+                        "avatar": None,
+                    },
+                    "publishedAt": patchnote.date.isoformat(),
+                    "seen": patchnote.seens.filter(id=request.user.id).exists(),
+                }
+            )
 
         return JsonResponse({"success": True, "data": patchnotes_data}, safe=False)
 
-
     return JsonResponse({"error": "Method not allowed"}, status=405)
+
 
 @login_required
 def render_servers(request: HttpRequest) -> HttpResponse:
@@ -2216,8 +2248,7 @@ def refresh_server_key(request: HttpRequest) -> HttpResponse:
 
         try:
             target_server = GameServer.objects.get(
-                owner=request.user,
-                id=int(request_body["serverId"])
+                owner=request.user, id=int(request_body["serverId"])
             )
         except GameServer.DoesNotExist:
             return HttpResponse(json.dumps({"success": False}))
@@ -2383,6 +2414,8 @@ def render_quicksetup(request: HttpRequest) -> HttpResponse:
             "dists": dists,
         },
     )
+
+
 @api_view(["POST", "GET"])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -2405,7 +2438,9 @@ def subscriptions_api(request):
         return Response({"success": True, "subscriptions": subscriptions_data})
 
     if request.data.get("key", "").strip().lower() == "trial":
-        if request.user.subscriptions.filter(plan=ServerSubscription.Plans.FREE).exists():
+        if request.user.subscriptions.filter(
+            plan=ServerSubscription.Plans.FREE
+        ).exists():
             return JsonResponse(
                 {"success": False, "error": "Trial already used."}, status=200
             )
@@ -2416,7 +2451,7 @@ def subscriptions_api(request):
             owner=request.user,
             started_at=now(),
         )
-        logger.info(f"Created free subscription for user \"{request.user.username}\"")
+        logger.info(f'Created free subscription for user "{request.user.username}"')
 
         subscriptions_data = [
             {

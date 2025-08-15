@@ -633,7 +633,7 @@ class AuditLogEntry(models.Model):
     summary = models.CharField(max_length=140, blank=True)
     details = models.TextField(blank=True)
 
-    game_server = models.ForeignKey(GameServer, on_delete=models.DO_NOTHING, related_name="audit_logs", null=True)
+    game_server = models.ForeignKey(GameServer, on_delete=models.SET_NULL, related_name="audit_logs", null=True)
 
     target_content_type = models.ForeignKey(
         ContentType, on_delete=models.SET_NULL, null=True, blank=True, related_name="audit_log_entries"

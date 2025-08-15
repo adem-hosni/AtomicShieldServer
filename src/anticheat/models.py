@@ -143,7 +143,7 @@ class HWID(models.Model):
     fivem_token = models.JSONField(blank=True, default=list)
     steam = models.CharField(max_length=64, null=True)
     discord_id = models.CharField(max_length=64, null=True)
-    history = HistoricalRecords(custom_model_name="hwids_logs")
+    history = HistoricalRecords()
 
     class Meta:
         verbose_name = "HWID"

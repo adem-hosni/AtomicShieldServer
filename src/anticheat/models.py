@@ -77,7 +77,7 @@ class AntiCheatConfigTemplate(models.Model):
         choices=AntiCheatConfigDataTypes,
         default=AntiCheatConfigDataTypes.BOOLEAN,
     )
-    extra = models.JSONField(default=dict, blank=False)
+    extra = models.JSONField(default=dict, blank=True)
 
     default_value = models.CharField(max_length=512, blank=True)
 
@@ -101,7 +101,8 @@ class AntiCheatConfigTemplate(models.Model):
 
 
 class AntiCheatConfigurations(models.Model):
-    config = models.JSONField(blank=False, default=dict)  # Json Dump
+    config = models.JSONField(blank=False, default=dict)
+    server_image = models.ImageField(null=True, upload_to="servers_images")
 
     class Meta:
         db_table = "anticheat_configurations"

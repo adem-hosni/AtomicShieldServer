@@ -266,43 +266,135 @@ class ClientHWIDAdmin(SimpleHistoryAdmin, ModelAdmin):
         model = HWID
 
 
+_config_field = AntiCheatConfigTemplate._meta.get_field("config_type")
+_server_field = AntiCheatConfigTemplate._meta.get_field("server_type")
+
+CONFIG_CHOICES = [c[0] for c in _config_field.choices]  # e.g. ['boolean', 'number', 'string', ...]
+SERVER_CHOICES = [c[0] for c in _server_field.choices]  # e.g. ['fivem', 'ragemp', ...]
+
+# try to detect typical server keys; fall back to first/any if not found
+def _find_server_key(possible_substrings):
+    for s in SERVER_CHOICES:
+        low = str(s).lower()
+        for sub in possible_substrings:
+            if sub in low:
+                return s
+    return None
+
+FIVEM_KEY = _find_server_key(("fivem", "five"))
+
+def _subset(*wanted):
+    found = [v for v in CONFIG_CHOICES if v.lower() in set(w.lower() for w in wanted)]
+    return found or CONFIG_CHOICES  # if nothing matched, fall back to all options
+
+FIVEM_CONFIGS = _subset("boolean", "number")
+
 @admin.register(AntiCheatConfigTemplate)
 class AntiCheatConfigurationsAdmin(ModelAdmin):
     list_display = (
+        "id",
         "name",
         "pseudo_name",
-        "config_type",
+        "pretty_config_type",
         "section",
         "server_type",
         "default_value_preview",
     )
     list_filter = ("config_type", "server_type", "section__category")
-    search_fields = ("name", "pseudo_name", "default_value")
+    list_display_links = list_display
+    search_fields = ("name", "pseudo_name", "default_value", "extra")
     ordering = ("section__category__name", "section__title", "name")
     list_per_page = 30
 
-    # Use django-unfold to collapse sections
+    # creative, folded fieldsets
     fieldsets = (
-        ("General Info", {"fields": ("name", "subtitle", "pseudo_name", "icon", "tip")}),
-        ("Assignment", {"fields": ("section", "server_type", "config_type")}),
-        ("Defaults", {"fields": ("default_value",)}),
+        (
+            "General — Basic info",
+            {"fields": ("name", "subtitle", "pseudo_name", "icon", "tip")},
+        ),
+        (
+            "Assignment — Where this applies",
+            {"fields": ("section", "server_type", "config_type")},
+        ),
+        (
+            "Defaults & Extras — default values and per-type extras",
+            {"fields": ("default_value", "extra")},
+        ),
+        # (
+        #     "Advanced — read-only helpers",
+        #     {"fields": ("created_at", "updated_at")},
+        # ),
     )
 
-    conditional_fields = {
-        'config_type': {
-            'server_type': {
-                'fivem': 'boolean,number',
-                'ragemp': 'string'
-            }
-        }
-    }
-    extra = 1
-    show_change_link = True
+    # make nice dynamic show/hide behaviour using unfold's conditional_fields feature
+    # conditional_fields expects a mapping of: target_field -> {watch_field: {watch_val: "allowed_options_csv"}}
+    # we compute keys dynamically so you don't have to hardcode 'boolean' or 'fivem'
+    conditional_fields = {}
 
-    @admin.display(description="Default Value")
+    # Only add server-based filtering if we detected relevant server keys
+    if FIVEM_KEY:
+        conditional_fields.setdefault("config_type", {})[
+            "server_type"
+        ] = {FIVEM_KEY: ",".join(FIVEM_CONFIGS)}
+    # If none of the specific server keys were detected, as a fallback make config_type visible always:
+    if not conditional_fields:
+        conditional_fields = None  # unfold will just ignore it
+
+    # optionally show created/updated if your model has them; otherwise ignore quietly
+    readonly_fields = ()
+
+
+    # custom pretty displays
+    def pretty_config_type(self, obj):
+        return obj.get_config_type_display() if hasattr(obj, "get_config_type_display") else str(obj.config_type)
+    pretty_config_type.short_description = "Type"
+
+    @admin.display(description="Default (parsed)")
     def default_value_preview(self, obj):
-        val = obj.get_default_value()
-        return str(val) if val is not None else "-"
+        try:
+            val = obj.get_default_value()
+            if isinstance(val, bool):
+                return "✅ True" if val else "❌ False"
+            if isinstance(val, (int, float)):
+                return str(val)
+            if isinstance(val, str) and len(val) > 60:
+                return f"{val[:57]}…"
+            return str(val) if val is not None else "-"
+        except Exception as e:
+            return f"err: {e}"
+
+    # short pretty dump of extra JSON (avoid massive text)
+    @admin.display(description="Extra (preview)")
+    def extra_preview(self, obj):
+        try:
+            if not obj.extra:
+                return "-"
+            s = str(obj.extra)
+            return s if len(s) <= 80 else s[:77] + "…"
+        except Exception:
+            return "-"
+
+    # attach the preview column (optional; comment/uncomment if you want it in list_display)
+    # list_display = list(list_display) + ["extra_preview"]
+
+    # If you want better textarea size for JSON default, override widgets via formfield_overrides or get_form
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        # increase rows for JSONField / default_value to make editing less annoying
+        try:
+            from django import forms
+            if "extra" in form.base_fields:
+                form.base_fields["extra"].widget = forms.Textarea(attrs={"rows": 6, "style": "font-family: monospace;"})
+            if "default_value" in form.base_fields:
+                form.base_fields["default_value"].widget = forms.Textarea(attrs={"rows": 2})
+        except Exception:
+            pass
+        return form
+
+    class Media:
+        # js = ()
+        # css = {"all": ()}
+        ...
 
 
 class ServerAntiCheatConfiguration(ModelAdmin):

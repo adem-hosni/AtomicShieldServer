@@ -1,3 +1,4 @@
+import time
 import os
 import base64
 from django.core.cache import cache
@@ -315,16 +316,18 @@ async def handle_request_player_join(
 
         await engine.hwid.asave()
 
-    await sync_to_async(AuditLogEntry.create_entry)(
+    await AuditLogEntry.acreate_entry(
         action=AuditLogEntry.Action.PLAYER_REQUEST_JOIN,
         severity=AuditLogEntry.Severity.LOW,
         actor=consumer.game_server,
         game_server=consumer.game_server,
         reviewed=True,
+        target_object=engine.hwid,
         summary="Player Request Join",
         details=f"{request['name']} connection {'accepted' if response['join'] else 'rejected'} with message: {response['message']}",
         category=AuditLogEntry.Category.PLAYER
 )
+    engine.joined_at = time.time()
 
     return await consumer.send(
         SafeServerPacketID.REQUEST_PLAYER_JOIN, {"ip": request["ip"], **response}

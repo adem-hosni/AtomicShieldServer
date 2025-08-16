@@ -30,7 +30,7 @@ from rest_framework.response import Response
 from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
 from django.utils.safestring import mark_safe
-from datetime import timedelta
+from datetime import timedelta, datetime
 from django.contrib import messages
 from django.contrib.humanize.templatetags.humanize import intcomma
 from django.contrib.auth.decorators import login_required
@@ -63,9 +63,7 @@ from .forms import AddServerForm
 import utils
 from typing import Dict, Union, Any
 from utils.aseclient import ASEQueryClient, ASEParser
-from django.views.decorators.http import require_http_methods
-from django.views.decorators.csrf import ensure_csrf_cookie
-from rest_framework.parsers import JSONParser
+from utils import discord
 
 from .models import Release, ReleaseAsset
 
@@ -1021,19 +1019,28 @@ def list_configurations(request: HttpRequest, server_id: int) -> Response:
                 "configs": {
                     "static": {
                         "serverName": game_server.name,
-                        "imageUrl": request.build_absolute_uri(
-                            game_server.configurations.server_image.url
-                        ) if game_server.configurations.server_image else "",
+                        "imageUrl": (
+                            request.build_absolute_uri(
+                                game_server.configurations.server_image.url
+                            )
+                            if game_server.configurations.server_image
+                            else ""
+                        ),
                         "webhookUrls": {
                             "ban": game_server.configurations.get_webhook_url("ban"),
                             "kick": game_server.configurations.get_webhook_url("kick"),
                             "kick": game_server.configurations.get_webhook_url("kick"),
-                            "screenshot": game_server.configurations.get_webhook_url("screenshot"),
-                            "unban": game_server.configurations.get_webhook_url("unban"),
+                            "screenshot": game_server.configurations.get_webhook_url(
+                                "screenshot"
+                            ),
+                            "unban": game_server.configurations.get_webhook_url(
+                                "unban"
+                            ),
                         },
                         "embedTemplates": {
-                            template_name: embed for template_name, embed in game_server.configurations.embeds.items()
-                        }
+                            template_name: embed
+                            for template_name, embed in game_server.configurations.embeds.items()
+                        },
                     },
                     "dynamic": {
                         "categories": [
@@ -1064,13 +1071,13 @@ def list_configurations(request: HttpRequest, server_id: int) -> Response:
                                             }
                                             for config in section.configurations.all()
                                         ],
+                                    }
+                                    for section in category.sections.all()
+                                ],
                             }
-                for section in category.sections.all()
-            ],
-        }
-        for category in AntiCheatConfigurationCategory.objects.filter(
-            server_type=game_server.type
-        )                  
+                            for category in AntiCheatConfigurationCategory.objects.filter(
+                                server_type=game_server.type
+                            )
                         ]
                     },
                 },
@@ -1078,6 +1085,7 @@ def list_configurations(request: HttpRequest, server_id: int) -> Response:
             "message": "Configurations retrieved successfully.",
         }
     )
+
 
 @api_view(["POST"])
 @authentication_classes([JWTAuthentication])
@@ -1122,7 +1130,7 @@ def save_configurations(request: HttpRequest, server_id: int) -> Response:
         server_name = static_configs.get("serverName")
         if server_name:
             game_server.name = server_name
-        
+
         image_base64 = static_configs.get("serverImage")
         if image_base64:
             if image_base64:
@@ -1143,7 +1151,7 @@ def save_configurations(request: HttpRequest, server_id: int) -> Response:
             for key, value in embed_templates.items():
                 if key in template_names:
                     game_server.configurations.embeds[key] = value
-    
+
     try:
         dynamic_configs = values.get("dynamic", {})
         if dynamic_configs:
@@ -1152,7 +1160,9 @@ def save_configurations(request: HttpRequest, server_id: int) -> Response:
                 game_server.configurations.config[str(key)] = value
 
     except Exception as err:
-        logger.error(f"An error occured while saving configurations for {request.user} ({game_server.name})")
+        logger.error(
+            f"An error occured while saving configurations for {request.user} ({game_server.name})"
+        )
         logger.info(values)
 
     game_server.configurations.save()
@@ -1164,6 +1174,7 @@ def save_configurations(request: HttpRequest, server_id: int) -> Response:
             "message": "Configurations saved successfuly",
         }
     )
+
 
 @api_view(["POST"])
 @authentication_classes([JWTAuthentication])
@@ -1811,6 +1822,37 @@ def list_audit_logs(request: HttpRequest, server_id: int) -> Response:
             },
         }
     )
+
+
+@api_view(["POST"])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+def test_webhook(request: HttpRequest) -> Response:
+    webhook_url = request.data.get("webhookUrl")
+    embed_template = request.data.get("embedTemplate", {})
+
+    if not webhook_url or not embed_template:
+        return Response({"success": False, "message": "Invalid request data"})
+
+    try:
+        async_to_sync(discord.send_discord_embed)(
+            webhook_url,
+            title=embed_template.get("title"),
+            description=embed_template.get("description"),
+            color=embed_template.get("color"),
+            fields=[
+                (field["name"], field["value"], field["inline"])
+                for field in embed_template.get("fields", {})
+            ],
+            footer_icon_url=embed_template["footer"]["icon"],
+
+        )
+    except Exception as err:
+        logger.error(f"An error occured while testing webhook url for {request.user}: {err}")
+        return Response(
+            {"success": False, "message": "An error occured while sending request"}
+        )
+    return Response({"success": True, "message": "Test embed sent successfuly"})
 
 
 @login_required
@@ -2633,10 +2675,12 @@ def subscriptions_api(request):
         }
     )
 
+
 @api_view(["POST", "GET"])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 def list_players(request, server_id):
+    players = []
     players = []
     message = ""
 
@@ -2644,18 +2688,33 @@ def list_players(request, server_id):
     try:
         target_server = GameServer.get_for_user(server_id, request.user)
     except GameServer.DoesNotExist:
-        return Response({
-            "success": False,
-            "message": "The selected server does not exist!",
-            "players": [],
-        })
+        return Response(
+            {
+                "success": False,
+                "message": "The selected server does not exist!",
+                "players": [],
+            }
+        )
 
     # Get the FiveM server
     server = fivem_guard.get_server_by_ip(target_server.ip)
     if server:
         try:
             status = async_to_sync(server.request_status)()
-            players = status.get("players", [])
+            retreived_players = status.get("players", [])
+            
+            for player in retreived_players:
+                engine = fivem_guard.get_scanner_by_ip(player["ip"])
+                if engine:
+                    players.append({
+                        **player,
+                        "joined_at": datetime.fromtimestamp(engine.joined_at),
+                        "play_time": utils.represent_timedelta_string(engine.play_time),
+                    })
+                else:
+                    players.append({**player, "joined_at": "Unknown", "play_time": "Unknown"})
+                
+                
         except Exception as e:
             logger.error(f"Failed to get server status: {e}")
             message = "Server is offline"
@@ -2680,12 +2739,16 @@ def list_players(request, server_id):
 
         player_ip = next((p["ip"] for p in players if p["id"] == player_id), None)
         if not player_ip:
-            return Response({"success": False, "message": "Cannot find the target player"})
+            return Response(
+                {"success": False, "message": "Cannot find the target player"}
+            )
 
         engine = fivem_guard.get_scanner_by_ip(player_ip)
         logger.info(player_ip)
         if not engine:
-            return Response({"success": False, "message": "Cannot retrieve the target player"})
+            return Response(
+                {"success": False, "message": "Cannot retrieve the target player"}
+            )
 
         action = data.get("action")
         match action:
@@ -2698,7 +2761,9 @@ def list_players(request, server_id):
                         if not kicked:
                             response["message"] = "Player could not be kicked."
                     else:
-                        response["message"] = "You dont have permission to perform this action"
+                        response["message"] = (
+                            "You dont have permission to perform this action"
+                        )
                 except Exception as e:
                     logger.error(f"Kick error: {e}")
                     response["message"] = "Failed to kick the player."
@@ -2712,7 +2777,9 @@ def list_players(request, server_id):
                         if not banned:
                             response["message"] = "Player could not be banned."
                     else:
-                        response["message"] = "You dont have permission to perform this action"
+                        response["message"] = (
+                            "You dont have permission to perform this action"
+                        )
 
                 except Exception as e:
                     logger.error(f"Ban error: {e}")
@@ -2721,7 +2788,16 @@ def list_players(request, server_id):
                 try:
                     image_path = async_to_sync(engine.get_screenshot)()
                     if image_path:
-                        response.update({"success": True, "url": request.build_absolute_uri(image_path) if image_path else ""})
+                        response.update(
+                            {
+                                "success": True,
+                                "url": (
+                                    request.build_absolute_uri(image_path)
+                                    if image_path
+                                    else ""
+                                ),
+                            }
+                        )
                     else:
                         response["message"] = "Cannot retrieve screenshot."
                 except Exception as e:
@@ -2739,24 +2815,34 @@ def list_players(request, server_id):
     search_text = request.GET.get("search", "").strip()
 
     if search_text:
-        players = [p for p in players if search_text.lower() in p["name"].lower() or search_text in p["id"]]
+        players = [
+            player
+            for player in players
+            if search_text.lower() in player["name"].lower() or search_text in player["id"]
+        ]
         current_page = 0
 
     page_size = min(len(players), 35) if players else 35
     max_pages = max(1, -(-len(players) // page_size))  # ceil division
     current_page = max(0, min(current_page, max_pages - 1))
-    players_to_show = players[page_size * current_page: page_size * (current_page + 1)]
+    players_to_show = players[page_size * current_page : page_size * (current_page + 1)]
 
-    return Response({
-        "success": True,
-        "message": "No Online Players to show" if not players_to_show and not message else message,
-        "data": {
-            "players": players_to_show,
-            "pages": max_pages,
-            "current_page": current_page + 1,
-            "show_previous": current_page > 0,
-            "show_next": current_page + 1 < max_pages,
-            "page_range": list(range(1, max_pages + 1)),
-            "max_pages": max_pages,
+    return Response(
+        {
+            "success": True,
+            "message": (
+                "No Online Players to show"
+                if not players_to_show and not message
+                else message
+            ),
+            "data": {
+                "players": players_to_show,
+                "pages": max_pages,
+                "current_page": current_page + 1,
+                "show_previous": current_page > 0,
+                "show_next": current_page + 1 < max_pages,
+                "page_range": list(range(1, max_pages + 1)),
+                "max_pages": max_pages,
+            },
         }
-    })
+    )

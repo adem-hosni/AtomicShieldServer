@@ -1,3 +1,4 @@
+import time
 import uuid
 import asyncio
 from asgiref.sync import sync_to_async
@@ -63,6 +64,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         ] = {}
         self.build_timestamp = "NONE"
         self.received_ip: str = "NONE"
+        self.joined_at = None
 
     def generate_request_id(self) -> str:
         """
@@ -841,3 +843,9 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             if not ban.is_expired and ban.active:
                 return ban
         return None
+    
+    @property
+    def play_time(self) -> float:
+        if not self._connected_server or self.joined_at:
+            return 0
+        return time.time() - self.joined_at

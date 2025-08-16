@@ -20,6 +20,7 @@ urlpatterns = [
     path("moderation/invite", views.invite_moderator, name="invite_moderator"),
     path("moderation/invite/mark", views.mark_invite, name="mark_invite"),
     path("server/<int:server_id>/audit-logs", views.list_audit_logs, name="list_audit_logs"),
+    path("webhook/test", views.test_webhook, name="test_webhook"),
 
     path("download-assets/", views.download_assets_view, name="dashboard"),
 

@@ -357,7 +357,7 @@ async def handle_player_quit(consumer: SafeServerConsumer, request: Dict[str, An
     if not check_request_body_key(request, "reason", str):
         return
 
-    AuditLogEntry.create_entry(
+    await AuditLogEntry.acreate_entry(
         action=AuditLogEntry.Action.PLAYER_QUIT,
         severity=AuditLogEntry.Severity.LOW,
         game_server=consumer.game_server,

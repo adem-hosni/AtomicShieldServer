@@ -1023,7 +1023,7 @@ def list_configurations(request: HttpRequest, server_id: int) -> Response:
                         "serverName": game_server.name,
                         "imageUrl": request.build_absolute_uri(
                             game_server.configurations.server_image.url
-                        ) if game_server.configurations.server_image else "",
+                        ) if game_server.configurations.server_image else ""
                     },
                     "dynamic": {
                         "categories": [
@@ -1047,20 +1047,20 @@ def list_configurations(request: HttpRequest, server_id: int) -> Response:
                                                 "subtitle": config.subtitle,
                                                 "tip": config.tip,
                                                 "value": game_server.configurations.config.get(
-                                                    config.id, config.default_value
+                                                    str(config.id), config.default_value
                                                 ),
                                                 "icon": config.icon,
                                                 "extra": config.extra,
                                             }
                                             for config in section.configurations.all()
                                         ],
-                                    }
-                                    for section in category.sections.all()
-                                ],
                             }
-                            for category in AntiCheatConfigurationCategory.objects.filter(
-                                server_type=game_server.type
-                            )
+                for section in category.sections.all()
+            ],
+        }
+        for category in AntiCheatConfigurationCategory.objects.filter(
+            server_type=game_server.type
+        )                  
                         ]
                     },
                 },
@@ -1069,6 +1069,79 @@ def list_configurations(request: HttpRequest, server_id: int) -> Response:
         }
     )
 
+@api_view(["POST"])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+def save_configurations(request: HttpRequest, server_id: int) -> Response:
+    try:
+        game_server = GameServer.objects.get(owner=request.user, id=server_id)
+    except GameServer.DoesNotExist:
+        logger.warning(
+            f"{request.user.username} tried to access configurations of a non-existing server ({server_id})!"
+        )
+        return Response(
+            {
+                "success": False,
+                "message": "The selected server does not exist or you do not have permission to access it.",
+            }
+        )
+    except Exception:
+        logger.exception(
+            f"An unexpected error occurred while accessing configurations for server {server_id} for user {request.user.username}."
+        )
+        return Response(
+            {
+                "success": False,
+                "message": "An unexpected error occurred while accessing the server.",
+            }
+        )
+
+    values = request.data.get("values", {})
+    if not values:
+        return Response(
+            {
+                "success": False,
+                "message": "No configurations provided!",
+            }
+        )
+
+    static_configs = values.get("static", {})
+    if static_configs:
+        server_name = static_configs.get("serverName")
+        if server_name:
+            game_server.name = server_name
+        
+        image_base64 = static_configs.get("serverImage")
+        if image_base64:
+            if image_base64:
+                format, imgstr = image_base64.split(";base64,")
+                ext = format.split("/")[-1]
+
+                img_data = base64.b64decode(imgstr)
+                game_server.configurations.server_image.save(
+                    f"{game_server.id}.{ext}", ContentFile(img_data), save=True
+                )
+    
+    try:
+        dynamic_configs = values.get("dynamic", {})
+        if dynamic_configs:
+            for key, value in dynamic_configs.items():
+                logger.info(f"Saving {key=} {value=}")
+                game_server.configurations.config[str(key)] = value
+
+    except Exception as err:
+        logger.error(f"An error occured while saving configurations for {request.user} ({game_server.name})")
+        logger.info(values)
+
+    game_server.configurations.save()
+    game_server.save()
+
+    return Response(
+        {
+            "success": True,
+            "message": "Configurations saved successfuly",
+        }
+    )
 
 @api_view(["POST"])
 @authentication_classes([JWTAuthentication])

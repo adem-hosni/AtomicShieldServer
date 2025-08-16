@@ -2538,8 +2538,6 @@ def subscriptions_api(request):
         }
     )
 
-
-
 @api_view(["POST", "GET"])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -2549,10 +2547,7 @@ def render_players(request, server_id):
 
     # Get the server object
     try:
-        target_server = GameServer.get_for_user(
-            server_id,
-            request.user
-        )
+        target_server = GameServer.get_for_user(server_id, request.user)
     except GameServer.DoesNotExist:
         return Response({
             "success": False,
@@ -2576,52 +2571,61 @@ def render_players(request, server_id):
     # POST actions
     # -------------------
     if request.method == "POST":
-        response: Dict[str, Union[bool, str]] = {"success": False, "message": ""}
+        response = {"success": False, "message": ""}
+
         try:
-            request_body: Dict[str, Union[str, bool]] = json.loads(request.body.decode())
+            data = json.loads(request.body.decode())
         except Exception as err:
             logger.error(f"Failed to parse request body: {err}")
             return Response({"success": False, "message": "Invalid JSON"})
 
-        player_id = request_body.get("playerid")
+        player_id = data.get("playerId")
         if not player_id:
-            response["message"] = "Invalid player!"
-            return Response(response)
+            return Response({"success": False, "message": "playerId is required"})
 
-        player_ip = next((p["ip"] for p in players if p["id"] == player_id), None)
+        player_ip = "127.0.0.1"#next((p["ip"] for p in players if p["id"] == player_id), None)
         if not player_ip:
-            response["message"] = "Cannot retrieve the target player!"
-            return Response(response)
+            return Response({"success": False, "message": "Cannot find the target player"})
 
         engine = fivem_guard.get_scanner_by_ip(player_ip)
+        logger.info(player_ip)
         if not engine:
-            response["message"] = "Cannot retrieve the target player!"
-            return Response(response)
+            return Response({"success": False, "message": "Cannot retrieve the target player"})
 
-        action_type = request_body.get("type")
-        if action_type == "request_screenshot":
+        action = data.get("action")
+        if action == "kick":
+            try:
+                reason = data.get("reason", "")
+                kicked = async_to_sync(engine.kick)(reason)
+                response["success"] = kicked
+                if not kicked:
+                    response["message"] = "Player could not be kicked."
+            except Exception as e:
+                logger.error(f"Kick error: {e}")
+                response["message"] = "Failed to kick the player."
+        elif action == "ban":
+            try:
+                reason = data.get("reason", "")
+                duration = data.get("duration", "permanent")
+                banned = async_to_sync(engine.ban)(reason, duration)
+                response["success"] = banned
+                if not banned:
+                    response["message"] = "Player could not be banned."
+            except Exception as e:
+                logger.error(f"Ban error: {e}")
+                response["message"] = "Failed to ban the player."
+        elif action == "screenshot":
             try:
                 image_path = async_to_sync(engine.get_screenshot)()
                 if image_path:
-                    logger.info(f"Successfully requested screenshot from {engine.hwid.username}")
-                    response.update({"success": True, "url": image_path})
+                    response.update({"success": True, "url": request.build_absolute_uri(image_path) if image_path else ""})
                 else:
-                    response["message"] = "Cannot retrieve screenshot from the player!"
+                    response["message"] = "Cannot retrieve screenshot."
             except Exception as e:
                 logger.error(f"Screenshot error: {e}")
-                response["message"] = "Failed to retrieve screenshot!"
-        elif action_type == "kick":
-            try:
-                kicked = async_to_sync(engine.kick)()
-                if kicked:
-                    response["success"] = True
-                else:
-                    response["message"] = "Player is not connected to your server."
-            except Exception as e:
-                logger.error(f"Kick error: {e}")
-                response["message"] = "Failed to kick the player!"
+                response["message"] = "Failed to retrieve screenshot."
         else:
-            response["message"] = "Invalid action requested!"
+            response["message"] = "Invalid action."
 
         return Response(response)
 
@@ -2632,26 +2636,24 @@ def render_players(request, server_id):
     search_text = request.GET.get("search", "").strip()
 
     if search_text:
-        players = [
-            p for p in players
-            if search_text.lower() in p["name"].lower() or search_text in p["id"]
-        ]
+        players = [p for p in players if search_text.lower() in p["name"].lower() or search_text in p["id"]]
         current_page = 0
 
     page_size = min(len(players), 35) if players else 35
     max_pages = max(1, -(-len(players) // page_size))  # ceil division
-
     current_page = max(0, min(current_page, max_pages - 1))
     players_to_show = players[page_size * current_page: page_size * (current_page + 1)]
 
     return Response({
         "success": True,
         "message": "No Online Players to show" if not players_to_show and not message else message,
-        "data": {        "players": players_to_show,
-        "pages": max_pages,
-        "current_page": current_page + 1,
-        "show_previous": current_page > 0,
-        "show_next": current_page + 1 < max_pages,
-        "page_range": list(range(1, max_pages + 1)),
-        "max_pages": max_pages,}
+        "data": {
+            "players": players_to_show,
+            "pages": max_pages,
+            "current_page": current_page + 1,
+            "show_previous": current_page > 0,
+            "show_next": current_page + 1 < max_pages,
+            "page_range": list(range(1, max_pages + 1)),
+            "max_pages": max_pages,
+        }
     })

@@ -332,7 +332,7 @@ async def handle_request_player_join(
 
 
 async def handle_server_disconnect(consumer: SafeServerConsumer):
-    AuditLogEntry.create_entry(
+    await AuditLogEntry.acreate_entry(
         action=AuditLogEntry.Action.ANTICHEAT_SHUTDOWN,
         severity=AuditLogEntry.Severity.MEDIUM,
         game_server=consumer.game_server,

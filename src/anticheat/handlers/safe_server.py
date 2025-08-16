@@ -216,94 +216,99 @@ async def handle_request_player_join(
 
     response = {"join": False, "message": ""}
 
-    # Commented out localhost check for testing
-    # if request["ip"] == "127.0.0.1":
-    #     response["join"] = False
-    #     response["message"] = await consumer.game_server.get_config_by_id(config_ids.NETWORK_CORRUPTED)
-    #     logger.warning(f"got a localhost ip in the server {consumer.game_server.name}{consumer.address}")
-    # else:
-
-    # Check if the AtomicShield agent is connected
-    engine = fivem_guard.get_scanner_by_ip(request["ip"])
-    if not engine:
-        engine = fivem_guard.get_engine_by_24subnet(request["ip"])
-        if engine:
-            logger.info(f"Engine found by 24 subnet: {engine.address[0]}")
-        else:
-            response["join"] = False
-            cached_engine_data = await cache.aget(f"ac:engine:{request['ip']}")
-            if cached_engine_data:
-                response["join"] = True
-
-    response["join"] = not engine is None
-    if not response["join"]:
-        response["message"] = await consumer.game_server.get_config_by_id(config_ids.AGENT_NOT_DETECTED_MSG)
-        logger.info(f'Connection refused: "AtomicShield Agent is Not Connected" (requested ip: {request["ip"]})')
+    if request["ip"] == "127.0.0.1":
+        response["join"] = False
+        response["message"] = await consumer.game_server.get_config_by_id(config_ids.NETWORK_CORRUPTED)
+        logger.warning(f"got a localhost ip in the server {consumer.game_server.name}{consumer.address}")
     else:
-        if len(request["steam"]) and request["steam"] != "Unknown":
-            engine.hwid.steam = request["steam"]
-        if len(request["license"]) and request["license"] != "Unknown":
-            engine.hwid.fivem_license = request["license"]
-        if len(request["discord"]) and request["discord"] != "Unknown":
-            engine.hwid.discord_id = request["discord"]
-        for token in request["token"]:
-            if token not in engine.hwid.fivem_token:
-                engine.hwid.fivem_token.append(token)
-        changes = await engine.hwid.get_changes()
-        if changes:
-            await engine.hwid.asave()
-            logger.info(f'Updating fivem identifiers for "{engine.hwid.username}"')
+        # Check if the AtomicShield agent is connected
+        engine = fivem_guard.get_scanner_by_ip(request["ip"])
+        if not engine:
+            engine = fivem_guard.get_engine_by_24subnet(request["ip"])
+            if engine:
+                logger.info(f"Engine found by 24 subnet: {engine.address[0]}")
+            else:
+                response["join"] = False
+                cached_engine_data = await cache.aget(f"ac:engine:{request['ip']}")
+                if cached_engine_data:
+                    response["join"] = True
 
-        if engine.is_flagged:
-            logger.info(
-                f'{engine.hwid.computer_name} Client is flagged: "{engine.flag_message}"'
-            )
+        response["join"] = not engine is None
+        if not response["join"]:
+            response["message"] = await consumer.game_server.get_config_by_id(config_ids.AGENT_NOT_DETECTED_MSG)
+            logger.info(f'Connection refused: "AtomicShield Agent is Not Connected" (requested ip: {request['ip']})')
+        else:
+            if len(request["steam"]) and request["steam"] != "Unknown":
+                engine.hwid.steam = request["steam"]
+            if len(request["license"]) and request["license"] != "Unknown":
+                engine.hwid.fivem_license = request["license"]
+            if len(request["discord"]) and request["discord"] != "Unknown":
+                engine.hwid.discord_id = request["discord"]
+            for token in request["token"]:
+                if token not in engine.hwid.fivem_token:
+                    engine.hwid.fivem_token.append(token)
+            changes = await engine.hwid.get_changes()
+            if changes:
+                await engine.hwid.asave()
+                logger.info(f'Updating fivem identifiers for "{engine.hwid.username}"')
 
-            # Handle the strict flags (Unallowed by the server configuration)
-            for flag in engine.get_flags():
-                if flag.type in unstrict_detection_types:
-                    kick_message = await engine.handle_basic_checks(flag.type, flag.report, consumer)
-                    if kick_message:
+            if engine.is_flagged:
+                logger.info(
+                    f'{engine.hwid.computer_name} Client is flagged: "{engine.flag_message}"'
+                )
+
+                # Handle the strict flags (Unallowed by the server configuration)
+                for flag in engine.get_flags():
+                    if flag.type in unstrict_detection_types:
+                        kick_message = await engine.handle_basic_checks(flag.type, flag.report, consumer)
+                        if kick_message:
+                            response["join"] = False
+                            response["message"] = kick_message
+                            logger.info(
+                                f'Connection refused: Strict Basic Checks Found on {engine.hwid.username}: "{flag.type.label}"'
+                            )
+                            break
+                    else:
+                        # Strict Detection ? Ban
+                        logger.warning(
+                            f"Cheating Behaviour {flag.type.name} detected on {engine.hwid.username}'s computer! {flag.report.get('kick_message', '<UNKNOWN>')}"
+                        )
                         response["join"] = False
-                        response["message"] = kick_message
-                        logger.info(
-                            f'Connection refused: Strict Basic Checks Found on {engine.hwid.username}: "{flag.type.label}"'
-                        )
-                        break
-                else:
-                    # Strict Detection ? Ban
-                    logger.warning(
-                        f"Cheating Behaviour {flag.type.name} detected on {engine.hwid.username}'s computer! {flag.report.get('kick_message', '<UNKNOWN>')}"
-                    )
-                    response["join"] = False
-                    response["message"] = flag.report.get('kick_message', '<UNKNOWN>')
+                        response["message"] = flag.report.get('kick_message', '<UNKNOWN>')
 
-                    if not flag.banned:
-                        await engine.send_report(flag.report.get("kick_message", ""), flag.report, flag.report["ss"])
-                        await engine.ban(
-                            detection_type=flag.type,
-                            duration=timedelta(days=999),
-                            target_game_server=consumer.game_server,
-                            image_buffer=flag.report.get("ss", b""),
-                            reason=flag.report.get("kick_message", "<None>"),
-                            report=flag.report
-                        )
-                        flag.banned = True
+                        if not flag.banned:
+                            await engine.send_report(flag.report.get("kick_message", ""), flag.report, flag.report["ss"])
+                            await engine.ban(
+                                detection_type=flag.type,
+                                duration=timedelta(days=999),
+                                target_game_server=consumer.game_server,
+                                image_buffer=flag.report.get("ss", b""),
+                                reason=flag.report.get("kick_message", "<None>"),
+                                report=flag.report
+                            )
+                            flag.banned = True
 
-        # Check if the player is banned
-        ban = await engine.get_last_ban()
-        if ban:
-            response["join"] = False
-            response["message"] = (
-                f"You're Banned from AtomicShield servers due to cheating \nReason: {ban.reason}\nNote: if you think this an error, you can appeal your ban on discord"
-            )
+            # Check if the player is banned
+            ban = await engine.get_last_ban()
+            if ban:
+                response["join"] = False
+                response["message"] = (
+                    f"You're Banned from AtomicShiled servers due to cheating \nReason: {ban.reason}\nNote: if you think this an error, you can appeal your ban on discord"
+                )
 
-    # If the player can join, link the engine to the consumer
+
+        # Is the player available to join the FxServer ? then start the scanners
     if response["join"]:
         engine.connected_server = consumer
         logger.info(
-            f'"{request["name"]}" ({request["ip"]}) is connected to "{server_name}"'
+            f"\"{request["name"]}\" ({request['ip']}) is connected to \"{server_name}\""
         )
+
+        # if await engine.run_scanners(True):
+        # else:
+        #     response["join"] = False
+        #     response["message"] = "Unable to scan your computer from cheats! try to restart the agent"
+        #     logger.info(f"\"{request["name"]}\" ({request['ip']}) is unable to connect to \"{server_name}\"!")
 
         # Store the given data from the FxServer
         engine.hwid.fivem_license = request["license"]
@@ -319,12 +324,12 @@ async def handle_request_player_join(
     await AuditLogEntry.acreate_entry(
         action=AuditLogEntry.Action.PLAYER_REQUEST_JOIN,
         severity=AuditLogEntry.Severity.LOW,
-        actor=consumer.game_server,
+        actor=request.user,
         game_server=consumer.game_server,
         reviewed=True,
         target_object=engine.hwid,
         summary="Player Request Join",
-        details=f"{request['name']} connection {'accepted' if response['join'] else 'rejected'} with message: {response['message']}",
+        details=f"{request['name']} connection {'accepted' if response["join"] else 'rejected'} with message: {response["message"]}",
         category=AuditLogEntry.Category.PLAYER
 )
     engine.joined_at = time.time()

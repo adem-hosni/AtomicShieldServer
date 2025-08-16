@@ -28,7 +28,7 @@ CONFIG_DIR = os.path.join(BASE_DIR.parent, "config")
 SECRET_KEY = "mr9y5jf)fp5^==jhccttp!d!9&hh@57@dbb+0-idp!-d!i0%r+"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 # Bin directory
 if DEBUG:
@@ -107,7 +107,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "simple_history.middleware.HistoryRequestMiddleware",
     "AtomicShield.middleware.ExceptionHandlerMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",
+    # "whitenoise.middleware.WhiteNoiseMiddleware",
     "django_hosts.middleware.HostsResponseMiddleware",
 ]
 
@@ -202,7 +202,7 @@ DATABASES = {
         "ENGINE": "django.db.backends.mysql",
         "NAME": "atomicshield",
         "USER": "root",
-        "PASSWORD": "root",
+        "PASSWORD": "",
         "HOST": "localhost",
         "CONN_HEALTH_CHECKS": True,
         "OPTIONS": {
@@ -268,7 +268,8 @@ STATICFILES_DIRS = [
 
 STATIC_URL = "static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+# STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
 
 # Media Configurations
 MEDIA_URL = "/media/"

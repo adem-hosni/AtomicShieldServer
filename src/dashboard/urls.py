@@ -31,7 +31,7 @@ urlpatterns = [
     path("configurations/", views.render_configurations),
     path("quicksetup/", views.render_quicksetup, name="quick_setup"),
     path("subscriptions/", views.subscriptions_api),
-    path("server/<int:server_id>/players", views.render_players, name="players"),
+    path("server/<int:server_id>/players", views.list_players, name="players"),
     path("servers/refresh_key/", views.refresh_server_key, name="refresh_key"),
     path("checkserver/", views.check_server),
 ]

@@ -2614,7 +2614,7 @@ def subscriptions_api(request):
 @api_view(["POST", "GET"])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
-def render_players(request, server_id):
+def list_players(request, server_id):
     players = []
     message = ""
 
@@ -2654,9 +2654,9 @@ def render_players(request, server_id):
 
         player_id = data.get("playerId")
         if not player_id:
-            return Response({"success": False, "message": "playerId is required"})
+            return Response({"success": False, "message": "Player not found"})
 
-        player_ip = "127.0.0.1"#next((p["ip"] for p in players if p["id"] == player_id), None)
+        player_ip = next((p["ip"] for p in players if p["id"] == player_id), None)
         if not player_ip:
             return Response({"success": False, "message": "Cannot find the target player"})
 
@@ -2666,39 +2666,47 @@ def render_players(request, server_id):
             return Response({"success": False, "message": "Cannot retrieve the target player"})
 
         action = data.get("action")
-        if action == "kick":
-            try:
-                reason = data.get("reason", "")
-                kicked = async_to_sync(engine.kick)(reason)
-                response["success"] = kicked
-                if not kicked:
-                    response["message"] = "Player could not be kicked."
-            except Exception as e:
-                logger.error(f"Kick error: {e}")
-                response["message"] = "Failed to kick the player."
-        elif action == "ban":
-            try:
-                reason = data.get("reason", "")
-                duration = data.get("duration", "permanent")
-                banned = async_to_sync(engine.ban)(reason, duration)
-                response["success"] = banned
-                if not banned:
-                    response["message"] = "Player could not be banned."
-            except Exception as e:
-                logger.error(f"Ban error: {e}")
-                response["message"] = "Failed to ban the player."
-        elif action == "screenshot":
-            try:
-                image_path = async_to_sync(engine.get_screenshot)()
-                if image_path:
-                    response.update({"success": True, "url": request.build_absolute_uri(image_path) if image_path else ""})
-                else:
-                    response["message"] = "Cannot retrieve screenshot."
-            except Exception as e:
-                logger.error(f"Screenshot error: {e}")
-                response["message"] = "Failed to retrieve screenshot."
-        else:
-            response["message"] = "Invalid action."
+        match action:
+            case "kick":
+                try:
+                    if target_server.has_permission_for(request.user, "kick_players"):
+                        reason = data.get("reason", "")
+                        kicked = async_to_sync(engine.kick)(reason)
+                        response["success"] = kicked
+                        if not kicked:
+                            response["message"] = "Player could not be kicked."
+                    else:
+                        response["message"] = "You dont have permission to perform this action"
+                except Exception as e:
+                    logger.error(f"Kick error: {e}")
+                    response["message"] = "Failed to kick the player."
+            case "ban":
+                try:
+                    if target_server.has_permission_for(request.user, "ban_players"):
+                        reason = data.get("reason", "")
+                        duration = data.get("duration", "permanent")
+                        banned = async_to_sync(engine.ban)(reason, duration)
+                        response["success"] = banned
+                        if not banned:
+                            response["message"] = "Player could not be banned."
+                    else:
+                        response["message"] = "You dont have permission to perform this action"
+
+                except Exception as e:
+                    logger.error(f"Ban error: {e}")
+                    response["message"] = "Failed to ban the player."
+            case "screenshot":
+                try:
+                    image_path = async_to_sync(engine.get_screenshot)()
+                    if image_path:
+                        response.update({"success": True, "url": request.build_absolute_uri(image_path) if image_path else ""})
+                    else:
+                        response["message"] = "Cannot retrieve screenshot."
+                except Exception as e:
+                    logger.error(f"Screenshot error: {e}")
+                    response["message"] = "Failed to retrieve screenshot."
+            case _:
+                response["message"] = "Invalid action."
 
         return Response(response)
 

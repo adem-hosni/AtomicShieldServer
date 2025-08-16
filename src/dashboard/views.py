@@ -1023,7 +1023,17 @@ def list_configurations(request: HttpRequest, server_id: int) -> Response:
                         "serverName": game_server.name,
                         "imageUrl": request.build_absolute_uri(
                             game_server.configurations.server_image.url
-                        ) if game_server.configurations.server_image else ""
+                        ) if game_server.configurations.server_image else "",
+                        "webhookUrls": {
+                            "ban": game_server.configurations.get_webhook_url("ban"),
+                            "kick": game_server.configurations.get_webhook_url("kick"),
+                            "kick": game_server.configurations.get_webhook_url("kick"),
+                            "screenshot": game_server.configurations.get_webhook_url("screenshot"),
+                            "unban": game_server.configurations.get_webhook_url("unban"),
+                        },
+                        "embedTemplates": {
+                            template_name: embed for template_name, embed in game_server.configurations.embeds.items()
+                        }
                     },
                     "dynamic": {
                         "categories": [
@@ -1106,6 +1116,8 @@ def save_configurations(request: HttpRequest, server_id: int) -> Response:
         )
 
     static_configs = values.get("static", {})
+    template_names = ["ban", "kick", "unban", "screenshot", "warning"]
+
     if static_configs:
         server_name = static_configs.get("serverName")
         if server_name:
@@ -1121,6 +1133,16 @@ def save_configurations(request: HttpRequest, server_id: int) -> Response:
                 game_server.configurations.server_image.save(
                     f"{game_server.id}.{ext}", ContentFile(img_data), save=True
                 )
+        webhook_urls = static_configs.get("webhookUrls")
+        if webhook_urls:
+            for key, value in webhook_urls.items():
+                if key in template_names:
+                    game_server.configurations.webhooks[key] = value
+        embed_templates = static_configs.get("embedTemplates")
+        if embed_templates:
+            for key, value in embed_templates.items():
+                if key in template_names:
+                    game_server.configurations.embeds[key] = value
     
     try:
         dynamic_configs = values.get("dynamic", {})

@@ -102,7 +102,16 @@ class AntiCheatConfigTemplate(models.Model):
 
 class AntiCheatConfigurations(models.Model):
     config = models.JSONField(blank=False, default=dict)
+    webhooks = models.JSONField(blank=False, default=dict)
+    embeds = models.JSONField(blank=False, default=dict)
     server_image = models.ImageField(null=True, upload_to="servers_images")
+
+    def get_config(self, config_name):
+        config = AntiCheatConfigTemplate.objects.get(pseudo_name=config_name)
+        return self.config.get(str(config.id), config.default_value)
+
+    def get_webhook_url(self, name: str):
+        return self.webhooks.get(name, "")
 
     class Meta:
         db_table = "anticheat_configurations"

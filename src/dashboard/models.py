@@ -213,7 +213,7 @@ class GameServer(models.Model):
         try:
             target_moderator = self.moderators.get(user__id=user.id)
         except Exception as err:
-            logger.error(err)
+            logger.error(f"An error occured while checking permission {permission} for {request.user}")
             return False
         return str(permission) in target_moderator.permission_summary
 

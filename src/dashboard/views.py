@@ -1202,6 +1202,19 @@ def list_moderators(request: HttpRequest, server_id: int) -> Response:
                 "message": "An unexpected error occurred while accessing the server.",
             }
         )
+    if not target_server.has_permission_for(
+        request.user, GameServerModerator.Permissions.CAN_MANAGE_MODERATORS
+    ):
+        logger.warning(
+            f"{request.user.username} wants to suspend moderator permissions with no permission"
+        )
+        return Response(
+            {
+                "success": False,
+                "message": "You dont have an access to perform this operation",
+            }
+        )
+
 
     moderators = target_server.moderators.all()
 
@@ -1792,6 +1805,7 @@ def list_audit_logs(request: HttpRequest, server_id: int) -> Response:
                 "message": "An unexpected error occurred while accessing the server.",
             }
         )
+    
 
     audit_logs = AuditLogEntry.objects.filter(game_server=server)
 

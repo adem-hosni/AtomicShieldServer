@@ -31,7 +31,7 @@ from ..models import (
 from dashboard.models import AuditLogEntry
 from typing import Dict, Any
 import logging
-
+from .safe_server import handle_request_player_join
 
 logger = logging.getLogger(__name__)
 
@@ -266,7 +266,7 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
         ]
         signature_count += len(signature.signatures)
 
-    return await consumer.send(
+    await consumer.send(
         SafeEnginePacketID.NETWORK_JOIN,
         {"success": True, "message": "", "signatures": encrypted_signatures},
     )
@@ -409,12 +409,12 @@ async def handle_cheat_detection(consumer: SafeEngineConsumer, request: Dict[str
             request["detection_type"], screenshot_buffer, request["report"]
         )
         if consumer.connected_server:
-            AuditLogEntry.create_entry(
+            await AuditLogEntry.acreate_entry(
                 action=AuditLogEntry.Action.CHEAT_DETECTED,
                 severity=AuditLogEntry.Severity.CRITICAL,
                 game_server=consumer.connected_server.game_server,
                 summary="Player Cheating Activity Detected",
-                details=f"A Cheating behaviour detected on {consumer.hwid.username} ({ban_message or 'Unknown'})",
+                details=f"A Cheating behaviour detected on {consumer.hwid.username} ({request['report']['kick_message'] or 'Unknown'})",
                 category=AuditLogEntry.Category.PLAYER
             )
             flag.banned = True

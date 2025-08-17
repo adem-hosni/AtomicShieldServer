@@ -506,7 +506,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                 send_alerts = True  # await target_game_server.configuration.aget_config("allow_send_alert")
 
                 if send_alerts:
-                    webhook_url = await target_game_server.configuration.aget_webhook_url("ban")
+                    webhook_url = (await target_game_server.aconfigurations).get_webhook_url("ban")
                     if len(webhook_url) > 0:
                         if detection_type == DetectionType.CHEAT_SIGNATURE_FOUND:
                             if (
@@ -514,7 +514,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                                 == "D:\\Projets\\TZX\\x64\\Release\\Module.pdb"
                             ):
                                 reason = "External Cheat Detected (TZX)"
-                        ban_embed = await target_game_server.configuration.aget_discord_embed("ban")
+                        ban_embed = (await target_game_server.configurations).get_discord_embed("ban")
 
                         embed_title = ban_embed["ban"]
                         embed_title = utils.format_string(
@@ -582,6 +582,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         server: SafeServerConsumer,
     ) -> bool:
         # Check if the malicious driver is about Process Hacker
+        return False
         try:
             if detection == DetectionType.MALICIOUS_DRIVER:
                 if str(report["driver"]).endswith("kprocesshacker.sys"):

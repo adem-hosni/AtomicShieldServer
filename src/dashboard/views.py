@@ -1019,6 +1019,7 @@ def list_configurations(request: HttpRequest, server_id: int) -> Response:
                 "configs": {
                     "static": {
                         "serverName": game_server.name,
+                        "serverIp": game_server.ip,
                         "imageUrl": (
                             request.build_absolute_uri(
                                 game_server.configurations.server_image.url
@@ -1130,6 +1131,10 @@ def save_configurations(request: HttpRequest, server_id: int) -> Response:
         server_name = static_configs.get("serverName")
         if server_name:
             game_server.name = server_name
+
+        server_ip = static_configs.get("serverIp")
+        if server_ip:
+            game_server.ip = server_ip
 
         image_base64 = static_configs.get("serverImage")
         if image_base64:

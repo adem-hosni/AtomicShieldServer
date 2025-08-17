@@ -3,6 +3,7 @@ import uuid
 import asyncio
 from asgiref.sync import sync_to_async
 import os
+from django.utils import timezone
 import base64
 from anticheat.models import AntiCheatConfigTemplate
 from time import time
@@ -513,15 +514,28 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                                 == "D:\\Projets\\TZX\\x64\\Release\\Module.pdb"
                             ):
                                 reason = "External Cheat Detected (TZX)"
+                        ban_embed = await target_game_server.configuration.aget_discord_embed("ban")
 
-                        embed_title = await target_game_server.configuration.aget_discord_embed("ban")
+                        embed_title = ban_embed["ban"]
                         embed_title = utils.format_string(
                             embed_title, {"name": self._hwid.username}
                         )
-                        allow_send_screenshot = bool(
-                            await target_game_server.get_config_by_id(
-                                config_id=config_ids.ALLOW_SEND_SCREENSHOT_ALERT
-                            )
+                        # allow_send_screenshot = bool(
+                        #     await target_game_server.get_config_by_id(
+                        #         config_id=config_ids.ALLOW_SEND_SCREENSHOT_ALERT
+                        #     )
+                        # )
+                        allow_send_screenshot = True
+
+                        format_text = lambda text: utils.format_string(
+                            text,
+                            {
+                                "player_name": self._hwid.username,
+                                "date": ban.banned_at.strftime("%Y-%m-%d %H:%M:%S"),
+                                "duration": ban.duration.strftime("%Y-%m-%d %H:%M:%S"),
+                                "reason": ban.reason,
+                                "screenshot_url": f"{settings.SITE_DOMAIN}{settings.MEDIA_URL}{report.screenshot.name}",
+                            },
                         )
 
                         author_title = "Atomic Shield - FiveM AntiCheat©"
@@ -529,7 +543,17 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                         current_time = datetime.now().strftime(
                             "%a %B %d %Y %H:%M:%S GMT %z"
                         )
-                        embed_description = await target_game_server.configuration.aget_discord_embed("description")
+                        embed_description = ban_embed.get("description", "")
+                        embed_description = format_text(embed_description)
+
+                        fields = []
+                        embed_fields = ban_embed.get("fields", [])
+                        for field in embed_fields:
+                            field_name = format_text(field.get("name", ""))
+                            field_value = format_text(field.get("value", ""))
+                            inline = field.get("inline", False)
+                            fields.append((field_name, field_value, inline))
+
                         footer_text = f"AtomicShield - {current_time}"
                         await utils.discord.send_discord_embed(
                             webhook_url,

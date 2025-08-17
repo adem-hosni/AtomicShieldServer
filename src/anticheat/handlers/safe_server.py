@@ -18,7 +18,6 @@ from dashboard.models import ServerSubscription
 from shared.enums import unstrict_detection_types, DetectionType
 from dashboard.models import AuditLogEntry
 from ..consumers.safe_server import SafeServerConsumer
-from .. import config_ids
 import logging
 
 # Set up logging for this module
@@ -218,7 +217,7 @@ async def handle_request_player_join(
 
     if request["ip"] == "127.0.0.1":
         response["join"] = False
-        response["message"] = await consumer.game_server.get_config_by_id(config_ids.NETWORK_CORRUPTED)
+        response["message"] = await consumer.game_server.configuration.aget_config("network_integrity_alert")
         logger.warning(f"got a localhost ip in the server {consumer.game_server.name}{consumer.address}")
     else:
         # Check if the AtomicShield agent is connected
@@ -235,7 +234,7 @@ async def handle_request_player_join(
 
         response["join"] = not engine is None
         if not response["join"]:
-            response["message"] = await consumer.game_server.get_config_by_id(config_ids.AGENT_NOT_DETECTED_MSG)
+            response["message"] = await consumer.game_server.configuration.aget_config("agent_not_running")
             logger.info(f'Connection refused: "AtomicShield Agent is Not Connected" (requested ip: {request['ip']})')
         else:
             if len(request["steam"]) and request["steam"] != "Unknown":

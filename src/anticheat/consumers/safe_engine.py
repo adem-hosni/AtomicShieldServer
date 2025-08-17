@@ -502,14 +502,10 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         embed_title = "Banned Player"
         try:
             if target_game_server:
-                send_alerts = await target_game_server.get_config_by_id(
-                    config_ids.ALLOW_SEND_DETECTION_ALERT
-                )
+                send_alerts = True  # await target_game_server.configuration.aget_config("allow_send_alert")
 
                 if send_alerts:
-                    webhook_url = await target_game_server.get_config_by_id(
-                        config_id=config_ids.DISCORD_WEBHOOK_URL
-                    )
+                    webhook_url = await target_game_server.configuration.aget_webhook_url("ban")
                     if len(webhook_url) > 0:
                         if detection_type == DetectionType.CHEAT_SIGNATURE_FOUND:
                             if (
@@ -518,9 +514,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                             ):
                                 reason = "External Cheat Detected (TZX)"
 
-                        embed_title = await target_game_server.get_config_by_id(
-                            config_id=config_ids.DISCORD_EMBED_TITLE
-                        )
+                        embed_title = await target_game_server.configuration.aget_discord_embed("ban")
                         embed_title = utils.format_string(
                             embed_title, {"name": self._hwid.username}
                         )
@@ -531,20 +525,11 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                         )
 
                         author_title = "Atomic Shield - FiveM AntiCheat©"
-                        embed_title = "**A cheater has been Banned by AtomicShield**"
                         avatar_url = "https://media.discordapp.net/attachments/944710024670879804/1346134230106636418/atomic.png"
                         current_time = datetime.now().strftime(
                             "%a %B %d %Y %H:%M:%S GMT %z"
                         )
-                        embed_description = f"""
-                **Name:** {self._hwid.username}
-                **Reason:** {reason}
-                **Steam:** {self._hwid.steam}
-                **License:** {self._hwid.fivem_license}
-                **Discord:** <@!{self._hwid.discord_id}>
-                **Ban ID:** {ban.id}
-                **Was this a false positive? Open a ticket in our Discord.**\ndiscord.gg/atomic-shield - <https://atomic-shield.com/>
-                """
+                        embed_description = await target_game_server.configuration.aget_discord_embed("description")
                         footer_text = f"AtomicShield - {current_time}"
                         await utils.discord.send_discord_embed(
                             webhook_url,

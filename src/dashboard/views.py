@@ -64,7 +64,7 @@ import utils
 from typing import Dict, Union, Any
 from utils.aseclient import ASEQueryClient, ASEParser
 from utils import discord
-
+from utils import analytics
 from .models import Release, ReleaseAsset
 
 logger = logging.getLogger(__name__)
@@ -2845,7 +2845,7 @@ def list_players(request, server_id):
     max_pages = max(1, -(-len(players) // page_size))  # ceil division
     current_page = max(0, min(current_page, max_pages - 1))
     players_to_show = players[page_size * current_page : page_size * (current_page + 1)]
-
+    
     return Response(
         {
             "success": True,
@@ -2856,12 +2856,10 @@ def list_players(request, server_id):
             ),
             "data": {
                 "players": players_to_show,
-                "pages": max_pages,
-                "current_page": current_page + 1,
-                "show_previous": current_page > 0,
-                "show_next": current_page + 1 < max_pages,
-                "page_range": list(range(1, max_pages + 1)),
-                "max_pages": max_pages,
+                "peakPlayers": analytics.get_peak_players_today(target_server),
+                "onlinePlayers": target_server.active_player_count,
+                "newPlayers": analytics.get_new_joins_today(target_server)
             },
+            
         }
     )

@@ -207,6 +207,13 @@ class GameServer(models.Model):
         choices=ServerStatus.choices, null=False, default=ServerStatus.unsubscribed
     )
 
+    @property
+    async def aconfigurations(self) -> AntiCheatConfigurations:
+        """
+        Get the AntiCheatConfigurations instance for this server.
+        """
+        return await sync_to_async(lambda: self.configurations)()
+
     def has_permission_for(self, user: User, permission: Union[str, Any]):
         if user == self.owner:
             return True

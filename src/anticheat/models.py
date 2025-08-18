@@ -112,16 +112,13 @@ class AntiCheatConfigurations(models.Model):
 
     async def aget_config(self, config_name):
         config = await AntiCheatConfigTemplate.objects.aget(pseudo_name=config_name)
-        return await self.config.aget(str(config.id), config.default_value)
+        return self.config.get(str(config.id), config.default_value)
 
     def get_webhook_url(self, name: str):
         return self.webhooks.get(name, "")
 
-    async def aget_webhook_url(self, name: str):
-        return await self.webhooks.aget(name, "")
-
-    async def aget_discord_embed(self, name: str):
-        return await self.embeds.aget(name, "")
+    async def get_discord_embed(self, name: str):
+        return self.embeds.get(name, "")
 
     class Meta:
         db_table = "anticheat_configurations"

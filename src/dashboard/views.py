@@ -604,10 +604,6 @@ def server_dashboard(request: HttpRequest, server_id: int) -> Response:
             "value": game_server.active_player_count,
             "trend": {"value": "+5 today", "isPositive": True},
         },
-        "peakPlayers": {
-            "value": game_server.active_player_count,  # TODO: This should be replaced with actual peak player count logic
-            "trend": {"value": "+10 this week", "isPositive": True},
-        },
         "totalBans": {
             "value": Ban.objects.filter(game_server=game_server).count(),
             "trend": {
@@ -620,7 +616,9 @@ def server_dashboard(request: HttpRequest, server_id: int) -> Response:
     return Response(
         {
             "success": True,
+            "status": "active" if game_server.is_online else "inactive",
             "data": {
+                "chart": analytics.get_30_day_chart_data(game_server),
                 "serverInfo": server_info,
                 "stats": server_stats,
                 "license": {
@@ -2858,7 +2856,8 @@ def list_players(request, server_id):
                 "players": players_to_show,
                 "peakPlayers": analytics.get_peak_players_today(target_server),
                 "onlinePlayers": target_server.active_player_count,
-                "newPlayers": analytics.get_new_joins_today(target_server)
+                "newPlayers": analytics.get_new_joins_today(target_server),
+                "actionsTaken": analytics.get_actions_taken_today(target_server)
             },
             
         }

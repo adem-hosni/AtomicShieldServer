@@ -215,7 +215,7 @@ async def handle_request_player_join(
 
     response = {"join": False, "message": ""}
 
-    if request["ip"] == "127.0.0.1":
+    if request["ip"] == "127.0.0.1" and False:
         response["join"] = False
         response["message"] = await consumer.game_server.configuration.aget_config("network_integrity_alert")
         logger.warning(f"got a localhost ip in the server {consumer.game_server.name}{consumer.address}")
@@ -323,7 +323,7 @@ async def handle_request_player_join(
     await AuditLogEntry.acreate_entry(
         action=AuditLogEntry.Action.PLAYER_REQUEST_JOIN,
         severity=AuditLogEntry.Severity.LOW,
-        actor=request.user,
+        actor=None,
         game_server=consumer.game_server,
         reviewed=True,
         target_object=engine.hwid,

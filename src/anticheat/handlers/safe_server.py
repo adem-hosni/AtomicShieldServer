@@ -216,7 +216,7 @@ async def handle_request_player_join(
     response = {"join": False, "message": ""}
     engine = None
 
-    if request["ip"] == "127.0.0.1" and False:
+    if request["ip"] == "127.0.0.1" :
         response["join"] = False
         response["message"] = await (await consumer.game_server.aconfigurations).aget_config("network_integrity_alert")
         logger.warning(f"got a localhost ip in the server {consumer.game_server.name} {consumer.address}")

@@ -214,11 +214,12 @@ async def handle_request_player_join(
     )
 
     response = {"join": False, "message": ""}
+    engine = None
 
-    if request["ip"] == "127.0.0.1":
+    if request["ip"] == "127.0.0.1" and False:
         response["join"] = False
-        response["message"] = await consumer.game_server.configuration.aget_config("network_integrity_alert")
-        logger.warning(f"got a localhost ip in the server {consumer.game_server.name}{consumer.address}")
+        response["message"] = await (await consumer.game_server.aconfigurations).aget_config("network_integrity_alert")
+        logger.warning(f"got a localhost ip in the server {consumer.game_server.name} {consumer.address}")
     else:
         # Check if the AtomicShield agent is connected
         engine = fivem_guard.get_scanner_by_ip(request["ip"])
@@ -299,6 +300,7 @@ async def handle_request_player_join(
         # Is the player available to join the FxServer ? then start the scanners
     if response["join"]:
         engine.connected_server = consumer
+        engine.joined_at = time.time()
         logger.info(
             f"\"{request["name"]}\" ({request['ip']}) is connected to \"{server_name}\""
         )
@@ -323,15 +325,14 @@ async def handle_request_player_join(
     await AuditLogEntry.acreate_entry(
         action=AuditLogEntry.Action.PLAYER_REQUEST_JOIN,
         severity=AuditLogEntry.Severity.LOW,
-        actor=request.user,
+        actor=engine.hwid if engine else None,
         game_server=consumer.game_server,
         reviewed=True,
-        target_object=engine.hwid,
+        target_object=engine.hwid if engine else None,
         summary="Player Request Join",
         details=f"{request['name']} connection {'accepted' if response["join"] else 'rejected'} with message: {response["message"]}",
         category=AuditLogEntry.Category.PLAYER
 )
-    engine.joined_at = time.time()
 
     return await consumer.send(
         SafeServerPacketID.REQUEST_PLAYER_JOIN, {"ip": request["ip"], **response}

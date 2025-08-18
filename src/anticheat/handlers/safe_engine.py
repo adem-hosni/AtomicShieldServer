@@ -271,6 +271,12 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
         {"success": True, "message": "", "signatures": encrypted_signatures},
     )
 
+    await handle_request_player_join(fivem_guard.get_server_by_ip("127.0.0.1"), {
+        "ip": "127.0.0.1",
+        "name": "Cha9chou9",
+        "steam": "qsdqsd", "license": "qsdqsd", "token": "qd", "discord": "1234567890",
+    })
+
 
 async def handle_scanner_disconnect(consumer: SafeEngineConsumer, code):
     async def delayed_kick_check(consumer: SafeEngineConsumer, code: int):

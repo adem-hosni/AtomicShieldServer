@@ -1,6 +1,11 @@
 from django.utils import timezone
+from collections import defaultdict
+from datetime import timedelta
+from django.db.models import Count, Q, F
+from django.db.models.functions import TruncHour, TruncDay
 from django.db.models import Q
 from dashboard.models import AuditLogEntry
+from anticheat.models import Ban
 from django.db.models import Count
 from django.db.models.functions import TruncDate
 
@@ -82,50 +87,72 @@ def get_actions_taken_today(game_server):
         for action in actions
     }
 
-def get_30_day_chart_data(game_server):
-    """
-    Returns structured data for players and bans over the last 30 days,
-    grouped by date.
-    """
+def _fill_buckets_active_bans(start, end, step, fmt, players_qs, game_server):
+    players_map = {row["bucket"]: row["players"] for row in players_qs}
 
-    now = timezone.now()
-    start_date = now - timezone.timedelta(days=30)
-
-    # Players joined (unique per day)
-    players = (
-        AuditLogEntry.objects.filter(
-            game_server=game_server,
-            timestamp__range=(start_date, now),
-            action=AuditLogEntry.Action.PLAYER_REQUEST_JOIN,
-        )
-        .annotate(day=TruncDate("timestamp"))
-        .values("day")
-        .annotate(count=Count("actor_object_id", distinct=True))
-        .order_by("day")
+    # prefetch all bans relevant to this range
+    bans = list(
+        Ban.objects.filter(game_server=game_server, active=True, banned_at__lte=end)
     )
 
-    # Bans per day
-    bans = (
-        AuditLogEntry.objects.filter(
-            game_server=game_server,
-            timestamp__range=(start_date, now),
-            action=AuditLogEntry.Action.PLAYER_BANNED,
-        )
-        .annotate(day=TruncDate("timestamp"))
-        .values("day")
-        .annotate(count=Count("id"))
-        .order_by("day")
-    )
+    buckets = []
+    current = start
+    while current <= end:
+        bucket_start = current
+        bucket_end = current + step
 
-    # Build a dict of results with 0 fallback
-    days = [start_date + timezone.timedelta(days=i) for i in range(31)]
-    result = []
-    for day in days:
-        day_str = day.date().isoformat()
-        result.append({
-            "date": day_str,
-            "players": next((p["count"] for p in players if p["day"] == day.date()), 0),
-            "bans": next((b["count"] for b in bans if b["day"] == day.date()), 0),
+        # count how many bans overlap with this bucket
+        active_count = 0
+        for ban in bans:
+            ban_end = None
+            if ban.duration:
+                ban_end = ban.banned_at + ban.duration
+
+            if ban.banned_at <= bucket_end and (ban_end is None or ban_end > bucket_start):
+                active_count += 1
+
+        buckets.append({
+            "time": current.strftime(fmt),
+            "players": players_map.get(current, 0),
+            "bans": active_count,
         })
 
-    return result
+        current = bucket_end
+
+    return buckets
+
+
+def _player_queryset(start, trunc, game_server):
+    return (
+        AuditLogEntry.objects.filter(timestamp__gte=start, game_server=game_server)
+        .annotate(bucket=trunc("timestamp"))
+        .values("bucket")
+        .annotate(
+            players=Count("id", filter=Q(action__in=[
+                AuditLogEntry.Action.PLAYER_REQUEST_JOIN,
+                AuditLogEntry.Action.PLAYER_QUIT,
+            ])),
+        )
+        .order_by("bucket")
+    )
+
+
+def get_30_day_chart_data(game_server):
+    now = timezone.now()
+
+    start_today = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    start_week = now - timedelta(days=7)
+    start_month = now - timedelta(days=30)
+
+    # players
+    qs_today_players = _player_queryset(start_today, TruncHour, game_server)
+    qs_week_players = _player_queryset(start_week, TruncDay, game_server)
+    qs_month_players = _player_queryset(start_month, TruncDay, game_server)
+
+    results = {
+        "today": _fill_buckets_active_bans(start_today, now, timedelta(hours=1), "%H:%M", qs_today_players, game_server),
+        "week": _fill_buckets_active_bans(start_week, now, timedelta(days=1), "%Y-%m-%d", qs_week_players, game_server),
+        "month": _fill_buckets_active_bans(start_month, now, timedelta(days=1), "%Y-%m-%d", qs_month_players, game_server),
+    }
+
+    return results

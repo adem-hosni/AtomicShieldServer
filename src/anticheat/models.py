@@ -241,10 +241,10 @@ class FalsePositiveReport(models.Model):
         APPROVED = "approved", "Approved (False Positive)"
         REJECTED = "rejected", "Rejected"
 
-    ban = models.ForeignKey(
+    ban = models.OneToOneField(
         Ban,
         on_delete=models.DO_NOTHING,
-        related_name="false_positive_reports"
+        related_name="false_positive_report"
     )
 
     reported_by = models.ForeignKey(

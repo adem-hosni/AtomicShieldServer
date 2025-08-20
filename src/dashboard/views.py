@@ -9,14 +9,15 @@ from django.shortcuts import render, redirect
 from django.shortcuts import get_object_or_404
 from django.conf import settings
 from django.urls import reverse
-from django.db.models import Q
+from django.db.models import Q, Count
+from django.db.models.functions import TruncHour
 from django.core.files.base import ContentFile
 from django.http import (
     HttpRequest,
     HttpResponse,
     HttpResponseRedirect,
     FileResponse,
-    JsonResponse,
+    HttpResponse,
 )
 import shutil
 from rest_framework.decorators import (
@@ -172,7 +173,7 @@ def render_dashboard_redirect(request: HttpRequest) -> HttpResponse:
 @api_view(["GET"])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
-def dashboard_overview(request: HttpRequest) -> JsonResponse:
+def dashboard_overview(request: HttpRequest) -> Response:
     # System status
     system_status = {
         "value": 100,
@@ -204,8 +205,10 @@ def dashboard_overview(request: HttpRequest) -> JsonResponse:
         "trend": {"value": "+45 today", "isPositive": True},
     }
 
+    all_threats = DetectionReport.objects.all()
+
     # Threat Level
-    threats_today = DetectionReport.objects.filter(
+    threats_today = all_threats.filter(
         detected_at__date=timezone.now().date()
     ).count()
     threat_level = {
@@ -245,32 +248,56 @@ def dashboard_overview(request: HttpRequest) -> JsonResponse:
     ]
 
     # Select last detections
-    recent_security_events = DetectionReport.objects.order_by("-detected_at")[:5]
-    security_events_data = [
+    user_servers = GameServer.get_user_servers(request.user)
+    recent_activities = AuditLogEntry.objects.filter(game_server__in=user_servers).order_by("-timestamp")[:5]
+    recent_activities_data = [
         {
-            "action": "Cheat Detection",
-            "user": event.hwid.username,
-            "time": event.detected_at.strftime("%Y-%m-%d %H:%M:%S"),
-            "severity": "high",
+            "action": event.get_action_display(),
+            "user": event.target_username or f"By {event.actor_username}",
+            "time": event.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+            "severity": event.get_severity_display().lower(),
         }
-        for event in recent_security_events
+        for event in recent_activities
     ]
 
     # Threat assessment data
     threat_assessment_data = {
-        "detectionRate": f"{DetectionReport.objects.count() / HWID.objects.count() * 100 if HWID.objects.count() > 0 else 0}%",
+        "detectionRate": f"{all_threats.count() / HWID.objects.count() * 100 if HWID.objects.count() > 0 else 0:.2f}%",
         "falsePositives": "0.1%",
         "responseTime": "12ms",
     }
 
+    last_month_threats = all_threats.filter(
+        detected_at__date=timezone.now().date() - timedelta(days=30)
+    )
+    threat_activity = [
+    {
+        "time": dp["time"].strftime("%H:%M"),  # <--- use the new alias here
+        "threatDetections": dp["threatDetections"],
+        "falsePositives": dp["falsePositives"],
+        "blockedAttempts": dp["blockedAttempts"],
+        "severity": dp.get("severity", "low"),  # placeholder, you can calculate severity inline if needed
+    }
+    for dp in (
+        DetectionReport.objects
+        .annotate(time=TruncHour('detected_at'))  # <--- rename annotation
+        .values('time')
+        .annotate(
+            threatDetections=Count('id'),
+            falsePositives=Count('id', filter=Q(report__false_positive=True)),
+            blockedAttempts=Count('id', filter=Q(report__blocked=True)),
+        )
+        .order_by('time')
+    )
+]
     # Global Stats
     global_stats_data = {
         "totalBans24h": Ban.objects.filter(
             banned_at__date=timezone.now().date()
         ).count(),
-        "kicks24h": 0,
+        "kicks24h": AuditLogEntry.objects.filter(action=AuditLogEntry.Action.PLAYER_KICKED, timestamp__date=timezone.now().date()).count(),
         "warnings24h": 0,
-        "cleanSessions": random.randint(50, 100),
+        "cleanSessions": 0,
     }
 
     # User Subscriptions
@@ -306,8 +333,9 @@ def dashboard_overview(request: HttpRequest) -> JsonResponse:
             "data": {
                 "stats": dashboard_stats_data,
                 "servers": servers_data,
-                "recentActivity": security_events_data,
+                "recentActivity": recent_activities_data,
                 "threatAssessment": threat_assessment_data,
+                "threatActivity": threat_activity,
                 "globalStats": global_stats_data,
                 "subscriptions": subscriptions_data,
                 "serverTypes": server_types,
@@ -511,7 +539,7 @@ def list_announcements(request: HttpRequest) -> HttpResponse:
             data = json.loads(request.body.decode())
         except Exception as err:
             logger.error(f"Failed to parse request body: {err}")
-            return JsonResponse({"success": False, "error": "Invalid JSON"}, status=400)
+            return Response({"success": False, "error": "Invalid JSON"}, status=400)
 
         announcement_id = data.get("seenAnnouncement")
         if announcement_id:
@@ -519,13 +547,13 @@ def list_announcements(request: HttpRequest) -> HttpResponse:
                 ann = Announcements.objects.get(id=int(announcement_id))
                 ann.seens.add(request.user)
                 ann.save()
-                return JsonResponse({"success": True})
+                return Response({"success": True})
             except Announcements.DoesNotExist:
-                return JsonResponse(
+                return Response(
                     {"success": False, "error": "Announcement not found"}, status=404
                 )
 
-        return JsonResponse(
+        return Response(
             {"success": False, "error": "Missing seenAnnouncement field"}, status=400
         )
 
@@ -550,10 +578,9 @@ def list_announcements(request: HttpRequest) -> HttpResponse:
                 }
             )
 
-        return JsonResponse({"success": True, "data": announcements}, safe=False)
-
+        return Response({"success": True, "data": announcements})
     else:
-        return JsonResponse({"error": "Method not allowed"}, status=405)
+        return Response({"success": False, "message": "Method not allowed"})
 
 
 @api_view(["POST", "GET"])
@@ -735,9 +762,18 @@ def list_bans(request: HttpRequest, server_id: int) -> Response:
                             else ""
                         ),
                         "bannedAt": ban.banned_at.strftime("%Y-%m-%d %H:%M:%S"),
-                        "firstJoin": ban.banned_at.strftime(
-                            "%Y-%m-%d %H:%M:%S"
-                        ),  # TODO: Implement first join logic
+                        "firstJoin": (
+                            AuditLogEntry.objects
+                            .filter(
+                                target_object_id=ban.hwid.id,
+                                action=AuditLogEntry.Action.PLAYER_REQUEST_JOIN,
+                                timestamp__lte=ban.banned_at
+                            )
+                            .values_list("timestamp", flat=True)
+                            .order_by("timestamp")
+                            .first()
+                        ),
+
                         "expiresAt": None,
                         "adminName": "zebi",
                         "reason": ban.reason,
@@ -745,7 +781,7 @@ def list_bans(request: HttpRequest, server_id: int) -> Response:
                         "evidence": True,
                         "status": "Peramnent",
                         "serverId": target_server.id,
-                        "appealStatus": "approved",  # TODO: Implement appeal status logic
+                        "appealStatus": "approved",
                         "report": {},
                         "reportedAsFalsePositive": FalsePositiveReport.objects.filter(
                             ban=ban
@@ -1171,6 +1207,20 @@ def save_configurations(request: HttpRequest, server_id: int) -> Response:
     game_server.configurations.save()
     game_server.save()
 
+    AuditLogEntry.create_entry(
+        action=AuditLogEntry.Action.CONFIG_CHANGED,
+        severity=AuditLogEntry.Severity.LOW,
+        actor=request.user,
+        target_object=game_server,
+        game_server=game_server,
+        reviewed=True,
+        source="dashboard",
+        summary="Configuration Update",
+        details=f"{request.user} updated server configurations",
+        category=AuditLogEntry.Category.MODERATION,
+    )
+
+
     return Response(
         {
             "success": True,
@@ -1233,7 +1283,7 @@ def list_moderators(request: HttpRequest, server_id: int) -> Response:
                         "id": moderator.id,
                         "username": moderator.user.username,
                         "email": "",
-                        # "avatar": "",  # TODO
+                        # "avatar": "",
                         "permissions": moderator.permission_summary,
                         "lastLogin": moderator.user.last_login,
                         "status": moderator.status,
@@ -1594,7 +1644,7 @@ def search_for_moderator(request: HttpRequest) -> Response:
                     "id": user.id,
                     "username": user.username,
                     "email": "",
-                    "avatar": "",  # TODO
+                    "avatar": "",
                     "permissions": [],
                     "status": "active",
                     "joinedAt": "",
@@ -1613,7 +1663,74 @@ def download_assets_view(request: HttpRequest) -> Response:
     GET  -> Return list of releases + their assets
     POST -> Create a release (optional, admin use)
     """
-    if request.method == "GET":
+    
+    if request.method == "POST":
+        asset_id = request.data.get("assetId")
+        try:
+            asset = ReleaseAsset.objects.get(id=asset_id)
+        except ReleaseAsset.DoesNotExist:
+            return Response(
+                {
+                    "success": False,
+                    "message": "Asset not found",
+                }
+            )
+        except Exception as err:
+            logger.error(
+                f"An unexpected error occurred while accessing asset {asset_id} for user {request.user.username}."
+            )
+            return Response(
+                {
+                    "success": False,
+                    "message": "An unexpected error occurred while accessing the asset.",
+                }
+            )
+
+        asset_path = asset.file.path
+        if not os.path.isfile(asset_path):
+            return Response(
+                {
+                    "success": False,
+                    "message": "Distribution file not found. Please contact support.",
+                }
+            )
+
+        temp_zip_path = os.path.join(
+            os.path.dirname(asset_path), f"temp-{random.randint(10, 100)}.zip"
+        )
+        shutil.copyfile(asset_path, temp_zip_path)
+
+        if os.path.isfile(temp_zip_path):
+            key_path = "AtomicShield/server.key"
+
+            if os.path.isfile(temp_zip_path):
+                with (
+                    ZipFile(asset_path, "r") as zip_read,
+                    ZipFile(temp_zip_path, "w") as zip_write,
+                ):
+                    for item in zip_read.infolist():
+                        if item.filename != key_path:
+                            zip_write.writestr(item, zip_read.read(item.filename))
+                        else:
+                            server_key = "<YOUR ATOMICSHIELD SERVER KEY>"
+                            try:
+                                target_server = GameServer.objects.get(
+                                    id=request.session.get("selected_server", -1),
+                                    owner=request.user,
+                                )
+                                server_key = target_server.key
+                            except GameServer.DoesNotExist:
+                                ...
+
+                            zip_write.writestr(key_path, server_key)
+                asset_path = temp_zip_path
+        return FileResponse(
+            open(asset_path, "rb"),
+            filename=f"{asset.release.title} - {asset.release.version}.{asset.release.format.lower().strip()}",
+            as_attachment=True,
+        )
+
+    else:
         releases = Release.objects.all().prefetch_related("assets")
         data = []
         for release in releases:
@@ -1960,7 +2077,7 @@ def render_bans(request: HttpRequest) -> HttpResponse:
 @api_view(["POST", "GET"])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
-def render_patchnotes(request: HttpRequest) -> HttpResponse:
+def list_changelogs(request: HttpRequest) -> Response:
     """
     API endpoint to list patch notes (GET) and mark them as seen (POST).
     Returns data in JSON format similar to announcements.
@@ -1971,25 +2088,25 @@ def render_patchnotes(request: HttpRequest) -> HttpResponse:
             patchnote_id = request_body.get("seenPatchNote")
 
             if not patchnote_id:
-                return JsonResponse(
+                return Response(
                     {"success": False, "error": "Missing seenPatchNote field"},
                     status=400,
                 )
 
             seen_patchnote = PatchNotes.objects.get(id=int(patchnote_id))
             seen_patchnote.seens.add(request.user)
-            return JsonResponse({"success": True})
+            return Response({"success": True})
 
         except json.JSONDecodeError as err:
             logger.error(f"Failed to parse request body: {err}")
-            return JsonResponse({"success": False, "error": "Invalid JSON"}, status=400)
+            return Response({"success": False, "error": "Invalid JSON"}, status=400)
         except PatchNotes.DoesNotExist:
-            return JsonResponse(
+            return Response(
                 {"success": False, "error": "Patch note not found"}, status=404
             )
         except Exception as e:
             logger.error(f"Unexpected error: {e}")
-            return JsonResponse(
+            return Response(
                 {"success": False, "error": "Internal server error"}, status=500
             )
 
@@ -2015,9 +2132,9 @@ def render_patchnotes(request: HttpRequest) -> HttpResponse:
                 }
             )
 
-        return JsonResponse({"success": True, "data": patchnotes_data}, safe=False)
+        return Response({"success": True, "data": patchnotes_data})
 
-    return JsonResponse({"error": "Method not allowed"}, status=405)
+    return Response({"success": True, "message": "Method not allowed"})
 
 
 @login_required
@@ -2595,7 +2712,7 @@ def subscriptions_api(request):
         if request.user.subscriptions.filter(
             plan=ServerSubscription.Plans.FREE
         ).exists():
-            return JsonResponse(
+            return Response(
                 {"success": False, "error": "Trial already used."}, status=200
             )
 
@@ -2621,7 +2738,7 @@ def subscriptions_api(request):
                 "-started_at"
             )
         ]
-        return JsonResponse(
+        return Response(
             {
                 "success": True,
                 "message": "Trial subscription created successfully!",
@@ -2635,32 +2752,32 @@ def subscriptions_api(request):
         subscription_key = request.data.get("key", "").strip()
         logger.info(subscription_key)
     except Exception:
-        return JsonResponse({"success": False, "error": "Invalid JSON"}, status=200)
+        return Response({"success": False, "error": "Invalid JSON"}, status=200)
 
     if not subscription_key:
-        return JsonResponse(
+        return Response(
             {"success": False, "error": "Empty Subscription Key"}, status=200
         )
 
     try:
         subscription = ServerSubscription.objects.get(key=subscription_key)
     except ServerSubscription.DoesNotExist:
-        return JsonResponse(
+        return Response(
             {"success": False, "error": "Invalid Redeemed Key."}, status=200
         )
 
     if subscription.owner:
-        return JsonResponse(
+        return Response(
             {"success": False, "error": "Subscription Key already redeemed"}, status=200
         )
 
     if not subscription.is_valid_for_now():
-        return JsonResponse(
+        return Response(
             {"success": False, "error": "Expired Subscription"}, status=200
         )
 
     if subscription.game_servers.count():
-        return JsonResponse(
+        return Response(
             {"success": False, "error": "This Subscription is already in-use."},
             status=200,
         )

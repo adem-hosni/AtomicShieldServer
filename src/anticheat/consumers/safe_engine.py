@@ -384,6 +384,17 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         --------
             bool: True if the kick was successful, False otherwise.
         """
+        from dashboard.models import AuditLogEntry  # moved import here
+
+        await AuditLogEntry.acreate_entry(
+            action=AuditLogEntry.Action.PLAYER_KICKED,
+            severity=AuditLogEntry.Severity.MEDIUM,
+            game_server=self._connected_server,
+            summary="Kicked player",
+            details=f"Kicked player {self._hwid.username} - {self._hwid.id} | Reason: {reason or 'No reason provided'}",
+            category=AuditLogEntry.Category.PLAYER
+        )
+
         if self._connected_server:
             logger.info(
                 f"Kicking {self._hwid.username} ({self._hwid.id}) from {self._connected_server.game_server.name} ({self._connected_server.game_server.ip}) for reason: {reason or 'No reason provided'}"
@@ -420,7 +431,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                 **{self._hwid.username} - {self._hwid.id}** Detection Report ```{reason}```
                 """,
                 fields=[
-                    (f"{key.replace("_", " ").title()}:", f"```{value}```", False)
+                    (f"{key.replace('_', ' ').title()}:", f"```{value}```", False)
                     for key, value in sent_report.items()
                 ],
                 image_buffer=image_buffer,
@@ -434,7 +445,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             **{self._hwid.username} - {self._hwid.id}** banned due to ```{reason}```
             """,
             fields=[
-                (f"{key.replace("_", " ").title()}:", f"```{value}```", False)
+                (f"{key.replace('_', ' ').title()}:", f"```{value}```", False)
                 for key, value in sent_report.items()
             ] + [
                     (

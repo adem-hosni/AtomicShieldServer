@@ -21,18 +21,17 @@ urlpatterns = [
     path("moderation/invite/mark", views.mark_invite, name="mark_invite"),
     path("server/<int:server_id>/audit-logs", views.list_audit_logs, name="list_audit_logs"),
     path("webhook/test", views.test_webhook, name="test_webhook"),
-
+    path("server/<int:server_id>/players", views.list_players, name="players"),
     path("download-assets/", views.download_assets_view, name="dashboard"),
-
+    path("patch-notes/", views.list_changelogs, name="patchnotes"),
     path("main/", views.list_announcements, name="dashboard"),
+
     path("bans/", views.render_bans),
-    path("patch-notes/", views.render_patchnotes, name="patchnotes"),
     path("servers/", views.render_servers, name="servers"),
     path("servers/select/", views.select_server, name="select_server"),
     path("configurations/", views.render_configurations),
     path("quicksetup/", views.render_quicksetup, name="quick_setup"),
     path("subscriptions/", views.subscriptions_api),
-    path("server/<int:server_id>/players", views.list_players, name="players"),
     path("servers/refresh_key/", views.refresh_server_key, name="refresh_key"),
     path("checkserver/", views.check_server),
 ]

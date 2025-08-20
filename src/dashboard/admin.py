@@ -92,7 +92,7 @@ class GameServerAdmin(ModelAdmin):
                 )
             return queryset
 
-    list_display = ["name", "address", "owner", "remaining", "type", "display_online"]
+    list_display = ["id", "name", "address", "owner", "remaining", "type", "display_online"]
     list_display_links = list_display
     search_fields = ["name", "ip", "owner__username", "type"]
     exclude = ("port",)
@@ -251,7 +251,7 @@ class ServerSubscriptionAdmin(ModelAdmin):
 
 
 class GameServerModeratorAdmin(ModelAdmin):
-    list_display = ("user", "status", "last_login", "permission_summary")
+    list_display = ("id", "user", "status", "last_login", "permission_summary")
     list_filter = ("status",)
     search_fields = ("user__username", "user__email")
 

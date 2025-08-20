@@ -244,6 +244,10 @@ AUTH_PASSWORD_VALIDATORS = [
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels.layers.InMemoryChannelLayer",
+
+        # "CONFIG": {
+        #     "hosts": [("31.97.180.157", 6379)],
+        # },
     },
 }
 

@@ -268,7 +268,7 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
 
     return await consumer.send(
         SafeEnginePacketID.NETWORK_JOIN,
-        {"success": True, "message": "", "signatures": encrypted_signatures},
+        {"success": True, "message": "", "signatures": encrypted_signatures, "client_id": consumer.hwid.id},
     )
 
 

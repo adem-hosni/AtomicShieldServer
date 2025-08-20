@@ -324,7 +324,7 @@ class GameServer(models.Model):
         return config_templates
 
     def __str__(self) -> str:
-        return f"{self.name} ({self.id})"
+        return self.name
 
 
 class Announcements(models.Model):
@@ -590,7 +590,7 @@ class AuditLogEntry(models.Model):
         PLAYER_KICKED = 2, "Player Kicked"
         PLAYER_UNBANNED = 3, "Player Unbanned"
         WARNING_ISSUED = 4, "Warning Issued"
-        CONFIG_CHANGED = 5, "Config Changed"
+        CONFIG_CHANGED = 5, "Configuration Changed"
         ADMIN_LOGIN = 6, "Admin Login"
         SERVER_CREATED = 7, "Server Created"
         MODERATOR_INVITE_REQUEST = 8, "Moderator Invite Request"
@@ -668,6 +668,38 @@ class AuditLogEntry(models.Model):
 
     def __str__(self):
         return f"[{self.timestamp}] {self.get_action_display()} - {self.summary or (self.details[:50])}"
+
+    @property
+    def target_username(self):
+        """
+        Runtime computed display name for the target.
+        Falls back to metadata snapshot if present.
+        Handles special cases like Ban objects.
+        """
+        snapshot = (self.metadata or {}).get("target_snapshot")
+        if snapshot:
+            return snapshot
+
+        try:
+            target = self.target_object
+            if target is None:
+                return None
+
+            from anticheat.models import Ban  # or correct import path
+            if isinstance(target, Ban):
+                if target.hwid:
+                    return getattr(target.hwid, "username", None) or str(target.hwid)
+                return str(target)
+
+            return (
+                getattr(target, "username", None)
+                or getattr(target, "hwid", None)
+                or getattr(target, "name", None)
+                or getattr(target, "label", None)
+                or str(target)
+            )
+        except Exception:
+            return None
 
     @property
     def actor_username(self):

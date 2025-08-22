@@ -431,6 +431,7 @@ class GameServerModerator(models.Model):
     can_view_analytics = models.BooleanField(default=False)
     can_kick_players = models.BooleanField(default=False)
     can_ban_players = models.BooleanField(default=False)
+    can_screenshot_players = models.BooleanField(default=False)
     can_view_anticheat_logs = models.BooleanField(default=False)
     can_manage_configuration = models.BooleanField(default=False)
     can_manage_webhook_settings = models.BooleanField(default=False)

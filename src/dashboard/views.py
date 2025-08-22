@@ -39,7 +39,7 @@ from django.utils import timezone
 from django.contrib.auth.models import User
 from guards import fivem_guard
 from utils import check_request_body_key, represent_timedelta_string
-from anticheat.models import Ban, DetectionReport, HWID
+from anticheat.models import Ban, DetectionReport, HWID, AntiCheatConfigDataTypes
 from shared.enums import DetectionType
 from .models import (
     Announcements,
@@ -588,13 +588,7 @@ def list_announcements(request: HttpRequest) -> HttpResponse:
 @permission_classes([IsAuthenticated])
 def server_dashboard(request: HttpRequest, server_id: int) -> Response:
     try:
-        game_server = GameServer.objects.get(
-            Q(id=server_id)
-            & (
-                Q(owner=request.user)
-                | Q(moderators__user=request.user, moderators__status="active")
-            )
-        )
+        game_server = GameServer.get_for_user(server_id, request.user)
     except GameServer.DoesNotExist:
         logger.warning(
             f"{request.user.username} tried to access a non-existing server ({server_id})!"
@@ -613,6 +607,19 @@ def server_dashboard(request: HttpRequest, server_id: int) -> Response:
             {
                 "success": False,
                 "message": "An unexpected error occurred while accessing the server.",
+            }
+        )
+    
+    if not game_server.has_permission_for(
+        request.user, GameServerModerator.Permissions.CAN_VIEW_DASHBOARD
+    ):
+        logger.warning(
+            f"{request.user.username} tried to access dashboard of a server with no permissions ({server_id})!"
+        )
+        return Response(
+            {
+                "success": False,
+                "message": "You dont have an access to perform this operation",
             }
         )
 
@@ -1022,7 +1029,7 @@ def report_false_positive(
 @permission_classes([IsAuthenticated])
 def list_configurations(request: HttpRequest, server_id: int) -> Response:
     try:
-        game_server = GameServer.objects.get(owner=request.user, id=server_id)
+        game_server = GameServer.get_for_user(server_id, request.user)        
     except GameServer.DoesNotExist:
         logger.warning(
             f"{request.user.username} tried to access configurations of a non-existing server ({server_id})!"
@@ -1041,6 +1048,19 @@ def list_configurations(request: HttpRequest, server_id: int) -> Response:
             {
                 "success": False,
                 "message": "An unexpected error occurred while accessing the server.",
+            }
+        )
+
+    if not game_server.has_permission_for(
+        request.user, GameServerModerator.Permissions.CAN_MANAGE_CONFIGURATION
+    ):
+        logger.warning(
+            f"{request.user.username} tried to access configurations with no permissions"
+        )
+        return Response(
+            {
+                "success": False,
+                "message": "You dont have an access to perform this operation",
             }
         )
 
@@ -1098,9 +1118,9 @@ def list_configurations(request: HttpRequest, server_id: int) -> Response:
                                                 "title": config.name,
                                                 "subtitle": config.subtitle,
                                                 "tip": config.tip,
-                                                "value": game_server.configurations.config.get(
+                                                "value": (int if config.config_type == AntiCheatConfigDataTypes.NUMBER else bool if config.config_type == AntiCheatConfigDataTypes.BOOLEAN else str)(game_server.configurations.config.get(
                                                     str(config.id), config.default_value
-                                                ),
+                                                )),
                                                 "icon": config.icon,
                                                 "extra": config.extra,
                                             }
@@ -1127,7 +1147,7 @@ def list_configurations(request: HttpRequest, server_id: int) -> Response:
 @permission_classes([IsAuthenticated])
 def save_configurations(request: HttpRequest, server_id: int) -> Response:
     try:
-        game_server = GameServer.objects.get(owner=request.user, id=server_id)
+        game_server = GameServer.get_for_user(server_id, request.user)
     except GameServer.DoesNotExist:
         logger.warning(
             f"{request.user.username} tried to access configurations of a non-existing server ({server_id})!"
@@ -1146,6 +1166,19 @@ def save_configurations(request: HttpRequest, server_id: int) -> Response:
             {
                 "success": False,
                 "message": "An unexpected error occurred while accessing the server.",
+            }
+        )
+    
+    if not game_server.has_permission_for(
+        request.user, GameServerModerator.Permissions.CAN_MANAGE_CONFIGURATION
+    ):
+        logger.warning(
+            f"{request.user.username} tried to save configurations with no permissions"
+        )
+        return Response(
+            {
+                "success": False,
+                "message": "You dont have an access to perform this operation",
             }
         )
 
@@ -1195,7 +1228,6 @@ def save_configurations(request: HttpRequest, server_id: int) -> Response:
         dynamic_configs = values.get("dynamic", {})
         if dynamic_configs:
             for key, value in dynamic_configs.items():
-                logger.info(f"Saving {key=} {value=}")
                 game_server.configurations.config[str(key)] = value
 
     except Exception as err:
@@ -1698,37 +1730,68 @@ def download_assets_view(request: HttpRequest) -> Response:
         temp_zip_path = os.path.join(
             os.path.dirname(asset_path), f"temp-{random.randint(10, 100)}.zip"
         )
+        user_servers = GameServer.get_user_servers(request.user)
+        if not user_servers.count():
+            return Response(
+                {
+                    "success": False,
+                    "message": "You do not have any servers to download the asset for.",
+                }
+            )
+
         shutil.copyfile(asset_path, temp_zip_path)
 
         if os.path.isfile(temp_zip_path):
             key_path = "AtomicShield/server.key"
+            new_temp_zip_path = temp_zip_path + ".new"
 
-            if os.path.isfile(temp_zip_path):
-                with (
-                    ZipFile(asset_path, "r") as zip_read,
-                    ZipFile(temp_zip_path, "w") as zip_write,
-                ):
-                    for item in zip_read.infolist():
-                        if item.filename != key_path:
-                            zip_write.writestr(item, zip_read.read(item.filename))
-                        else:
-                            server_key = "<YOUR ATOMICSHIELD SERVER KEY>"
-                            try:
-                                target_server = GameServer.objects.get(
-                                    id=request.session.get("selected_server", -1),
-                                    owner=request.user,
-                                )
+            with (
+                ZipFile(temp_zip_path, "r") as zip_read,
+                ZipFile(new_temp_zip_path, "w") as zip_write,
+            ):
+                for item in zip_read.infolist():
+                    if item.filename != key_path:
+                        zip_write.writestr(item, zip_read.read(item.filename))
+                    else:
+                        server_key = "<YOUR ATOMICSHIELD SERVER KEY>"
+                        try:
+                            if user_servers.count() == 1:
+                                target_server = user_servers.first()
                                 server_key = target_server.key
-                            except GameServer.DoesNotExist:
-                                ...
+                        except GameServer.DoesNotExist:
+                            ...
+                        zip_write.writestr(key_path, server_key)
 
-                            zip_write.writestr(key_path, server_key)
-                asset_path = temp_zip_path
-        return FileResponse(
+            asset_path = new_temp_zip_path
+
+        response = FileResponse(
             open(asset_path, "rb"),
             filename=f"{asset.release.title} - {asset.release.version}.{asset.release.format.lower().strip()}",
             as_attachment=True,
         )
+
+        def cleanup_file(file, path):
+            file.close()
+            try:
+                os.remove(path)
+            except OSError:
+                pass
+
+        orig_close = response.close
+        file = response.file_to_stream
+        path = asset_path
+
+        def cleanup_and_close():
+            try:
+                orig_close()
+            finally:
+                cleanup_file(file, path)
+
+        response.close = cleanup_and_close
+
+        return response
+
+
 
     else:
         releases = Release.objects.all().prefetch_related("assets")
@@ -1926,6 +1989,18 @@ def list_audit_logs(request: HttpRequest, server_id: int) -> Response:
             }
         )
     
+    if not server.has_permission_for(
+        request.user, GameServerModerator.Permissions.CAN_VIEW_ANTICHEAT_LOGS
+    ):
+        logger.warning(
+            f"{request.user.username} tried to access audit logs with no permissions"
+        )
+        return Response(
+            {
+                "success": False,
+                "message": "You dont have an access to perform this operation",
+            }
+        )
 
     audit_logs = AuditLogEntry.objects.filter(game_server=server)
 

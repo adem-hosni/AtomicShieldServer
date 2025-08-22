@@ -107,7 +107,7 @@ class DiscordOAuthLoginView(APIView):
 
     def get(self, request):
         return_url = request.query_params.get("returnUrl", "/dashboard/overview")
-        redirect_uri = request.query_params.get("redirect") or "http://localhost:8000/api/auth/discord/callback"
+        redirect_uri = request.query_params.get("redirect") or "http://31.97.180.157:4000/api/auth/discord/callback"
 
         if not redirect_uri:
             return Response({"success": False, "message": "Missing redirect URI"}, status=400)
@@ -140,7 +140,7 @@ class DiscordOAuthCallbackView(APIView):
             "client_secret": "6_Ne6-v2aaYWHLzeSVXHBAtchTnnYD2W",
             "grant_type": "authorization_code",
             "code": code,
-            "redirect_uri": "http://localhost:8000/api/auth/discord/callback",
+            "redirect_uri": "http://31.97.180.157:4000/api/auth/discord/callback",
         }
         headers = {"Content-Type": "application/x-www-form-urlencoded"}
         token_res = requests.post(token_url, data=data, headers=headers)
@@ -190,7 +190,7 @@ class DiscordOAuthCallbackView(APIView):
         user_info_json = json.dumps(user_info)
         user_data_encoded = quote(user_info_json)
 
-        frontend_url = getattr(settings, "FRONTEND_URL", "http://localhost:8080")
+        frontend_url = getattr(settings, "FRONTEND_URL", "http://31.97.180.157:4000")
         redirect_path = state if state.startswith("/") else f"/{state}"
         redirect_url = f"{frontend_url}{redirect_path}?token={access}&user={user_data_encoded}"
 

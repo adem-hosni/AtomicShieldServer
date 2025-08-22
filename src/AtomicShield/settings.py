@@ -36,22 +36,23 @@ if DEBUG:
 else:
     BIN_DIR = os.path.join(BASE_DIR.parent, "bin", "production")
 
-#ALLOWED_HOSTS = [
-#    "*",
-#    ".atomic-shield.com",
-#]
-ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
+ALLOWED_HOSTS = [
+    "*",
+    ".atomic-shield.com",
+]
 
 CSRF_TRUSTED_ORIGINS = (
     [
-        "http://localhost:8080",
         "https://atomic-shield.com",
         "https://www.atomic-shield.com",
+        "http://31.97.180.157:4000",
     ]
     if not DEBUG
     else ["http://31.97.180.157:553"]
 )
 
+CORS_ALLOWED_ORIGINS = CSRF_TRUSTED_ORIGINS
+CORS_ALLOW_ALL_ORIGINS = True
 # Application definition
 
 INSTALLED_APPS = [
@@ -89,7 +90,6 @@ INSTALLED_APPS = [
     "corsheaders",
 ]
 
-
 SITE_ID = 1
 ASGI_APPLICATION = "AtomicShield.asgi.application"
 
@@ -107,66 +107,21 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "simple_history.middleware.HistoryRequestMiddleware",
     "AtomicShield.middleware.ExceptionHandlerMiddleware",
-    # "whitenoise.middleware.WhiteNoiseMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django_hosts.middleware.HostsResponseMiddleware",
 ]
 
-AUTHENTICATION_BACKENDS = [
-    "django.contrib.auth.backends.ModelBackend",
-    "allauth.account.auth_backends.AuthenticationBackend",
-]
-
-CORS_ALLOW_ALL_ORIGINS = True
-
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:8080"
-]
-CORS_ALLOW_CREDENTIALS = True
-
-DISCORD_CLIENT_ID="1404072529684861058"
-DISCORD_CLIENT_SECRET="6GZ-gYHXbOxg4F3wWNh7o_hX8whrE0TC"
-DISCORD_REDIRECT_URI="http://localhost:8000/api/auth/discord/callback"
-
-GOOGLE_CLIENT_ID = "1091637385561-5l7jpbubori3m6jekd6nn1bu7g999p3f.apps.googleusercontent.com"
-GOOGLE_CLIENT_SECRET = "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"
-GOOGLE_REDIRECT_URI = "http://localhost:8000/api/auth/google/callback"
-
-REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
-    ),
-}
-
-REST_USE_JWT = True
-
-ACCOUNT_EMAIL_VERIFICATION = "optional"
-ACCOUNT_LOGIN_METHODS = ["email", "username"]
-ACCOUNT_SIGNUP_FIELDS = ["email", "username*", "password1*", "password2*"]
-
-SOCIALACCOUNT_PROVIDERS = {
-    "discord": {
-        "APP": {
-            "client_id": "YOUR_DISCORD_CLIENT_ID",
-            "secret": "YOUR_DISCORD_CLIENT_SECRET",
-            "key": "",
-        },
-        "SCOPE": [
-            "identify",
-            "email",
-        ],
-    }
-}
-
 if DEBUG:
     INSTALLED_APPS.append("django_browser_reload")
+    # INSTALLED_APPS.append("debug_toolbar")
+
+    # MIDDLEWARE.append("debug_toolbar.middleware.DebugToolbarMiddleware")
 
     INTERNAL_IPS = [
         "127.0.0.1",
     ]
 
 ROOT_URLCONF = "AtomicShield.urls"
-
-APPEND_SLASH=True
 
 # Domain Settings
 ROOT_HOSTCONF = "AtomicShield.hosts"
@@ -200,7 +155,7 @@ WSGI_APPLICATION = "AtomicShield.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
-        "NAME": "atomicshield",
+        "NAME": "atomicshield_beta",
         "USER": "root",
         "PASSWORD": "",
         "HOST": "localhost",
@@ -231,23 +186,22 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 # Cache settings
-# CACHES = {
-#     "default": {
-#         "BACKEND": "django_redis.cache.RedisCache",
-#         "LOCATION": "redis://127.0.0.1:6379/1",
-#         "OPTIONS": {
-#             "CLIENT_CLASS": "django_redis.client.DefaultClient",
-#         }
-#     }
-# }
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/1",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+}
 
 CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer",
-
-        # "CONFIG": {
-        #     "hosts": [("31.97.180.157", 6379)],
-        # },
+        "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
     },
 }
 
@@ -272,8 +226,7 @@ STATICFILES_DIRS = [
 
 STATIC_URL = "static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
-# STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
-
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # Media Configurations
 MEDIA_URL = "/media/"
@@ -420,39 +373,40 @@ LOGIN_REDIRECT_URL = "/dashboard/main/"
 PASSWORD_RESET_TIMEOUT = 60 * 60 * 24 * 1  # 1 Day
 
 # Sessions
-SESSION_ENGINE = "django.contrib.sessions.backends.db"
+SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_COOKIE_AGE = (60 * 60 * 24) / 2  # 12h
 SESSION_CACHE_ALIAS = "default"
-
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    )
-}
-
-from datetime import timedelta
-
-SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(days=1),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
-    "ROTATE_REFRESH_TOKENS": True,
-    "BLACKLIST_AFTER_ROTATION": True,
-    "ALGORITHM": "HS256",
-    "SIGNING_KEY": SECRET_KEY,
-    "AUTH_HEADER_TYPES": ("Bearer",),
-    "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
-    "USER_ID_FIELD": "id",
-    "USER_ID_CLAIM": "user_id",
-}
 
 # Captcha Settings
 RECAPTCHA_PUBLIC_KEY = "6Lee-LoqAAAAAO4gH6AC1DR0R-6V6lPpFzf2nYlx"
 RECAPTCHA_PRIVATE_KEY = "6Lee-LoqAAAAAIPaRqeCahr1sC8ABgaKeRU1tsE9"
 RECAPTCHA_REQUIRED_SCORE = 0.6
 
+DISCORD_CLIENT_ID="1402682093896601822"
+DISCORD_CLIENT_SECRET="JCh6PBzCxLPdb5nZ9v590E0cLXr72xL2"
+DISCORD_REDIRECT_URI="http://31.97.180.157:4000/api/auth/discord/callback"
+
+GOOGLE_CLIENT_ID = "1091637385561-5l7jpbubori3m6jekd6nn1bu7g999p3f.apps.googleusercontent.com"
+GOOGLE_CLIENT_SECRET = "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"
+GOOGLE_REDIRECT_URI = "http://localhost:8000/api/auth/google/callback"
+
+SOCIALACCOUNT_PROVIDERS = {
+    "discord": {
+        "APP": {
+            "client_id": "YOUR_DISCORD_CLIENT_ID",
+            "secret": "YOUR_DISCORD_CLIENT_SECRET",
+            "key": "",
+        },
+        "SCOPE": [
+            "identify",
+            "email",
+        ],
+    }
+}
 
 # Admin Settings
 ADMINS = [("Hyper", "hosniadem400@gmail.com")]
+APPEND_SLASH=True
 
 # Mail Settings
 DEFAULT_FROM_EMAIL = "AtomicShield@localhost"
@@ -472,10 +426,10 @@ if not DEBUG:
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_SECONDS = 31536000  # Enforce HTTPS for 1 year
 
-    SESSION_COOKIE_SECURE = True
-    SESSION_COOKIE_SAMESITE = None
-    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SECURE = False
+    # SESSION_COOKIE_SAMESITE = None
+    SESSION_COOKIE_HTTPONLY = False
 
-    CSRF_COOKIE_SECURE = True
-    CSRF_COOKIE_HTTPONLY = True
-    CSRF_USE_SESSIONS = True
+    CSRF_COOKIE_SECURE = False
+    CSRF_COOKIE_HTTPONLY = False
+    CSRF_USE_SESSIONS = False

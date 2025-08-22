@@ -54,6 +54,7 @@ class DetectionType(models.IntegerChoices):
     MALICIOUS_PROCESS_HANDLE_OPEN = 9, "Malicious Process opened FiveM handle"
     MALICIOUS_DRIVER = 10, "Malicious Driver Found"
     THREAD_SHELLCODE = 11, "Thread Shell Code"
+    MEMORY_INTEGRITY_DISABLED = 12, "Memory Integrity Disabled"
 
 
 detection_messages = {
@@ -67,6 +68,7 @@ detection_messages = {
     DetectionType.MALICIOUS_PROCESS_HANDLE_OPEN: "External Cheat Detected",
     DetectionType.MALICIOUS_DRIVER: "Hacking Tools Found",
     DetectionType.THREAD_SHELLCODE: "Injected Windows DLL",
+    DetectionType.MEMORY_INTEGRITY_DISABLED: "Memory Integrity Disabled",
 }
 
 unstrict_detection_types = [
@@ -75,4 +77,5 @@ unstrict_detection_types = [
     DetectionType.DEBUG_MODE_ENABLED,
     DetectionType.SECURE_BOOT_DISABLED,
     DetectionType.DLL_FOUND,
+    DetectionType.MEMORY_INTEGRITY_DISABLED,
 ]

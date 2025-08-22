@@ -28,7 +28,7 @@ CONFIG_DIR = os.path.join(BASE_DIR.parent, "config")
 SECRET_KEY = "mr9y5jf)fp5^==jhccttp!d!9&hh@57@dbb+0-idp!-d!i0%r+"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 # Bin directory
 if DEBUG:
@@ -39,13 +39,14 @@ else:
 ALLOWED_HOSTS = [
     "*",
     ".atomic-shield.com",
+    "atomic-shield.com",
 ]
 
 CSRF_TRUSTED_ORIGINS = (
     [
         "https://atomic-shield.com",
         "https://www.atomic-shield.com",
-        "http://31.97.180.157:4000",
+        "http://31.97.180.157:8000",
     ]
     if not DEBUG
     else ["http://31.97.180.157:553"]
@@ -155,7 +156,7 @@ WSGI_APPLICATION = "AtomicShield.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
-        "NAME": "atomicshield_beta",
+        "NAME": "atomicshield",
         "USER": "root",
         "PASSWORD": "",
         "HOST": "localhost",
@@ -203,6 +204,12 @@ CHANNEL_LAYERS = {
             "hosts": [("127.0.0.1", 6379)],
         },
     },
+}
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework.authentication.TokenAuthentication",
+    ),
 }
 
 
@@ -382,13 +389,13 @@ RECAPTCHA_PUBLIC_KEY = "6Lee-LoqAAAAAO4gH6AC1DR0R-6V6lPpFzf2nYlx"
 RECAPTCHA_PRIVATE_KEY = "6Lee-LoqAAAAAIPaRqeCahr1sC8ABgaKeRU1tsE9"
 RECAPTCHA_REQUIRED_SCORE = 0.6
 
-DISCORD_CLIENT_ID="1402682093896601822"
-DISCORD_CLIENT_SECRET="JCh6PBzCxLPdb5nZ9v590E0cLXr72xL2"
-DISCORD_REDIRECT_URI="http://31.97.180.157:4000/api/auth/discord/callback"
+DISCORD_CLIENT_ID="1404072529684861058"
+DISCORD_CLIENT_SECRET="N43jrx37HOUzTyXxY5ZP0N-SzdlMh4_e"
+DISCORD_REDIRECT_URI="http://atomic-shield.com/api/auth/discord/callback"
 
 GOOGLE_CLIENT_ID = "1091637385561-5l7jpbubori3m6jekd6nn1bu7g999p3f.apps.googleusercontent.com"
-GOOGLE_CLIENT_SECRET = "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"
-GOOGLE_REDIRECT_URI = "http://localhost:8000/api/auth/google/callback"
+GOOGLE_CLIENT_SECRET = "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"
+GOOGLE_REDIRECT_URI = "https://atomic-shield.com/api/auth/google/callback"
 
 SOCIALACCOUNT_PROVIDERS = {
     "discord": {
@@ -406,7 +413,7 @@ SOCIALACCOUNT_PROVIDERS = {
 
 # Admin Settings
 ADMINS = [("Hyper", "hosniadem400@gmail.com")]
-APPEND_SLASH=True
+APPEND_SLASH = True
 
 # Mail Settings
 DEFAULT_FROM_EMAIL = "AtomicShield@localhost"
@@ -417,19 +424,19 @@ TEBEX_SECRET_KEY = "433788188a0ba1d3bb38b21fc39b2967"
 
 if not DEBUG:
     # Redirect from http to https
-    # SECURE_SSL_REDIRECT = True
+    # SECURE_SSL_REDIRECT = False
     # SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-
-    USE_X_FORWARDED_HOST = True
+    # USE_X_FORWARDED_HOST = True
 
     SECURE_HSTS_PRELOAD = True
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_SECONDS = 31536000  # Enforce HTTPS for 1 year
 
-    SESSION_COOKIE_SECURE = False
-    # SESSION_COOKIE_SAMESITE = None
-    SESSION_COOKIE_HTTPONLY = False
+    SESSION_COOKIE_SECURE = True
+    SESSION_COOKIE_SAMESITE = "Lax"
+    SESSION_COOKIE_HTTPONLY = True
 
     CSRF_COOKIE_SECURE = False
+    CSRF_COOKIE_SAMESITE = False
     CSRF_COOKIE_HTTPONLY = False
     CSRF_USE_SESSIONS = False

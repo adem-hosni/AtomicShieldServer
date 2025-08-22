@@ -1408,6 +1408,7 @@ def update_moderators(request: HttpRequest, server_id: int, moderator_id) -> Res
     target_moderator.can_view_dashboard = False
     target_moderator.can_kick_players = False
     target_moderator.can_ban_players = False
+    target_moderator.can_screenshot_players = False
     target_moderator.can_view_anticheat_logs = False
     target_moderator.can_manage_configuration = False
     target_moderator.can_manage_webhook_settings = False
@@ -2995,20 +2996,25 @@ def list_players(request, server_id):
                     response["message"] = "Failed to ban the player."
             case "screenshot":
                 try:
-                    image_path = async_to_sync(engine.get_screenshot)()
-                    if image_path:
-                        response.update(
-                            {
-                                "success": True,
-                                "url": (
-                                    request.build_absolute_uri(image_path)
-                                    if image_path
-                                    else ""
-                                ),
-                            }
-                        )
+                    if target_server.has_permission_for(request.user, "screenshot_players"):
+                        image_path = async_to_sync(engine.get_screenshot)()
+                        if image_path:
+                            response.update(
+                                {
+                                    "success": True,
+                                    "url": (
+                                        request.build_absolute_uri(image_path)
+                                        if image_path
+                                        else ""
+                                    ),
+                                }
+                            )
+                        else:
+                            response["message"] = "Cannot retrieve screenshot."
                     else:
-                        response["message"] = "Cannot retrieve screenshot."
+                        response["message"] = (
+                            "You dont have permission to perform this action"
+                        )
                 except Exception as e:
                     logger.error(f"Screenshot error: {e}")
                     response["message"] = "Failed to retrieve screenshot."

@@ -706,6 +706,9 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                 f"{self._hwid.id}.png",
             )
 
+            if os.path.isfile(image_path):
+                os.remove(image_path)
+
             with open(image_path, "wb") as file:
                 file.write(image_buffer)
 

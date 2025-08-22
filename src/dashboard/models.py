@@ -407,6 +407,7 @@ class GameServerModerator(models.Model):
         CAN_VIEW_ANALYTICS = "view_analytics", "Can View Analytics"
         CAN_KICK_PLAYERS = "kick_players", "Can Kick Players"
         CAN_BAN_PLAYERS = "ban_players", "Can Ban Players"
+        CAN_SCREENSHOT_PLAYERS = "screenshot_players", "Can Screenshot Players"
         CAN_VIEW_ANTICHEAT_LOGS = "view_anticheat_logs", "Can View Anticheat Logs"
         CAN_MANAGE_CONFIGURATION = "manage_configuration", "Can Manage Configuration"
         CAN_MANAGE_WEBHOOK_SETTINGS = (
@@ -457,14 +458,12 @@ class GameServerModerator(models.Model):
             perms.append(GameServerModerator.Permissions.CAN_KICK_PLAYERS)
         if self.can_ban_players:
             perms.append(GameServerModerator.Permissions.CAN_BAN_PLAYERS)
+        if self.can_screenshot_players:
+            perms.append(GameServerModerator.Permissions.CAN_SCREENSHOT_PLAYERS)
         if self.can_view_anticheat_logs:
             perms.append(GameServerModerator.Permissions.CAN_VIEW_ANTICHEAT_LOGS)
         if self.can_manage_configuration:
             perms.append(GameServerModerator.Permissions.CAN_MANAGE_CONFIGURATION)
-        if self.can_manage_webhook_settings:
-            perms.append(GameServerModerator.Permissions.CAN_MANAGE_WEBHOOK_SETTINGS)
-        if self.can_access_interactive_map:
-            perms.append(GameServerModerator.Permissions.CAN_ACCESS_INTERACTIVE_MAP)
         if self.can_access_multi_stream:
             perms.append(GameServerModerator.Permissions.CAN_ACCESS_MULTI_STREAM)
         if self.can_manage_moderators:

@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { DashboardError } from "@/components/ui/dashboard-error";
+import { useErrorTracking, formatApiError } from "@/hooks/use-error-tracking";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -1147,12 +1149,12 @@ function ActivityItem({
 export function GeneralDashboard() {
   usePageTitle("General Dashboard");
   const navigate = useNavigate();
+  const { error, setError, clearError } = useErrorTracking();
   const [pageLoaded, setPageLoaded] = useState(false);
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(
     null,
   );
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [loadingStage, setLoadingStage] = useState<
     "initializing" | "stats" | "servers" | "activity" | "complete"
   >("initializing");
@@ -1174,7 +1176,7 @@ export function GeneralDashboard() {
     const loadData = async () => {
       try {
         setIsLoading(true);
-        setError(null);
+        clearError();
 
         console.log("Loading dashboard data from API...");
 
@@ -1221,11 +1223,23 @@ export function GeneralDashboard() {
           setLoadingStage("complete");
           setDashboardData(response.data);
         } else {
-          setError(response.error || "Failed to load dashboard data");
+          const errorMessage = formatApiError(
+            response,
+            "Failed to load dashboard data",
+          );
+          setError(
+            errorMessage,
+            "dashboard_overview",
+            `API Response: ${JSON.stringify({ success: response.success, status: response.status })}`,
+          );
         }
       } catch (err) {
-        setError(`Failed to load dashboard data`);
         console.error("Error loading dashboard data:", err);
+        setError(
+          err instanceof Error ? err : "Failed to load dashboard data",
+          "dashboard_overview",
+          "Network/Connection Error during dashboard load",
+        );
       } finally {
         setIsLoading(false);
       }
@@ -1266,53 +1280,49 @@ export function GeneralDashboard() {
   // Error state
   if (error && !isLoading) {
     return (
-      <div className="flex-1 overflow-y-auto relative">
-        <div className="p-4 sm:p-8 flex items-center justify-center min-h-[400px]">
-          <Card className="p-8 text-center bg-gradient-to-br from-background/90 to-background/50 backdrop-blur-xl border-red-500/20">
-            <AlertCircle className="h-16 w-16 text-red-400 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold mb-2">
-              Failed to Load Dashboard
-            </h2>
-            <p className="text-muted-foreground mb-4">{error}</p>
-            <div className="flex gap-2 justify-center">
-              <Button
-                onClick={async () => {
-                  setIsLoading(true);
-                  setError(null);
-                  try {
-                    const response = await api.dashboard.getOverview();
-                    if (response.success && response.data) {
-                      setDashboardData(response.data);
-                    } else {
-                      setError(
-                        response.error || "Failed to load dashboard data",
-                      );
-                    }
-                  } catch (err) {
-                    setError("Failed to load dashboard data");
-                  } finally {
-                    setIsLoading(false);
-                  }
-                }}
-                className="bg-primary hover:bg-primary/90"
-              >
-                Retry
-              </Button>
-              {error.includes("Authentication") && (
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    authManager.clearToken();
-                    window.location.href = "/auth/signin";
-                  }}
-                >
-                  Sign In
-                </Button>
-              )}
-            </div>
-          </Card>
-        </div>
-      </div>
+      <DashboardError
+        error={error.message}
+        errorCode={error.code}
+        context="dashboard"
+        timestamp={error.timestamp}
+        additionalInfo={error.additionalInfo}
+        onRetry={() => {
+          clearError();
+          setIsLoading(true);
+          // Trigger reload with a timeout
+          setTimeout(async () => {
+            try {
+              console.log("🔄 Retrying dashboard overview fetch...");
+              const response = await api.dashboard.getOverview();
+
+              if (response.success && response.data) {
+                setLoadingStage("complete");
+                setDashboardData(response.data);
+              } else {
+                const errorMessage = formatApiError(
+                  response,
+                  "Failed to load dashboard data",
+                );
+                setError(
+                  errorMessage,
+                  "dashboard_overview",
+                  "Retry attempt failed",
+                );
+              }
+            } catch (retryError) {
+              setError(
+                retryError instanceof Error ? retryError : "Retry failed",
+                "dashboard_overview",
+                "Network error during retry",
+              );
+            } finally {
+              setIsLoading(false);
+            }
+          }, 100);
+        }}
+        retryLabel="Retry Loading Dashboard"
+        showHomeButton={false}
+      />
     );
   }
 

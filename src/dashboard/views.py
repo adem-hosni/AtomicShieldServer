@@ -2918,8 +2918,8 @@ def list_players(request, server_id):
                 if engine:
                     players.append({
                         **player,
-                        "joined_at": datetime.fromtimestamp(engine.joined_at),
-                        "play_time": utils.represent_timedelta_string(engine.play_time),
+                        "joinedAt": datetime.fromtimestamp(engine.joined_at).strftime("%Y-%m-%d %H:%M:%S") if engine.joined_at else "Unknown",
+                        "playtime": utils.represent_timedelta_string(engine.play_time),  # float to timedelta string
                     })
                 else:
                     players.append({**player, "joined_at": "Unknown", "play_time": "Unknown"})
@@ -2927,7 +2927,7 @@ def list_players(request, server_id):
                 
         except Exception as e:
             logger.error(f"Failed to get server status: {e}")
-            message = "Server is offline"
+            message = "An error occurred while fetching server status."
     else:
         message = "Server is offline"
 
@@ -2954,7 +2954,6 @@ def list_players(request, server_id):
             )
 
         engine = fivem_guard.get_scanner_by_ip(player_ip)
-        logger.info(player_ip)
         if not engine:
             return Response(
                 {"success": False, "message": "Cannot retrieve the target player"}

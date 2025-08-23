@@ -113,7 +113,6 @@ class SafeServerConsumer(AsyncWebsocketConsumer):
         """
         if bytes_data is not None:
             text_data = bytes_data.decode('utf-8')  
-        logger.info(text_data)
         try:
             await self.process_packet(atomic_core.decode(text_data))
         except Exception as err:

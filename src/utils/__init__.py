@@ -73,6 +73,10 @@ def check_request_body_key(
 
 
 def represent_timedelta_string(time: timedelta) -> str:
+    # If time is an int, convert to timedelta (assume seconds)
+    if isinstance(time, int):
+        time = timedelta(seconds=time)
+
     result = ""
 
     days = time.days

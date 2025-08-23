@@ -447,7 +447,7 @@ export function PlayersPage() {
 
       toast({
         title: "Screenshot Error",
-        description: `Failed to take screenshot for ${player.name}. Using default.`,
+        description: error || `Failed to take screenshot for ${player.name}. Using default.`,
         variant: "destructive",
       });
     }
@@ -806,9 +806,9 @@ export function PlayersPage() {
                                       <div className="text-xs text-muted-foreground">
                                         <span className="sm:hidden">
                                           Online • {player.ping}ms •{" "}
-                                          {new Date(
-                                            player.joinedAt,
-                                          ).toLocaleDateString()}
+                                          {(
+                                            player.joinedAt
+                                          )}
                                         </span>
                                         <span className="hidden sm:inline">
                                           Player ID: {player.id}
@@ -835,13 +835,13 @@ export function PlayersPage() {
                                 </TableCell>
                                 <TableCell className="text-xs sm:text-sm">
                                   <div className="font-medium">
-                                    {formatPlaytime(player.playtime)}
+                                    {(player.playtime)}
                                   </div>
                                 </TableCell>
                                 <TableCell className="text-xs sm:text-sm mobile-hidden">
-                                  {new Date(
-                                    player.joinedAt,
-                                  ).toLocaleDateString()}
+                                  {
+                                    player.joinedAt
+                                  }
                                 </TableCell>
                               </TableRow>
                             </ContextMenuTrigger>
@@ -1057,7 +1057,7 @@ export function PlayersPage() {
                       <div>
                         <div className="text-muted-foreground">Playtime</div>
                         <div className="font-medium">
-                          {formatPlaytime(selectedPlayer.playtime)}
+                          {(selectedPlayer.playtime)}
                         </div>
                       </div>
                     </div>
@@ -1101,7 +1101,7 @@ export function PlayersPage() {
                       <div>
                         <div className="text-muted-foreground">Joined At</div>
                         <div className="font-medium">
-                          {formatTimestamp(selectedPlayer.joinedAt)}
+                          {(selectedPlayer.joinedAt)}
                         </div>
                       </div>
                       {selectedPlayer.position && (

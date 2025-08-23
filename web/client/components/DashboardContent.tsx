@@ -34,6 +34,8 @@ import {
 import { useLanguage } from "@/hooks/use-language";
 import { ServerDashboardData } from "@shared/api";
 import { api } from "@/lib/api-client";
+import { DashboardError } from "@/components/ui/dashboard-error";
+import { useErrorTracking, formatApiError } from "@/hooks/use-error-tracking";
 
 interface StatsCardProps {
   title: string;
@@ -119,10 +121,10 @@ export function DashboardContent() {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { error, setError, clearError } = useErrorTracking();
   const [dashboardData, setDashboardData] =
     useState<ServerDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [isRefreshingKey, setIsRefreshingKey] = useState(false);
 
   // Track render count for debugging
@@ -194,7 +196,7 @@ export function DashboardContent() {
       try {
         console.log("Starting to load server data for serverId:", serverId);
         setIsLoading(true);
-        setError(null);
+        clearError();
 
         console.log("🔄 Fetching dashboard data...");
         const response = await api.servers.getServerDashboard(serverId);
@@ -212,14 +214,22 @@ export function DashboardContent() {
           setDashboardData(enhancedData);
         } else {
           console.error("❌ Failed to load dashboard data:", response.error);
-          setError(response.error || "Failed to load dashboard data");
+          const errorMessage = formatApiError(
+            response,
+            "Failed to load dashboard data",
+          );
+          setError(
+            errorMessage,
+            "server_dashboard",
+            `Server ID: ${serverId}, API Response: ${JSON.stringify({ success: response.success, status: response.status })}`,
+          );
         }
       } catch (error) {
         console.error("💥 Error loading dashboard data:", error);
         setError(
-          error instanceof Error
-            ? error.message
-            : "An unexpected error occurred",
+          error instanceof Error ? error : "An unexpected error occurred",
+          "server_dashboard",
+          `Server ID: ${serverId}, Network/Connection Error`,
         );
       } finally {
         setIsLoading(false);
@@ -384,22 +394,57 @@ export function DashboardContent() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center space-y-4 max-w-md">
-          <AlertCircle className="h-12 w-12 text-destructive mx-auto" />
-          <div>
-            <h3 className="text-lg font-semibold">Error Loading Dashboard</h3>
-            <p className="text-muted-foreground mt-2">{error}</p>
-          </div>
-          <Button
-            onClick={() => window.location.reload()}
-            variant="outline"
-            className="mt-4"
-          >
-            Try Again
-          </Button>
-        </div>
-      </div>
+      <DashboardError
+        error={error.message}
+        errorCode={error.code}
+        context="server"
+        timestamp={error.timestamp}
+        additionalInfo={error.additionalInfo}
+        onRetry={() => {
+          clearError();
+          setIsLoading(true);
+          // Trigger reload by setting a timeout to call loadServerData
+          setTimeout(() => {
+            if (serverId) {
+              // Re-run the loadServerData logic
+              (async () => {
+                try {
+                  console.log("🔄 Retrying dashboard data fetch...");
+                  const response =
+                    await api.servers.getServerDashboard(serverId);
+
+                  if (response.success && response.data) {
+                    const enhancedData = {
+                      ...response.data,
+                      _apiStatus: response.status,
+                    };
+                    setDashboardData(enhancedData);
+                  } else {
+                    const errorMessage = formatApiError(
+                      response,
+                      "Failed to load dashboard data",
+                    );
+                    setError(
+                      errorMessage,
+                      "server_dashboard",
+                      `Server ID: ${serverId}, Retry attempt`,
+                    );
+                  }
+                } catch (retryError) {
+                  setError(
+                    retryError instanceof Error ? retryError : "Retry failed",
+                    "server_dashboard",
+                    `Server ID: ${serverId}, Retry attempt failed`,
+                  );
+                } finally {
+                  setIsLoading(false);
+                }
+              })();
+            }
+          }, 100);
+        }}
+        retryLabel="Retry Loading Dashboard"
+      />
     );
   }
 
@@ -629,13 +674,22 @@ export function DashboardContent() {
               </CardHeader>
               <CardContent>
                 <TabsContent value="today" className="space-y-4">
-                  <ServerAnalyticsChart data={dashboardData.chart.today} period="today" />
+                  <ServerAnalyticsChart
+                    data={dashboardData.chart.today}
+                    period="today"
+                  />
                 </TabsContent>
                 <TabsContent value="week" className="space-y-4">
-                  <ServerAnalyticsChart data={dashboardData.chart.week} period="week" />
+                  <ServerAnalyticsChart
+                    data={dashboardData.chart.week}
+                    period="week"
+                  />
                 </TabsContent>
                 <TabsContent value="month" className="space-y-4">
-                  <ServerAnalyticsChart data={dashboardData.chart.month} period="month" />
+                  <ServerAnalyticsChart
+                    data={dashboardData.chart.month}
+                    period="month"
+                  />
                 </TabsContent>
               </CardContent>
             </Tabs>

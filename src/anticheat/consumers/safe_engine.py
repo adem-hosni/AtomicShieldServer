@@ -398,7 +398,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         await AuditLogEntry.acreate_entry(
             action=AuditLogEntry.Action.PLAYER_KICKED,
             severity=AuditLogEntry.Severity.MEDIUM,
-            game_server=self._connected_server.game_server,
+            game_server=self._connected_server.game_server if self._connected_server else None,
             summary="Kicked player",
             details=f"Kicked player {self._hwid.username} - {self._hwid.id} | Reason: {reason or 'No reason provided'}",
             category=AuditLogEntry.Category.PLAYER

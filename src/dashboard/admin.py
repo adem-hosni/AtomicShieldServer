@@ -283,6 +283,7 @@ class GameServerModeratorAdmin(ModelAdmin):
                 "fields": (
                     "can_kick_players",
                     "can_ban_players",
+                    "can_screenshot_players",
                     "can_view_anticheat_logs",
                 ),
             },

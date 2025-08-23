@@ -235,7 +235,9 @@ async def handle_request_player_join(
 
         response["join"] = not engine is None
         if not response["join"]:
-            response["message"] = await consumer.game_server.configuration.aget_config("agent_not_running")
+            configurations = await sync_to_async(lambda: consumer.game_server.configurations)()
+            response["message"] = await configurations.aget_config("agent_not_running")
+
             logger.info(f'Connection refused: "AtomicShield Agent is Not Connected" (requested ip: {request['ip']})')
         else:
             if len(request["steam"]) and request["steam"] != "Unknown":

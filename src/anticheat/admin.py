@@ -253,7 +253,7 @@ class ClientHWIDAdmin(SimpleHistoryAdmin, ModelAdmin):
 
     @admin.display(description="IP Address")
     def ip(self, obj: HWID):
-        return fivem_guard.get_scanner_by_hwid(obj).address[0] or "Not Found"
+        return fivem_guard.get_scanner_by_hwid(obj).address[0] if fivem_guard.get_scanner_by_hwid(obj) else "Not Found"
 
     @admin.display(description="Connected Server")
     def display_connected_server(self, obj: HWID):

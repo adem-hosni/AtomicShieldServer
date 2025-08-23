@@ -86,8 +86,17 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             None
         """
         await self.accept()
-        self.address = tuple(self.scope["client"])
+
+        client_ip, client_port = self.scope.get("client", ("unknown", 0))
+
+        headers = dict((k.lower(), v) for k, v in self.scope.get("headers", []))
+        x_forwarded_for = headers.get(b'x-forwarded-for')
+        if x_forwarded_for:
+            client_ip = x_forwarded_for.decode().split(",")[0].strip()
+
+        self.address = (client_ip, client_port)
         logger.info(f"ENGINE CONNECTION ATTACHED FROM {self.address}")
+
 
     async def send(
         self,
@@ -389,7 +398,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         await AuditLogEntry.acreate_entry(
             action=AuditLogEntry.Action.PLAYER_KICKED,
             severity=AuditLogEntry.Severity.MEDIUM,
-            game_server=self._connected_server,
+            game_server=self._connected_server.game_server,
             summary="Kicked player",
             details=f"Kicked player {self._hwid.username} - {self._hwid.id} | Reason: {reason or 'No reason provided'}",
             category=AuditLogEntry.Category.PLAYER

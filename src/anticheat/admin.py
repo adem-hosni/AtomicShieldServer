@@ -97,6 +97,7 @@ class ClientHWIDAdmin(SimpleHistoryAdmin, ModelAdmin):
     list_display = [
         "id",
         "username",
+        "ip",
         "computer_name",
         "motherboard_serial",
         "display_discord_id",
@@ -249,6 +250,10 @@ class ClientHWIDAdmin(SimpleHistoryAdmin, ModelAdmin):
     @admin.display(description="Discord ID")
     def display_discord_id(self, obj: HWID):
         return obj.discord_id or "Not Linked"
+
+    @admin.display(description="IP Address")
+    def ip(self, obj: HWID):
+        return fivem_guard.get_scanner_by_hwid(obj).address[0] or "Not Found"
 
     @admin.display(description="Connected Server")
     def display_connected_server(self, obj: HWID):

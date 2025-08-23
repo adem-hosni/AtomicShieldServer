@@ -25,4 +25,6 @@ django-allauth
 django-cors-headers
 django_hosts
 django-simple_history
+django_redis
+channels_redis
 hypercorn

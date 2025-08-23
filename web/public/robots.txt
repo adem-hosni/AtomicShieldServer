@@ -1,0 +1,39 @@
+User-agent: *
+Allow: /
+
+# Disallow private/admin areas
+Disallow: /admin
+Disallow: /api/private/
+Disallow: /internal/
+Disallow: /_next/
+Disallow: /temp/
+Disallow: /tmp/
+
+# Disallow search results and pagination duplicates
+Disallow: /search?
+Disallow: /*?page=
+Disallow: /*?sort=
+Disallow: /*?filter=
+
+# Disallow test and development pages
+Disallow: /test
+Disallow: /dev
+Disallow: /staging
+
+# Allow specific important paths
+Allow: /api/og
+Allow: /api/sitemap
+
+# Crawl-delay for heavy crawlers
+User-agent: GPTBot
+Crawl-delay: 5
+
+User-agent: Google-Extended
+Crawl-delay: 2
+
+# Sitemap location
+Sitemap: https://atomicshield.com/sitemap.xml
+Sitemap: https://atomicshield.com/sitemap-blogs.xml
+
+# Host directive (replace with actual domain)
+Host: https://atomicshield.com

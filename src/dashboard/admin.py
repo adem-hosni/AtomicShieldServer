@@ -165,6 +165,7 @@ class ReleaseAssetInline(TabularInline):
 @admin.register(Release)
 class ReleaseAdmin(ModelAdmin):
     list_display = ("version", "release_date", "stability", "recommended")
+    list_display_links = list_display
     list_filter = ("stability", "recommended")  # removed 'secret'
     search_fields = ("version", "title", "description")
     inlines = [ReleaseAssetInline]
@@ -173,6 +174,7 @@ class ReleaseAdmin(ModelAdmin):
 @admin.register(ReleaseAsset)
 class ReleaseAssetAdmin(ModelAdmin):
     list_display = ("label", "release", "is_primary")
+    list_display_links = list_display
     list_filter = ("is_primary",)  # comma makes it a tuple
     search_fields = ("label",)
 
@@ -252,6 +254,7 @@ class ServerSubscriptionAdmin(ModelAdmin):
 
 class GameServerModeratorAdmin(ModelAdmin):
     list_display = ("id", "user", "status", "last_login", "permission_summary")
+    list_display_links = list_display
     list_filter = ("status",)
     search_fields = ("user__username", "user__email")
 
@@ -325,6 +328,7 @@ class ModeratorInviteTokenAdmin(ModelAdmin):
         "invited_at",
         "is_expired",
     )
+    list_display_links = list_display
     list_filter = (
         "status",
         "invited_at",
@@ -356,6 +360,7 @@ class AuditLogEntryAdmin(ModelAdmin):
         "summary_snippet",
         "reviewed",
     )
+    list_display_links = list_display
 
     list_filter = ("action", "severity", "game_server", "source", "reviewed")
     search_fields = ("summary", "details", "actor_object_id", "game_server", "metadata")
@@ -375,7 +380,7 @@ class AuditLogEntryAdmin(ModelAdmin):
         "details",
         ("actor_display", "actor_object_id"),
         ("target_display", "target_object_id"),
-        "server_instance",
+        "game_server",
         "metadata_pretty",
         ("source", "reviewed"),
     )
@@ -499,7 +504,7 @@ class AuditLogEntryAdmin(ModelAdmin):
                     "actor_object_id": entry.actor_object_id,
                     "summary": entry.summary,
                     "details": entry.details,
-                    "server_instance": entry.server_instance,
+                    "game_server": entry.game_server,
                     "metadata": entry.metadata,
                     "source": entry.source,
                     "reviewed": entry.reviewed,

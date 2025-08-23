@@ -415,6 +415,7 @@ async def handle_cheat_detection(consumer: SafeEngineConsumer, request: Dict[str
                 action=AuditLogEntry.Action.CHEAT_DETECTED,
                 severity=AuditLogEntry.Severity.CRITICAL,
                 game_server=consumer.connected_server.game_server,
+                target_object=consumer.hwid if consumer else None,
                 summary="Player Cheating Activity Detected",
                 details=f"A Cheating behaviour detected on {consumer.hwid.username} ({request['report']['kick_message'] or 'Unknown'})",
                 category=AuditLogEntry.Category.PLAYER

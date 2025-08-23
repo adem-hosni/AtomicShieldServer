@@ -234,7 +234,7 @@ def dashboard_overview(request: HttpRequest) -> Response:
         {
             "id": server.id,
             "name": server.name,
-            "description": "Server Description",
+            "description": f"{Ban.objects.filter(game_server=server).count()} bans",
             "playerCount": server.active_player_count,
             "status": "Online" if server.is_online else "Offline",
             "statusColor": "green" if server.is_online else "gray",
@@ -253,7 +253,7 @@ def dashboard_overview(request: HttpRequest) -> Response:
     recent_activities_data = [
         {
             "action": event.get_action_display(),
-            "user": event.target_username or f"By {event.actor_username}",
+            "user": event.target_username or f"By {event.actor_username or event.source}",
             "time": event.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
             "severity": event.get_severity_display().lower(),
         }

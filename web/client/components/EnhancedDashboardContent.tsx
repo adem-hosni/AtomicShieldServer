@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { usePageTitle } from "@/hooks/use-page-title";
+import { DashboardError } from "@/components/ui/dashboard-error";
+import { useErrorTracking, formatApiError } from "@/hooks/use-error-tracking";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -273,7 +275,7 @@ export function EnhancedDashboardContent() {
   const [dashboardData, setDashboardData] =
     useState<ServerDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { error, setError, clearError } = useErrorTracking();
   const [isRefreshingKey, setIsRefreshingKey] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
@@ -319,17 +321,22 @@ export function EnhancedDashboardContent() {
 
       try {
         setIsLoading(true);
-        setError(null);
+        clearError();
 
         const response = await api.servers.getServerDashboard(serverId);
 
         if (response.success && response.data) {
           setDashboardData(response.data);
         } else {
-          setError(response.error || "Failed to load server data");
+          const errorMessage = formatApiError(response, "Failed to load server data");
+          setError(errorMessage, "server_dashboard", `Server ID: ${serverId}`);
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Unknown error occurred");
+        setError(
+          err instanceof Error ? err : "Unknown error occurred",
+          "server_dashboard",
+          `Server ID: ${serverId}, Network/Connection Error`
+        );
       } finally {
         setIsLoading(false);
       }
@@ -410,15 +417,37 @@ export function EnhancedDashboardContent() {
   // Error state
   if (error) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <AlertCircle className="h-12 w-12 text-destructive mx-auto" />
-          <div>
-            <h3 className="text-lg font-semibold">Error Loading Dashboard</h3>
-            <p className="text-muted-foreground">{error}</p>
-          </div>
-        </div>
-      </div>
+      <DashboardError
+        error={error.message}
+        errorCode={error.code}
+        context="server"
+        onRetry={() => {
+          clearError();
+          setIsLoading(true);
+          setTimeout(async () => {
+            try {
+              const response = await api.servers.getServerDashboard(serverId!);
+
+              if (response.success && response.data) {
+                setDashboardData(response.data);
+              } else {
+                const errorMessage = formatApiError(response, "Failed to load server data");
+                setError(errorMessage, "server_dashboard", `Server ID: ${serverId}, Retry attempt`);
+              }
+            } catch (retryError) {
+              setError(
+                retryError instanceof Error ? retryError : "Retry failed",
+                "server_dashboard",
+                `Server ID: ${serverId}, Retry attempt failed`
+              );
+            } finally {
+              setIsLoading(false);
+            }
+          }, 100);
+        }}
+        retryLabel="Retry Loading Dashboard"
+        showHomeButton={true}
+      />
     );
   }
 

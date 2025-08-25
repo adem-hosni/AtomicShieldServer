@@ -208,9 +208,7 @@ def dashboard_overview(request: HttpRequest) -> Response:
     all_threats = DetectionReport.objects.all()
 
     # Threat Level
-    threats_today = all_threats.filter(
-        detected_at__date=timezone.now().date()
-    ).count()
+    threats_today = all_threats.filter(detected_at__date=timezone.now().date()).count()
     threat_level = {
         "value": threats_today,
         "subtitle": (
@@ -249,11 +247,14 @@ def dashboard_overview(request: HttpRequest) -> Response:
 
     # Select last detections
     user_servers = GameServer.get_user_servers(request.user)
-    recent_activities = AuditLogEntry.objects.filter(game_server__in=user_servers).order_by("-timestamp")[:5]
+    recent_activities = AuditLogEntry.objects.filter(
+        game_server__in=user_servers
+    ).order_by("-timestamp")[:5]
     recent_activities_data = [
         {
             "action": event.get_action_display(),
-            "user": event.target_username or f"By {event.actor_username or event.source}",
+            "user": event.target_username
+            or f"By {event.actor_username or event.source}",
             "time": event.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
             "severity": event.get_severity_display().lower(),
         }
@@ -271,31 +272,37 @@ def dashboard_overview(request: HttpRequest) -> Response:
         detected_at__date=timezone.now().date() - timedelta(days=30)
     )
     threat_activity = [
-    {
-        "time": dp["time"].strftime("%H:%M"),  # <--- use the new alias here
-        "threatDetections": dp["threatDetections"],
-        "falsePositives": dp["falsePositives"],
-        "blockedAttempts": dp["blockedAttempts"],
-        "severity": dp.get("severity", "low"),  # placeholder, you can calculate severity inline if needed
-    }
-    for dp in (
-        DetectionReport.objects
-        .annotate(time=TruncHour('detected_at'))  # <--- rename annotation
-        .values('time')
-        .annotate(
-            threatDetections=Count('id'),
-            falsePositives=Count('id', filter=Q(report__false_positive=True)),
-            blockedAttempts=Count('id', filter=Q(report__blocked=True)),
+        {
+            "time": dp["time"].strftime("%H:%M"),  # <--- use the new alias here
+            "threatDetections": dp["threatDetections"],
+            "falsePositives": dp["falsePositives"],
+            "blockedAttempts": dp["blockedAttempts"],
+            "severity": dp.get(
+                "severity", "low"
+            ),  # placeholder, you can calculate severity inline if needed
+        }
+        for dp in (
+            DetectionReport.objects.annotate(
+                time=TruncHour("detected_at")
+            )  # <--- rename annotation
+            .values("time")
+            .annotate(
+                threatDetections=Count("id"),
+                falsePositives=Count("id", filter=Q(report__false_positive=True)),
+                blockedAttempts=Count("id", filter=Q(report__blocked=True)),
+            )
+            .order_by("time")
         )
-        .order_by('time')
-    )
-]
+    ]
     # Global Stats
     global_stats_data = {
         "totalBans24h": Ban.objects.filter(
             banned_at__date=timezone.now().date()
         ).count(),
-        "kicks24h": AuditLogEntry.objects.filter(action=AuditLogEntry.Action.PLAYER_KICKED, timestamp__date=timezone.now().date()).count(),
+        "kicks24h": AuditLogEntry.objects.filter(
+            action=AuditLogEntry.Action.PLAYER_KICKED,
+            timestamp__date=timezone.now().date(),
+        ).count(),
         "warnings24h": 0,
         "cleanSessions": 0,
     }
@@ -504,7 +511,7 @@ def add_server(request: HttpRequest) -> Response:
     )
 
     AuditLogEntry.create_entry(
-        action=AuditLogEntry.Action.PLAYER_UNBANNED,
+        action=AuditLogEntry.Action.SERVER_CREATED,
         severity=AuditLogEntry.Severity.LOW,
         actor=request.user,
         game_server=new_server,
@@ -609,7 +616,7 @@ def server_dashboard(request: HttpRequest, server_id: int) -> Response:
                 "message": "An unexpected error occurred while accessing the server.",
             }
         )
-    
+
     if not game_server.has_permission_for(
         request.user, GameServerModerator.Permissions.CAN_VIEW_DASHBOARD
     ):
@@ -689,35 +696,34 @@ def list_servers(request: HttpRequest) -> Response:
     """
     List all servers owned by the user.
     """
-    user = request.user
     game_servers = GameServer.get_user_servers(request.user)
-    servers = []
-
-    for server in game_servers:
-        servers.append(
-            {
-                "id": server.id,
-                "name": server.name,
-                "ip": server.ip,
-                "status": "active" if server.is_online else "inactive",
-                "subscriptionPlan": (
-                    server.subscriptions.last().plan
-                    if server.subscriptions.exists()
-                    else "None"
-                ),
-                "createdAt": "",
-                "imageUrl": (
-                    request.build_absolute_uri(server.configurations.server_image.url)
-                    if server.configurations.server_image
-                    else ""
-                ),
-            }
-        )
-
     return Response(
         {
             "success": True,
-            "data": {"servers": servers},
+            "data": {
+                "servers": sorted([
+                    {
+                        "id": server.id,
+                        "name": server.name,
+                        "ip": server.ip,
+                        "status": "active" if server.is_online else "inactive",
+                        "subscriptionPlan": (
+                            server.subscriptions.last().plan
+                            if server.subscriptions.exists()
+                            else "None"
+                        ),
+                        "createdAt": "",
+                        "imageUrl": (
+                            request.build_absolute_uri(
+                                server.configurations.server_image.url
+                            )
+                            if server.configurations.server_image
+                            else ""
+                        ),
+                    }
+                    for server in game_servers
+                ], key=lambda x: x['status'] == "active")
+            },
             "message": "Servers retrieved successfully.",
         }
     )
@@ -770,17 +776,15 @@ def list_bans(request: HttpRequest, server_id: int) -> Response:
                         ),
                         "bannedAt": ban.banned_at.strftime("%Y-%m-%d %H:%M:%S"),
                         "firstJoin": (
-                            AuditLogEntry.objects
-                            .filter(
+                            AuditLogEntry.objects.filter(
                                 target_object_id=ban.hwid.id,
                                 action=AuditLogEntry.Action.PLAYER_REQUEST_JOIN,
-                                timestamp__lte=ban.banned_at
+                                timestamp__lte=ban.banned_at,
                             )
                             .values_list("timestamp", flat=True)
                             .order_by("timestamp")
                             .first()
                         ),
-
                         "expiresAt": None,
                         "adminName": "zebi",
                         "reason": ban.reason,
@@ -1029,7 +1033,7 @@ def report_false_positive(
 @permission_classes([IsAuthenticated])
 def list_configurations(request: HttpRequest, server_id: int) -> Response:
     try:
-        game_server = GameServer.get_for_user(server_id, request.user)        
+        game_server = GameServer.get_for_user(server_id, request.user)
     except GameServer.DoesNotExist:
         logger.warning(
             f"{request.user.username} tried to access configurations of a non-existing server ({server_id})!"
@@ -1118,9 +1122,22 @@ def list_configurations(request: HttpRequest, server_id: int) -> Response:
                                                 "title": config.name,
                                                 "subtitle": config.subtitle,
                                                 "tip": config.tip,
-                                                "value": (int if config.config_type == AntiCheatConfigDataTypes.NUMBER else bool if config.config_type == AntiCheatConfigDataTypes.BOOLEAN else str)(game_server.configurations.config.get(
-                                                    str(config.id), config.default_value
-                                                )),
+                                                "value": (
+                                                    int
+                                                    if config.config_type
+                                                    == AntiCheatConfigDataTypes.NUMBER
+                                                    else (
+                                                        bool
+                                                        if config.config_type
+                                                        == AntiCheatConfigDataTypes.BOOLEAN
+                                                        else str
+                                                    )
+                                                )(
+                                                    game_server.configurations.config.get(
+                                                        str(config.id),
+                                                        config.default_value,
+                                                    )
+                                                ),
                                                 "icon": config.icon,
                                                 "extra": config.extra,
                                             }
@@ -1168,7 +1185,7 @@ def save_configurations(request: HttpRequest, server_id: int) -> Response:
                 "message": "An unexpected error occurred while accessing the server.",
             }
         )
-    
+
     if not game_server.has_permission_for(
         request.user, GameServerModerator.Permissions.CAN_MANAGE_CONFIGURATION
     ):
@@ -1252,7 +1269,6 @@ def save_configurations(request: HttpRequest, server_id: int) -> Response:
         category=AuditLogEntry.Category.MODERATION,
     )
 
-
     return Response(
         {
             "success": True,
@@ -1299,7 +1315,6 @@ def list_moderators(request: HttpRequest, server_id: int) -> Response:
                 "message": "You dont have an access to perform this operation",
             }
         )
-
 
     moderators = target_server.moderators.all()
 
@@ -1380,6 +1395,14 @@ def update_moderators(request: HttpRequest, server_id: int, moderator_id) -> Res
             {
                 "success": False,
                 "message": "Target moderator not found",
+            }
+        )
+
+    if target_moderator.user == request.user:
+        return Response(
+            {
+                "success": False,
+                "message": "You cannot update your own permissions, ask server owner to do this operation.",
             }
         )
 
@@ -1696,7 +1719,7 @@ def download_assets_view(request: HttpRequest) -> Response:
     GET  -> Return list of releases + their assets
     POST -> Create a release (optional, admin use)
     """
-    
+
     if request.method == "POST":
         asset_id = request.data.get("assetId")
         try:
@@ -1791,8 +1814,6 @@ def download_assets_view(request: HttpRequest) -> Response:
         response.close = cleanup_and_close
 
         return response
-
-
 
     else:
         releases = Release.objects.all().prefetch_related("assets")
@@ -1989,7 +2010,7 @@ def list_audit_logs(request: HttpRequest, server_id: int) -> Response:
                 "message": "An unexpected error occurred while accessing the server.",
             }
         )
-    
+
     if not server.has_permission_for(
         request.user, GameServerModerator.Permissions.CAN_VIEW_ANTICHEAT_LOGS
     ):
@@ -2055,10 +2076,11 @@ def test_webhook(request: HttpRequest) -> Response:
                 for field in embed_template.get("fields", {})
             ],
             footer_icon_url=embed_template["footer"]["icon"],
-
         )
     except Exception as err:
-        logger.error(f"An error occured while testing webhook url for {request.user}: {err}")
+        logger.error(
+            f"An error occured while testing webhook url for {request.user}: {err}"
+        )
         return Response(
             {"success": False, "message": "An error occured while sending request"}
         )
@@ -2848,9 +2870,7 @@ def subscriptions_api(request):
         )
 
     if not subscription.is_valid_for_now():
-        return Response(
-            {"success": False, "error": "Expired Subscription"}, status=200
-        )
+        return Response({"success": False, "error": "Expired Subscription"}, status=200)
 
     if subscription.game_servers.count():
         return Response(
@@ -2912,19 +2932,30 @@ def list_players(request, server_id):
         try:
             status = async_to_sync(server.request_status)()
             retreived_players = status.get("players", [])
-            
+
             for player in retreived_players:
                 engine = fivem_guard.get_scanner_by_ip(player["ip"])
                 if engine:
-                    players.append({
-                        **player,
-                        "joinedAt": datetime.fromtimestamp(engine.joined_at).strftime("%Y-%m-%d %H:%M:%S") if engine.joined_at else "Unknown",
-                        "playtime": utils.represent_timedelta_string(engine.play_time),  # float to timedelta string
-                    })
+                    players.append(
+                        {
+                            **player,
+                            "joinedAt": (
+                                datetime.fromtimestamp(engine.joined_at).strftime(
+                                    "%Y-%m-%d %H:%M:%S"
+                                )
+                                if engine.joined_at
+                                else "Unknown"
+                            ),
+                            "playtime": utils.represent_timedelta_string(
+                                engine.play_time
+                            ),  # float to timedelta string
+                        }
+                    )
                 else:
-                    players.append({**player, "joined_at": "Unknown", "play_time": "Unknown"})
-                
-                
+                    players.append(
+                        {**player, "joined_at": "Unknown", "play_time": "Unknown"}
+                    )
+
         except Exception as e:
             logger.error(f"Failed to get server status: {e}")
             message = "An error occurred while fetching server status."
@@ -2995,7 +3026,9 @@ def list_players(request, server_id):
                     response["message"] = "Failed to ban the player."
             case "screenshot":
                 try:
-                    if target_server.has_permission_for(request.user, "screenshot_players"):
+                    if target_server.has_permission_for(
+                        request.user, "screenshot_players"
+                    ):
                         image_path = async_to_sync(engine.get_screenshot)()
                         if image_path:
                             response.update(
@@ -3032,7 +3065,8 @@ def list_players(request, server_id):
         players = [
             player
             for player in players
-            if search_text.lower() in player["name"].lower() or search_text in player["id"]
+            if search_text.lower() in player["name"].lower()
+            or search_text in player["id"]
         ]
         current_page = 0
 
@@ -3040,7 +3074,7 @@ def list_players(request, server_id):
     max_pages = max(1, -(-len(players) // page_size))  # ceil division
     current_page = max(0, min(current_page, max_pages - 1))
     players_to_show = players[page_size * current_page : page_size * (current_page + 1)]
-    
+
     return Response(
         {
             "success": True,
@@ -3054,8 +3088,7 @@ def list_players(request, server_id):
                 "peakPlayers": analytics.get_peak_players_today(target_server),
                 "onlinePlayers": target_server.active_player_count,
                 "newPlayers": analytics.get_new_joins_today(target_server),
-                "actionsTaken": analytics.get_actions_taken_today(target_server)
+                "actionsTaken": analytics.get_actions_taken_today(target_server),
             },
-            
         }
     )

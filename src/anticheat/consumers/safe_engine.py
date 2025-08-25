@@ -13,6 +13,7 @@ from core import atomic_core
 from .safe_server import SafeServerConsumer
 from django.conf import settings
 from ..models import HWID, MaliciousSignatures, Ban, DetectionReport
+from utils import notifications
 import utils
 import utils.discord
 from shared.models import ServerType
@@ -90,13 +91,12 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         client_ip, client_port = self.scope.get("client", ("unknown", 0))
 
         headers = dict((k.lower(), v) for k, v in self.scope.get("headers", []))
-        x_forwarded_for = headers.get(b'x-forwarded-for')
+        x_forwarded_for = headers.get(b"x-forwarded-for")
         if x_forwarded_for:
             client_ip = x_forwarded_for.decode().split(",")[0].strip()
 
         self.address = (client_ip, client_port)
         logger.info(f"ENGINE CONNECTION ATTACHED FROM {self.address}")
-
 
     async def send(
         self,
@@ -398,10 +398,13 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         await AuditLogEntry.acreate_entry(
             action=AuditLogEntry.Action.PLAYER_KICKED,
             severity=AuditLogEntry.Severity.MEDIUM,
-            game_server=self._connected_server.game_server if self._connected_server else None,
+            game_server=(
+                self._connected_server.game_server if self._connected_server else None
+            ),
+            target_object=self._hwid,
             summary="Kicked player",
             details=f"Kicked player {self._hwid.username} - {self._hwid.id} | Reason: {reason or 'No reason provided'}",
-            category=AuditLogEntry.Category.PLAYER
+            category=AuditLogEntry.Category.PLAYER,
         )
 
         if self._connected_server:
@@ -456,18 +459,19 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             fields=[
                 (f"{key.replace('_', ' ').title()}:", f"```{value}```", False)
                 for key, value in sent_report.items()
-            ] + [
+            ]
+            + [
+                (
+                    "Server:",
                     (
-                        "Server:",
-                        (
-                            f"```{server_consumer.game_server.name}```"
-                            if server_consumer
-                            else "```NO SERVER CONNECTED```"
-                        ),
-                        False,
+                        f"```{server_consumer.game_server.name}```"
+                        if server_consumer
+                        else "```NO SERVER CONNECTED```"
                     ),
-                    ("BAN ID: ", f"**{ban_id}**", True)
-                ],
+                    False,
+                ),
+                ("BAN ID: ", f"**{ban_id}**", True),
+            ],
             image_buffer=image_buffer,
         )
 
@@ -526,7 +530,8 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                 send_alerts = True  # await target_game_server.configuration.aget_config("allow_send_alert")
 
                 if send_alerts:
-                    webhook_url = (await target_game_server.aconfigurations).get_webhook_url("ban")
+                    webhook_url = (await target_game_server.aget_configurations()).get_webhook_url("ban")
+                    print("Webhook URL:", webhook_url)
                     if len(webhook_url) > 0:
                         if detection_type == DetectionType.CHEAT_SIGNATURE_FOUND:
                             if (
@@ -534,7 +539,9 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                                 == "D:\\Projets\\TZX\\x64\\Release\\Module.pdb"
                             ):
                                 reason = "External Cheat Detected (TZX)"
-                        ban_embed = (await target_game_server.configurations).get_discord_embed("ban")
+                        ban_embed = (
+                            await target_game_server.configurations
+                        ).get_discord_embed("ban")
 
                         embed_title = ban_embed["ban"]
                         embed_title = utils.format_string(
@@ -575,7 +582,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                             fields.append((field_name, field_value, inline))
 
                         footer_text = f"AtomicShield - {current_time}"
-                        await utils.discord.send_discord_embed(
+                        response = await utils.discord.send_discord_embed(
                             webhook_url,
                             embed_title,
                             embed_description,
@@ -588,6 +595,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
                                 image_buffer if allow_send_screenshot else None
                             ),
                         )
+                        print("Discord response:", response)
 
         except Exception as err:
             logger.error(
@@ -673,6 +681,14 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
         self._pending_responses[(SafeEnginePacketID.REQUEST_SCREENSHOT, request_id)] = (
             response_future
         )
+
+        # notifications.notify_server(
+        #     notifications.NotificationType.SCREENSHOT,
+        #     self._connected_server.game_server,
+        #     player_name=self._hwid.username if self._hwid else "<Unknown>",
+        #     screenshot="screenshot.png",
+        #     report={"created_at": timezone.now()},
+        # )
 
         await self.send(
             SafeEnginePacketID.REQUEST_SCREENSHOT, {"request_id": request_id}
@@ -876,7 +892,7 @@ class SafeEngineConsumer(AsyncWebsocketConsumer):
             if not ban.is_expired and ban.active:
                 return ban
         return None
-    
+
     @property
     def play_time(self) -> float:
         if not self._connected_server or self.joined_at:

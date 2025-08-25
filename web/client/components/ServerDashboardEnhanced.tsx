@@ -272,7 +272,7 @@ function StatusCard({
           </div>
 
           {/* Server Info Panel */}
-          {serverInfo && (
+          {dashboardData.serverInfo && (
             <div className="text-right space-y-2">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Globe className="h-4 w-4" />
@@ -537,9 +537,7 @@ export function ServerDashboardEnhanced() {
     );
   }
 
-  const { server, onlinePlayers, totalBans, recentBans, analytics, license } =
-    dashboardData;
-  const serverStatus = (dashboardData as any)?._apiStatus || server?.status;
+  const serverStatus = (dashboardData as any)?._apiStatus || dashboardData.serverInfo?.status;
 
   // Sample trend data - in real implementation, this would come from API
   const playerTrendData = [12, 15, 18, 22, 19, 25, 30, 28];
@@ -568,7 +566,7 @@ export function ServerDashboardEnhanced() {
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
-                <BreadcrumbPage>{server?.name || "Server"}</BreadcrumbPage>
+                <BreadcrumbPage>{dashboardData.serverInfo?.name || "Server"}</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
@@ -583,7 +581,7 @@ export function ServerDashboardEnhanced() {
               )}
             >
               <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold gradient-text-primary">
-                {server?.name || "Server Dashboard"}
+                {dashboardData.serverInfo?.name || "Server Dashboard"}
               </h1>
               <p className="text-muted-foreground mt-2 text-sm md:text-base lg:text-lg">
                 Real-time server monitoring and analytics dashboard
@@ -610,7 +608,7 @@ export function ServerDashboardEnhanced() {
         {/* Server Status - Most Prominent */}
         <StatusCard
           status={serverStatus}
-          lastSeen={server?.lastSeen}
+          lastSeen={dashboardData.serverInfo?.lastRestart}
           serverInfo={{}}
         />
 
@@ -642,11 +640,11 @@ export function ServerDashboardEnhanced() {
 
             <MetricCard
               title="Active Players"
-              value={onlinePlayers?.count || 0}
+              value={dashboardData.stats?.currentPlayers.value || 0}
               subtitle="Currently online"
               icon={<Users className="h-6 w-6" />}
-              trend={onlinePlayers?.count > 15 ? "up" : "neutral"}
-              trendValue={`${onlinePlayers?.count > 15 ? "+" : ""}${onlinePlayers?.count || 0} from yesterday`}
+              trend={dashboardData.stats?.currentPlayers.value > 15 ? "up" : "neutral"}
+              trendValue={`${dashboardData.stats?.currentPlayers.value > 15 ? "+" : ""}${dashboardData.stats?.currentPlayers.value || 0} from yesterday`}
               color="blue"
               sparklineData={playerTrendData}
               actions={
@@ -658,7 +656,7 @@ export function ServerDashboardEnhanced() {
 
             <MetricCard
               title="Security Events"
-              value={totalBans?.count || 0}
+              value={dashboardData.stats.totalBans?.value || 0}
               subtitle="Last 24 hours"
               icon={<Shield className="h-6 w-6" />}
               trend="down"
@@ -788,7 +786,7 @@ export function ServerDashboardEnhanced() {
                         </div>
                         <div className="bg-muted/50 rounded p-2 mt-4">
                           <p className="text-xs font-mono break-all text-muted-foreground">
-                            {license?.key ||
+                            {dashboardData.license?.key ||
                               "••••••••-••••-••••-••••-••••••••••••"}
                           </p>
                         </div>

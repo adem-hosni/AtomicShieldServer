@@ -214,6 +214,10 @@ class GameServer(models.Model):
         """
         return await sync_to_async(lambda: self.configurations)()
 
+    async def aget_configurations(self) -> AntiCheatConfigurations:
+        return await sync_to_async(lambda: self.configurations)()
+
+
     def has_permission_for(self, user: User, permission: Union[str, Any]):
         if user == self.owner:
             return True

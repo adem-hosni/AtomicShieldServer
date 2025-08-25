@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 
 from pathlib import Path
 from django.utils.translation import gettext_lazy as _
+from datetime import timedelta
 from django.templatetags.static import static
 import os
 
@@ -112,6 +113,11 @@ MIDDLEWARE = [
     "django_hosts.middleware.HostsResponseMiddleware",
 ]
 
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=1),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+}
+
 if DEBUG:
     INSTALLED_APPS.append("django_browser_reload")
     # INSTALLED_APPS.append("debug_toolbar")
@@ -211,6 +217,7 @@ REST_FRAMEWORK = {
         "rest_framework.authentication.TokenAuthentication",
     ),
 }
+REST_USE_JWT = False
 
 
 # Internationalization

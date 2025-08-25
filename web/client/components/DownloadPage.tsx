@@ -243,17 +243,48 @@ export function DownloadPage() {
       downloadItem.assets[0];
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/download-assets/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authManager.getToken()}`,
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/download-assets/`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authManager.getToken()}`,
+          },
+          body: JSON.stringify({ assetId }),
         },
-        body: JSON.stringify({ assetId }),
-      });
+      );
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
+      }
+
+      // Check if response is JSON with success field
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        const result = await response.json();
+        if (!result.success) {
+          throw new Error(result.error || "Download request failed");
+        }
+
+        // If JSON response with success, it might contain a download URL
+        if (result.downloadUrl) {
+          // Handle redirect to download URL
+          window.open(result.downloadUrl, "_blank");
+          toast({
+            title: "Download Started",
+            description: `Downloading ${downloadItem.title} ${downloadItem.version}...`,
+          });
+          return;
+        }
+      }
+
+      // For blob responses, proceed with original logic
+      const blob = await response.blob();
+
+      // Validate blob size
+      if (blob.size === 0) {
+        throw new Error("Received empty file");
       }
 
       // grab filename from server header if available
@@ -263,7 +294,6 @@ export function DownloadPage() {
         filename = disposition.split("filename=")[1].replace(/['"]/g, "");
       }
 
-      const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
 
       const a = document.createElement("a");
@@ -646,7 +676,7 @@ export function DownloadPage() {
                   <Button
                     variant="outline"
                     size="lg"
-                    onClick={() => (window.location.href = "/changelogs")}
+                    onClick={() => (window.location.href = "/dashboard/changelogs")}
                     className="hover:shadow-lg transition-all duration-300 group w-full"
                   >
                     <FileText className="h-5 w-5 mr-2 group-hover:rotate-12 transition-transform" />

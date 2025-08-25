@@ -218,7 +218,7 @@ async def handle_request_player_join(
 
     if request["ip"] == "127.0.0.1" :
         response["join"] = False
-        response["message"] = await (await consumer.game_server.aconfigurations).aget_config("network_integrity_alert")
+        response["message"] = await (await consumer.game_server.aget_configurations()).aget_config("network_integrity_alert")
         logger.warning(f"got a localhost ip in the server {consumer.game_server.name} {consumer.address}")
     else:
         # Check if the AtomicShield agent is connected
@@ -235,7 +235,7 @@ async def handle_request_player_join(
 
         response["join"] = not engine is None
         if not response["join"]:
-            configurations = await sync_to_async(lambda: consumer.game_server.configurations)()
+            configurations = await consumer.game_server.aget_configurations()
             response["message"] = await configurations.aget_config("agent_not_running")
 
             logger.info(f'Connection refused: "AtomicShield Agent is Not Connected" (requested ip: {request['ip']})')
@@ -332,7 +332,7 @@ async def handle_request_player_join(
         reviewed=True,
         target_object=engine.hwid if engine else None,
         summary="Player Request Join",
-        details=f"{request['name']} connection {'accepted' if response["join"] else 'rejected'} with message: {response["message"]}",
+        details=f"\"{request['name']}\" connection {'accepted' if response["join"] else 'rejected'} with message: \"{response["message"]}\"",
         category=AuditLogEntry.Category.PLAYER
 )
 
@@ -347,6 +347,7 @@ async def handle_server_disconnect(consumer: SafeServerConsumer):
         severity=AuditLogEntry.Severity.MEDIUM,
         game_server=consumer.game_server,
         reviewed=True,
+        target_object=consumer.game_server if consumer else None,
         summary="AntiCheat Shutdown",
         details="AntiCheat Shutdowned",
         category=AuditLogEntry.Category.SERVER
@@ -367,17 +368,18 @@ async def handle_player_quit(consumer: SafeServerConsumer, request: Dict[str, An
     if not check_request_body_key(request, "reason", str):
         return
 
+    player_engine = fivem_guard.get_scanner_by_ip(request["player_ip"])
     await AuditLogEntry.acreate_entry(
         action=AuditLogEntry.Action.PLAYER_QUIT,
         severity=AuditLogEntry.Severity.LOW,
         game_server=consumer.game_server,
         reviewed=True,
+        target_object=player_engine.hwid if player_engine else None,
         summary="Player Quit",
-        details=f"{request['name']} quited with reason: {request['reason']}",
+        details=f"\"{request['name']}\" quited with reason: \"{request['reason']}\"",
         category=AuditLogEntry.Category.PLAYER
     )
 
-    player_engine = fivem_guard.get_scanner_by_ip(request["player_ip"])
     if not player_engine and not fivem_guard.get_engine_by_24subnet(request["player_ip"]):
         logger.warning(
             f"Unauthorized player engine disconnected from \"{consumer.game_server.name}\" (ip: {request['player_ip']}, name: {request['name']}, reason: {request['reason']})"

@@ -1695,7 +1695,7 @@ export function AntiCheatConfigurationPage() {
                     </div>
 
                     {/* Kick Webhook */}
-                    <div className="p-4 hover:bg-muted/20 transition-colors">
+                    {/* <div className="p-4 hover:bg-muted/20 transition-colors">
                       <div className="grid grid-cols-12 gap-4 items-center">
                         <div className="col-span-3">
                           <div className="flex items-center gap-2">
@@ -1743,10 +1743,10 @@ export function AntiCheatConfigurationPage() {
                           )}
                         </div>
                       </div>
-                    </div>
+                    </div> */}
 
                     {/* Unban Webhook */}
-                    <div className="p-4 hover:bg-muted/20 transition-colors">
+                    {/* <div className="p-4 hover:bg-muted/20 transition-colors">
                       <div className="grid grid-cols-12 gap-4 items-center">
                         <div className="col-span-3">
                           <div className="flex items-center gap-2">
@@ -1794,10 +1794,10 @@ export function AntiCheatConfigurationPage() {
                           )}
                         </div>
                       </div>
-                    </div>
+                    </div> */}
 
                     {/* Screenshot Webhook */}
-                    <div className="p-4 hover:bg-muted/20 transition-colors">
+                    {/* <div className="p-4 hover:bg-muted/20 transition-colors">
                       <div className="grid grid-cols-12 gap-4 items-center">
                         <div className="col-span-3">
                           <div className="flex items-center gap-2">
@@ -1847,7 +1847,7 @@ export function AntiCheatConfigurationPage() {
                           )}
                         </div>
                       </div>
-                    </div>
+                    </div> */}
                   </div>
                 </div>
 
@@ -1952,14 +1952,14 @@ export function AntiCheatConfigurationPage() {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="ban">Player Ban</SelectItem>
-                            <SelectItem value="kick">Player Kick</SelectItem>
+                            {/* {<SelectItem value="kick">Player Kick</SelectItem>
                             <SelectItem value="unban">Player Unban</SelectItem>
                             <SelectItem value="warning">
                               Warning Issued
                             </SelectItem>
                             <SelectItem value="screenshot">
                               Screenshot Taken
-                            </SelectItem>
+                            </SelectItem>} */}
                           </SelectContent>
                         </Select>
                       </FormField>

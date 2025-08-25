@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { usePageTitle } from "@/hooks/use-page-title";
+import { DashboardError } from "@/components/ui/dashboard-error";
+import { useErrorTracking, formatApiError } from "@/hooks/use-error-tracking";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -105,7 +107,7 @@ export function SimpleServerDashboard() {
   const [dashboardData, setDashboardData] =
     useState<ServerDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { error, setError, clearError } = useErrorTracking();
 
   // Load server data
   useEffect(() => {
@@ -114,17 +116,22 @@ export function SimpleServerDashboard() {
 
       try {
         setIsLoading(true);
-        setError(null);
+        clearError();
 
         const response = await api.servers.getServerDashboard(serverId);
 
         if (response.success && response.data) {
           setDashboardData(response.data);
         } else {
-          setError(response.error || "Failed to load server data");
+          const errorMessage = formatApiError(response, "Failed to load server data");
+          setError(errorMessage, "server_dashboard", `Server ID: ${serverId}`);
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Unknown error occurred");
+        setError(
+          err instanceof Error ? err : "Unknown error occurred",
+          "server_dashboard",
+          `Server ID: ${serverId}, Network/Connection Error`
+        );
       } finally {
         setIsLoading(false);
       }

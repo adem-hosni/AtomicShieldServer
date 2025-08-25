@@ -272,8 +272,6 @@ async def handle_network_join(consumer: SafeEngineConsumer, request: Dict[str, A
     )
 
 
-
-
 async def handle_scanner_disconnect(consumer: SafeEngineConsumer, code):
     async def delayed_kick_check(consumer: SafeEngineConsumer, code: int):
         await asyncio.sleep(40)
@@ -296,7 +294,8 @@ async def handle_scanner_disconnect(consumer: SafeEngineConsumer, code):
         f"{consumer.hwid.username if consumer.hwid else '<Unknown>'}'s scanner disconnected from network. (code: {code})"
     )
     fivem_guard.remove_safe_scanner(consumer)
-    asyncio.create_task(delayed_kick_check(consumer, code))
+    if not consumer.connected_server:
+        asyncio.create_task(delayed_kick_check(consumer, code))
 
 
 async def handle_cheat_detection(consumer: SafeEngineConsumer, request: Dict[str, Any]):

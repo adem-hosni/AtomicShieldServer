@@ -15,7 +15,7 @@ class SafeServerPacketID(Enum):
     ENGINE_CHECK = 10
 
 
-class SafeEnginePacketID(Enum):
+class AtomicEnginePacketID(Enum):
     NETWORK_JOIN = 1
     SYNC_SIGNATURES = 2
     MALICIOUS_SIGNATURE_DETECTION = 3
@@ -29,6 +29,7 @@ class SafeEnginePacketID(Enum):
     REQUEST_DEBUG_LOGS = 11
     REQUEST_FILEHASH = 12
     REQUEST_FILE_UPLOAD = 13
+    HEARBEAT = 14
 
 
 class WebSocketGroupNames(Enum):

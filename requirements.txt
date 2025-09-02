@@ -28,3 +28,4 @@ django-simple_history
 django_redis
 channels_redis
 hypercorn
+django-ratelimit

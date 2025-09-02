@@ -3,6 +3,7 @@ import logging
 import zipfile
 import io
 from django.http import HttpResponse
+from asgiref.sync import async_to_sync
 from django.contrib import admin
 from django.http import HttpRequest
 from unfold.admin import ModelAdmin
@@ -27,7 +28,7 @@ from .models import (
     CrashReport,
     FalsePositiveReport
 )
-from guards import fivem_guard
+from services.websocket import fivem_conn_manager
 
 
 logger = logging.getLogger(__name__)
@@ -51,7 +52,7 @@ class ClientHWIDAdmin(SimpleHistoryAdmin, ModelAdmin):
                     id__in=[
                         record.id
                         for record in queryset
-                        if fivem_guard.is_engine_connected_by_hwid(record)
+                        if async_to_sync(fivem_conn_manager.is_engine_connected_by_hwid)(record)
                     ]
                 )
             elif filter_value == "offline":
@@ -59,7 +60,7 @@ class ClientHWIDAdmin(SimpleHistoryAdmin, ModelAdmin):
                     id__in=[
                         record.id
                         for record in queryset
-                        if not fivem_guard.is_engine_connected_by_hwid(record)
+                        if not async_to_sync(fivem_conn_manager.is_engine_connected_by_hwid)(record)
                     ]
                 )
             return queryset
@@ -71,7 +72,7 @@ class ClientHWIDAdmin(SimpleHistoryAdmin, ModelAdmin):
         def lookups(self, request, model_admin):
             return [
                 (server.game_server.id, server.game_server.name)
-                for server in fivem_guard.servers
+                for server in async_to_sync(fivem_conn_manager.get_servers)()
             ]
 
         def queryset(self, request, queryset):
@@ -84,7 +85,7 @@ class ClientHWIDAdmin(SimpleHistoryAdmin, ModelAdmin):
                             obj.id
                             for obj in queryset
                             if (
-                                (engine := fivem_guard.get_scanner_by_hwid(obj))
+                                (engine := async_to_sync(fivem_conn_manager.get_scanner_by_hwid)(obj))
                                 and engine.connected_server
                                 and engine.connected_server.game_server.id == server_id
                             )
@@ -128,7 +129,7 @@ class ClientHWIDAdmin(SimpleHistoryAdmin, ModelAdmin):
     def download_debug_logs(self, request, queryset):
         engines = []
         for obj in queryset:
-            engine = fivem_guard.get_scanner_by_hwid(obj)
+            engine = async_to_sync(fivem_conn_manager.get_scanner_by_hwid)(obj)
             if engine:
                 engines.append((obj, engine))
 
@@ -202,7 +203,7 @@ class ClientHWIDAdmin(SimpleHistoryAdmin, ModelAdmin):
     def shutdown(self, request, queryset):
         if request.method == "POST":
             for obj in queryset:
-                engine = fivem_guard.get_scanner_by_hwid(obj)
+                engine = async_to_sync(fivem_conn_manager.get_scanner_by_hwid)(obj)
                 if engine:
                     try:
                         asyncio.run(engine.shutdown())
@@ -225,7 +226,7 @@ class ClientHWIDAdmin(SimpleHistoryAdmin, ModelAdmin):
         # Match by IP address (hwid.address[0])
         matching_ids = []
         for obj in self.model.objects.all():
-            engine = fivem_guard.get_scanner_by_hwid(obj)
+            engine = async_to_sync(fivem_conn_manager.get_scanner_by_hwid)(obj)
             if engine and engine.address:
                 ip = engine.address[0]
                 if search_term in ip:
@@ -242,8 +243,8 @@ class ClientHWIDAdmin(SimpleHistoryAdmin, ModelAdmin):
     @admin.display(description="Build")
     def display_build_timestamp(self, obj: HWID):
         return (
-            fivem_guard.get_scanner_by_hwid(obj).build_timestamp
-            if fivem_guard.get_scanner_by_hwid(obj)
+            async_to_sync(fivem_conn_manager.get_scanner_by_hwid)(obj).build_timestamp
+            if async_to_sync(fivem_conn_manager.get_scanner_by_hwid)(obj)
             else "N/A"
         )
 
@@ -253,11 +254,11 @@ class ClientHWIDAdmin(SimpleHistoryAdmin, ModelAdmin):
 
     @admin.display(description="IP Address")
     def ip(self, obj: HWID):
-        return fivem_guard.get_scanner_by_hwid(obj).address[0] if fivem_guard.get_scanner_by_hwid(obj) else "Not Found"
+        return async_to_sync(fivem_conn_manager.get_scanner_by_hwid)(obj).address[0] if async_to_sync(fivem_conn_manager.get_scanner_by_hwid)(obj) else "Not Found"
 
     @admin.display(description="Connected Server")
     def display_connected_server(self, obj: HWID):
-        engine = fivem_guard.get_scanner_by_hwid(obj)
+        engine = async_to_sync(fivem_conn_manager.get_scanner_by_hwid)(obj)
         if engine:
             server = engine.connected_server
             return server.game_server.name if server else "No Server Connected"
@@ -265,7 +266,7 @@ class ClientHWIDAdmin(SimpleHistoryAdmin, ModelAdmin):
 
     @admin.display(description="Online", boolean=True)
     def display_online(self, obj: HWID):
-        return bool(fivem_guard.get_scanner_by_hwid(obj))
+        return bool(async_to_sync(fivem_conn_manager.get_scanner_by_hwid)(obj))
 
     class Meta:
         model = HWID
@@ -624,7 +625,7 @@ class ThreatFileAdmin(ModelAdmin):
         "note",
     ]
     list_display_links = list_display
-    search_fields = ["id", "uploaded_by", "file", "found_path", "hash", "note"]
+    search_fields = ["id", "uploaded_by__id", "file", "found_path", "hash", "note"]
     list_filter = ["uploaded_at"]
 
     @admin.display(description="Name")

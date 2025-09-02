@@ -58,7 +58,8 @@ CORS_ALLOW_ALL_ORIGINS = True
 # Application definition
 
 INSTALLED_APPS = [
-    "daphne",
+    # "daphne",
+    "channels",
     "unfold",
     "django.contrib.admin",
     "django.contrib.auth",
@@ -84,10 +85,10 @@ INSTALLED_APPS = [
     "rest_framework.authtoken",
     "dj_rest_auth",
     "dj_rest_auth.registration",
-    "allauth",
-    "allauth.account",
-    "allauth.socialaccount",
-    "allauth.socialaccount.providers.discord",
+    # "allauth",
+    # "allauth.account",
+    # "allauth.socialaccount",
+    # "allauth.socialaccount.providers.discord",
     "rest_framework_simplejwt",
     "corsheaders",
 ]
@@ -95,9 +96,11 @@ INSTALLED_APPS = [
 SITE_ID = 1
 ASGI_APPLICATION = "AtomicShield.asgi.application"
 
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
+
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
-    "allauth.account.middleware.AccountMiddleware",
+    # "allauth.account.middleware.AccountMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django_hosts.middleware.HostsRequestMiddleware",
     "django_browser_reload.middleware.BrowserReloadMiddleware",  # Debug
@@ -193,10 +196,11 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 # Cache settings
+REDIS_URL = "redis://127.0.0.1:6379/1"
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379/1",
+        "LOCATION": REDIS_URL,
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         }
@@ -263,11 +267,13 @@ LOGGING = {
         },
     },
     "handlers": {
+        # Console: only show INFO+ (no debug)
         "console": {
             "class": "rich.logging.RichHandler",
             "rich_tracebacks": True,
             "show_time": True,
             "show_path": False,
+            "level": "DEBUG",
         },
         "alltypes": {
             "level": "INFO",
@@ -281,14 +287,22 @@ LOGGING = {
             "filename": os.path.join(BASE_DIR, "../logs/error.log"),
             "formatter": "verbose",
         },
+        # Debug-only goes to file
+        "debug_file": {
+            "level": "DEBUG",
+            "class": "logging.FileHandler",
+            "filename": os.path.join(BASE_DIR, "../logs/debug.log"),
+            "formatter": "verbose",
+        },
     },
     "root": {
-        "handlers": ["alltypes", "console", "error_file"],
-        "level": "INFO",
+        # removed "console" here so DEBUG doesn’t hit stdout
+        "handlers": ["console", "alltypes", "error_file", "debug_file"],
+        "level": "DEBUG",
     },
     "loggers": {
         "django": {
-            "handlers": ["console", "alltypes", "error_file"],
+            "handlers": ["console", "alltypes", "error_file"],  # console still here, but INFO+ only
             "level": "INFO",
             "propagate": False,
         },
@@ -297,23 +311,31 @@ LOGGING = {
             "level": "INFO",
             "propagate": False,
         },
-        "daphne": {
-            "handlers": ["console", "alltypes", "error_file"],
-            "level": "INFO",
+        "channels": {
+            # If you don’t want DEBUG spam in terminal, drop console here too
+            "handlers": ["alltypes", "error_file", "debug_file"],
+            "level": "DEBUG",
             "propagate": False,
         },
-        "uvicorn.error": {
-            "handlers": ["console", "alltypes", "error_file"],
-            "level": "ERROR",
+        "hypercorn": {
+            # If you don’t want DEBUG spam in terminal, drop console here too
+            "handlers": ["console", "alltypes", "error_file", "debug_file"],
+            "level": "DEBUG",
             "propagate": False,
         },
-        "uvicorn.access": {
-            "handlers": ["console", "alltypes", "error_file"],
-            "level": "INFO",
+        "autobahn": {
+            "handlers": ["console", "alltypes", "error_file", "debug_file"],
+            "level": "DEBUG",
+            "propagate": False,
+        },
+        "twisted": {
+            "handlers": ["console", "alltypes", "error_file", "debug_file"],
+            "level": "DEBUG",
             "propagate": False,
         },
     },
 }
+
 
 # Project names
 ANTICHEAT_NAME = "AtomicShield"

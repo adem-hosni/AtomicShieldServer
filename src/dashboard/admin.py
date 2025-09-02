@@ -1,6 +1,7 @@
 import json
 from django.db import models
 from django.db.models import Q
+from asgiref.sync import async_to_sync
 from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
@@ -33,7 +34,7 @@ from .models import Release, ReleaseAsset
 
 from unfold.admin import ModelAdmin, TabularInline
 from unfold.forms import AdminPasswordChangeForm, UserChangeForm, UserCreationForm
-from guards import fivem_guard
+from services.websocket import fivem_conn_manager
 
 
 admin.site.unregister(User)
@@ -79,7 +80,7 @@ class GameServerAdmin(ModelAdmin):
                     id__in=[
                         record.id
                         for record in queryset
-                        if fivem_guard.get_server_by_ip(record.ip)
+                        if fivem_conn_manager.get_server_by_ip(record.ip)
                     ]
                 )
             elif filter_value == "offline":
@@ -87,7 +88,7 @@ class GameServerAdmin(ModelAdmin):
                     id__in=[
                         record.id
                         for record in queryset
-                        if not fivem_guard.get_server_by_ip(record.ip)
+                        if not fivem_conn_manager.get_server_by_ip(record.ip)
                     ]
                 )
             return queryset
@@ -121,7 +122,7 @@ class GameServerAdmin(ModelAdmin):
 
     @admin.display(description="Online", boolean=True)
     def display_online(self, obj: GameServer):
-        return bool(fivem_guard.get_server_by_ip(obj.ip))
+        return bool(fivem_conn_manager.get_server_by_ip(obj.ip))
 
     # def formfield_for_manytomany(self, db_field, request, **kwargs):
     #     if db_field.name == "subscriptions":

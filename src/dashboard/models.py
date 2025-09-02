@@ -1,5 +1,6 @@
 import logging
 import secrets
+from asgiref.sync import async_to_sync
 from django.db import models
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
@@ -9,10 +10,10 @@ from django.utils import timezone
 from django.db.models import Q
 from datetime import datetime, timedelta
 from utils import represent_timedelta_string
-from anticheat.consumers.safe_server import SafeServerConsumer
+from anticheat.consumers.atomic_server import AtomicServerConsumer
 from django.contrib.auth.models import User
 from asgiref.sync import sync_to_async
-from guards import fivem_guard
+from services.websocket import fivem_conn_manager
 from anticheat.models import AntiCheatConfigurations, AntiCheatConfigTemplate
 from shared.models import ServerType
 from typing import Dict, Any, Union, List, Optional
@@ -249,22 +250,32 @@ class GameServer(models.Model):
         except ServerSubscription.DoesNotExist:
             ...
 
-    @property
-    def is_online(self) -> bool:
-        return fivem_guard.is_server_running(self.ip)
 
     @property
-    def active_players(self) -> List[SafeServerConsumer]:
+    def is_online(self) -> bool:
+        return async_to_sync(fivem_conn_manager.is_server_running)(self.ip)
+
+
+
+    @property
+    async def active_players(self) -> List[AtomicServerConsumer]:
         active_players = []
-        for engine in fivem_guard.engines:
-            if engine.connected_server:
-                if engine.connected_server.game_server == self:
-                    active_players.append(engine)
+        engines = await fivem_conn_manager.get_engines()  # async
+        for engine in engines:
+            if engine.connected_server and engine.connected_server.game_server == self:
+                active_players.append(engine)
         return active_players
 
     @property
-    def active_player_count(self) -> int:
-        return len(self.active_players)
+    async def active_player_count(self) -> int:
+        return len(await self.active_players)
+
+    async def aget_active_player_count(self) -> int:
+        return len(await self.active_players)
+
+    def get_active_player_count(self) -> int:
+        return async_to_sync(self.aget_active_player_count)()
+
 
     class Meta:
         db_table = "gameservers"

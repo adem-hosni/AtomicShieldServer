@@ -21,6 +21,7 @@ async def send_discord_embed(
     color: Optional[nextcord.Color] = 0x111629,
     bot_name: Optional[str] = f"{settings.ANTICHEAT_NAME} AntiCheat",
     avatar_url: Optional[str] = None,  
+    thumbnail_url: Optional[str] = None,  
 ):
     if isinstance(color, str):
         color = nextcord.Colour(int(color[1:], 16))
@@ -38,6 +39,9 @@ async def send_discord_embed(
 
     if image_buffer:
         embed.set_image(url="attachment://image.jpg")    
+
+    if thumbnail_url:
+        embed.set_thumbnail(url=thumbnail_url)    
 
     async with ClientSession() as session:
         webhook = nextcord.Webhook.from_url(webhook_url, session=session)

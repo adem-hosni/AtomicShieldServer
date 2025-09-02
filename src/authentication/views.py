@@ -1,3 +1,4 @@
+import logging
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
@@ -16,6 +17,8 @@ import requests
 from django.conf import settings
 from django.shortcuts import redirect
 from django.http import JsonResponse
+
+logger = logging.getLogger(__name__)
 
 class SignInView(APIView):
     permission_classes = [AllowAny]
@@ -40,6 +43,8 @@ class SignInView(APIView):
 
         refresh = RefreshToken.for_user(user)
         access = refresh.access_token
+
+        logger.info(f"{user.username} logged in")
 
         return Response({
             "success": True,
@@ -76,11 +81,13 @@ class SignUpView(APIView):
 
         user = User.objects.create_user(username=username, email=email, password=password)
         user.last_login = timezone.now()
-        user.save(update_fields=["last_login"])
+        user.save()
 
         user = authenticate(username=user.username, password=password)
         if not user:
             return Response({"success": False, "message": "Authentication failed"}, status=401)
+        
+        logger.info(f"{username} just signed up")
 
         refresh = RefreshToken.for_user(user)
         access = refresh.access_token
@@ -172,6 +179,7 @@ class DiscordOAuthCallbackView(APIView):
 
         user.last_login = timezone.now()
         user.save(update_fields=["last_login"])
+        logger.info(f"{username} just signed in using discord")
 
         refresh = RefreshToken.for_user(user)
         access = refresh.access_token
@@ -251,6 +259,8 @@ def google_callback(request):
         user = User.objects.create_user(username=username, email=email)
         user.set_unusable_password()
         user.save()
+
+    logger.info(f"{username} just signed up using google")
 
     user.last_login = timezone.now()
     user.save(update_fields=["last_login"])

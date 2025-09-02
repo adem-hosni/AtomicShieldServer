@@ -399,7 +399,7 @@ class WhitelistedProcess(models.Model):
 class ThreatFile(models.Model):
     file = models.FileField(upload_to="threat_files/")
     found_path = models.CharField(max_length=256)
-    hash = models.CharField(max_length=256)
+    hash = models.CharField(max_length=256, unique=True)
     note = models.CharField(max_length=256, blank=True, null=True)
     uploaded_by = models.ForeignKey(HWID, on_delete=models.CASCADE)
     uploaded_at = models.DateTimeField(auto_now_add=True)

@@ -37,7 +37,7 @@ from django.contrib.humanize.templatetags.humanize import intcomma
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.contrib.auth.models import User
-from guards import fivem_guard
+from services.websocket import fivem_conn_manager
 from utils import check_request_body_key, represent_timedelta_string
 from anticheat.models import Ban, DetectionReport, HWID, AntiCheatConfigDataTypes
 from shared.enums import DetectionType
@@ -197,10 +197,11 @@ def dashboard_overview(request: HttpRequest) -> Response:
             "isPositive": True,
         },
     }
+    engines_count = fivem_conn_manager.total_engines()
 
     # Network Players
     network_players = {
-        "value": fivem_guard.total_engines,
+        "value": engines_count,
         "subtitle": "Across all servers",
         "trend": {"value": "+45 today", "isPositive": True},
     }
@@ -233,7 +234,7 @@ def dashboard_overview(request: HttpRequest) -> Response:
             "id": server.id,
             "name": server.name,
             "description": f"{Ban.objects.filter(game_server=server).count()} bans",
-            "playerCount": server.active_player_count,
+            "playerCount": server.get_active_player_count(),
             "status": "Online" if server.is_online else "Offline",
             "statusColor": "green" if server.is_online else "gray",
             "imageUrl": (
@@ -635,14 +636,14 @@ def server_dashboard(request: HttpRequest, server_id: int) -> Response:
         "name": game_server.name,
         "ip": game_server.ip,
         "description": "Server Description",
-        "playerCount": game_server.active_player_count,
-        "maxPlayers": game_server.active_player_count,
+        "playerCount": game_server.get_active_player_count(),
+        "maxPlayers": game_server.get_active_player_count(),
         "uptime": 0,
     }
 
     server_stats = {
         "currentPlayers": {
-            "value": game_server.active_player_count,
+            "value": game_server.get_active_player_count(),
             "trend": {"value": "+5 today", "isPositive": True},
         },
         "totalBans": {
@@ -2465,7 +2466,7 @@ def render_servers(request: HttpRequest) -> HttpResponse:
                     "port": server.port,
                     "name": server.name,
                     "type": server.type,
-                    "status": fivem_guard.is_server_running(server.ip),
+                    "status": async_to_sync(fivem_conn_manager.is_server_running)(server.ip),
                     "subscription_status": server.subscriptions.last() or "Not Found",
                     "expired": (
                         not server.subscriptions.last().is_valid_for_now()
@@ -2927,14 +2928,14 @@ def list_players(request, server_id):
         )
 
     # Get the FiveM server
-    server = fivem_guard.get_server_by_ip(target_server.ip)
+    server = fivem_conn_manager.get_server_by_ip(target_server.ip)
     if server:
         try:
             status = async_to_sync(server.request_status)()
             retreived_players = status.get("players", [])
 
             for player in retreived_players:
-                engine = fivem_guard.get_scanner_by_ip(player["ip"])
+                engine = async_to_sync(fivem_conn_manager.get_engine_by_ip)(player["ip"])
                 if engine:
                     players.append(
                         {
@@ -2984,7 +2985,7 @@ def list_players(request, server_id):
                 {"success": False, "message": "Cannot find the target player"}
             )
 
-        engine = fivem_guard.get_scanner_by_ip(player_ip)
+        engine = async_to_sync(fivem_conn_manager.get_engine_by_ip)(player_ip)
         if not engine:
             return Response(
                 {"success": False, "message": "Cannot retrieve the target player"}
@@ -3026,30 +3027,23 @@ def list_players(request, server_id):
                     response["message"] = "Failed to ban the player."
             case "screenshot":
                 try:
-                    if target_server.has_permission_for(
-                        request.user, "screenshot_players"
-                    ):
-                        image_path = async_to_sync(engine.get_screenshot)()
-                        if image_path:
+                    if target_server.has_permission_for(request.user, "screenshot_players"):
+                        image_base64 = async_to_sync(engine.get_screenshot)()
+                        if image_base64:
                             response.update(
                                 {
                                     "success": True,
-                                    "url": (
-                                        request.build_absolute_uri(image_path)
-                                        if image_path
-                                        else ""
-                                    ),
+                                    "image_base64": image_base64,
                                 }
                             )
                         else:
                             response["message"] = "Cannot retrieve screenshot."
                     else:
-                        response["message"] = (
-                            "You dont have permission to perform this action"
-                        )
+                        response["message"] = "You don't have permission to perform this action"
                 except Exception as e:
                     logger.error(f"Screenshot error: {e}")
                     response["message"] = "Failed to retrieve screenshot."
+
             case _:
                 response["message"] = "Invalid action."
 
@@ -3086,7 +3080,7 @@ def list_players(request, server_id):
             "data": {
                 "players": players_to_show,
                 "peakPlayers": analytics.get_peak_players_today(target_server),
-                "onlinePlayers": target_server.active_player_count,
+                "onlinePlayers": target_server.get_active_player_count(),
                 "newPlayers": analytics.get_new_joins_today(target_server),
                 "actionsTaken": analytics.get_actions_taken_today(target_server),
             },

@@ -395,18 +395,10 @@ export function PlayersPage() {
       const response = await screenshotMutation.mutate(player.id);
 
       if (response.success) {
-        // Handle the response format: {success: true, message: "", url: "..."}
-        let screenshotUrlFromResponse: string | null = null;
+        const base64Image = response.data.image_base64;
+        const screenshotDataUrl = `data:image/png;base64,${base64Image}`;
 
-        // Check if url is in response.data.url or directly in response.url
-        if (response.data?.url) {
-          screenshotUrlFromResponse = response.data.url;
-        } else if (response.url) {
-          screenshotUrlFromResponse = response.url;
-        }
-
-        if (screenshotUrlFromResponse) {
-          setScreenshotUrl(screenshotUrlFromResponse);
+          setScreenshotUrl(screenshotDataUrl);
           setScreenshotPlayer(player);
           setIsScreenshotViewOpen(true);
 
@@ -415,7 +407,6 @@ export function PlayersPage() {
             description: `Screenshot taken for ${player.name}.`,
           });
         } else {
-          // Fallback to default screenshot if no URL in response
           const defaultScreenshotUrl = createDefaultScreenshot(player);
           setScreenshotUrl(defaultScreenshotUrl);
           setScreenshotPlayer(player);
@@ -426,22 +417,9 @@ export function PlayersPage() {
             description: `Screenshot taken for ${player.name} (using default - no URL in response).`,
           });
         }
-      } else {
-        // Fallback to default screenshot
-        const defaultScreenshotUrl = createDefaultScreenshot(player);
-        setScreenshotUrl(defaultScreenshotUrl);
-        setScreenshotPlayer(player);
-        setIsScreenshotViewOpen(true);
-
-        toast({
-          title: "Screenshot Captured",
-          description: `Screenshot taken for ${player.name} (using default - API error).`,
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
+      } 
+     catch (error) {
       console.error("Screenshot error:", error);
-      // Fallback to default screenshot on error
       const defaultScreenshotUrl = createDefaultScreenshot(player);
       setScreenshotUrl(defaultScreenshotUrl);
       setScreenshotPlayer(player);

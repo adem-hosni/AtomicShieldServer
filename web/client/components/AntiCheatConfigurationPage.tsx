@@ -117,13 +117,12 @@ function ConfigurationLoadingScreen() {
             {[...Array(6)].map((_, i) => (
               <Card
                 key={i}
-                className={`p-4 bg-gradient-to-br from-background/90 to-background/50 backdrop-blur-xl border-primary/20 transition-all duration-700 transform ${
-                  loadingStage >= i
-                    ? "opacity-100 scale-100"
-                    : loadingStage === i - 1
-                      ? "opacity-75 scale-95"
-                      : "opacity-50 scale-90"
-                }`}
+                className={`p-4 bg-gradient-to-br from-background/90 to-background/50 backdrop-blur-xl border-primary/20 transition-all duration-700 transform ${loadingStage >= i
+                  ? "opacity-100 scale-100"
+                  : loadingStage === i - 1
+                    ? "opacity-75 scale-95"
+                    : "opacity-50 scale-90"
+                  }`}
                 style={{
                   animationDelay: `${i * 100}ms`,
                 }}
@@ -170,9 +169,8 @@ function ConfigurationLoadingScreen() {
               {[...Array(4)].map((_, i) => (
                 <div
                   key={i}
-                  className={`flex-1 h-8 rounded-md transition-all duration-500 ${
-                    loadingStage > 2 ? "bg-primary/20" : "bg-muted"
-                  } animate-pulse`}
+                  className={`flex-1 h-8 rounded-md transition-all duration-500 ${loadingStage > 2 ? "bg-primary/20" : "bg-muted"
+                    } animate-pulse`}
                   style={{ animationDelay: `${i * 150}ms` }}
                 />
               ))}
@@ -184,11 +182,10 @@ function ConfigurationLoadingScreen() {
             {[...Array(3)].map((_, cardIndex) => (
               <Card
                 key={cardIndex}
-                className={`transition-all duration-700 ${
-                  loadingStage >= cardIndex + 2
-                    ? "opacity-100 scale-100"
-                    : "opacity-50 scale-95"
-                }`}
+                className={`transition-all duration-700 ${loadingStage >= cardIndex + 2
+                  ? "opacity-100 scale-100"
+                  : "opacity-50 scale-95"
+                  }`}
               >
                 <CardHeader>
                   <div className="flex items-center space-x-3">
@@ -559,10 +556,10 @@ export function AntiCheatConfigurationPage() {
         description:
           "Player {player_name} has been banned by {admin} for: {reason}",
         color: "#ff0000",
-        thumbnail: "",
+        thumbnail: "https://atomic-shield.com/static/assets/images/logo.png",
         footer: {
           text: "AtomicShield Security System",
-          icon: "https://i.imgur.com/AtomicShield.png",
+          icon: "https://atomic-shield.com/static/assets/images/logo.png",
         },
         fields: [
           { name: "Date", value: "{date}", inline: true },
@@ -584,7 +581,7 @@ export function AntiCheatConfigurationPage() {
     try {
       const webhookUrl =
         configData.static.webhookUrls?.[
-          eventType as keyof typeof configData.static.webhookUrls
+        eventType as keyof typeof configData.static.webhookUrls
         ];
 
       if (!webhookUrl) {
@@ -697,11 +694,10 @@ export function AntiCheatConfigurationPage() {
         <div
           className={`
         relative flex items-center rounded-lg border transition-all duration-200
-        ${
-          isFocused
-            ? `border-${color}-400 ring-2 ring-${color}-400/20 shadow-lg shadow-${color}-500/10`
-            : `border-border hover:border-${color}-400/50`
-        }
+        ${isFocused
+              ? `border-${color}-400 ring-2 ring-${color}-400/20 shadow-lg shadow-${color}-500/10`
+              : `border-border hover:border-${color}-400/50`
+            }
         ${!isValid && value ? "border-red-400 ring-2 ring-red-400/20" : ""}
         bg-gradient-to-r from-background to-muted/20
       `}
@@ -794,50 +790,65 @@ export function AntiCheatConfigurationPage() {
     );
   }
 
-  // Function to apply template based on event type
-  // Save current embed settings back to embedTemplates for the current event type
+  // --- FIXED saveCurrentTemplateChanges ---
+  // This function synchronously builds the updated embedTemplates object,
+  // sets state, and returns the new object for immediate use.
+  // This avoids the async setState race and ensures the payload is always fresh.
   const saveCurrentTemplateChanges = () => {
-    const currentSettings = configData.static.embedSettings;
-    console.log(selectedEventType);
-    setEmbedTemplates((prev) => ({
-      ...prev,
+    const currentSettings = configData.static.embedSettings || {};
+    const updatedTemplates = {
+      ...embedTemplates,
       [selectedEventType]: {
-        title: currentSettings.title || "",
-        description: currentSettings.description || "",
-        color: currentSettings.color || "#dc2626",
-        thumbnail: currentSettings.thumbnail || "",
-        footer: currentSettings.footer || {
+        title: currentSettings.title ?? "",
+        description: currentSettings.description ?? "",
+        color: currentSettings.color ?? "#dc2626",
+        thumbnail: currentSettings.thumbnail ?? "",
+        footer: currentSettings.footer ?? {
           text: "AtomicShield Security System",
-          icon: "https://i.imgur.com/AtomicShield.png",
+          icon: "https://atomic-shield.com/static/assets/images/logo.png",
         },
-        fields: currentSettings.fields || [],
+        fields: currentSettings.fields ?? [],
       },
-    }));
-    console.log(embedTemplates);
+    };
+    setEmbedTemplates(updatedTemplates); // triggers React re-render
+    // Do NOT log embedTemplates here, it's stale due to async setState.
+    return updatedTemplates; // always use this for payload
   };
 
   const applyTemplate = (eventType: string) => {
     // First save current changes before switching
     saveCurrentTemplateChanges();
 
-    const template = embedTemplates[eventType as keyof typeof embedTemplates];
+    const templates = embedTemplatesRef.current;
+    const template = templates[eventType as keyof typeof templates];
+
+    console.log("Applying template:", eventType, template);
+
     if (template) {
       updateStaticConfig((prev) => ({
         ...prev,
         embedSettings: {
           ...prev.embedSettings,
-          title: template.title,
-          description: template.description,
-          color: template.color,
-          thumbnail: template.thumbnail,
-          footer: template.footer,
-          fields: template.fields,
+          title: template.title || "AtomicShield Alert",
+          description: template.description ||
+            "Player {player_name} has been banned by {admin} for: {reason}",
+          color: template.color || "#ff0000",
+          thumbnail: template.thumbnail || "",
+          footer: template.footer || {
+            text: "AtomicShield Security System",
+            icon: "https://atomic-shield.com/static/assets/images/logo.png",
+          },
+          fields: template.fields || [
+            { name: "Date", value: "{date}", inline: true },
+            { name: "Server", value: "{server_name}", inline: true },
+          ],
         },
       }));
-      setHasChanges(true);
+      // setHasChanges(true);
+    } else {
+      console.warn("Template not found for event type:", eventType);
     }
   };
-
   // Function to copy text to clipboard
   const copyToClipboard = async (text: string) => {
     try {
@@ -914,7 +925,7 @@ export function AntiCheatConfigurationPage() {
     "AtomicShield Security System",
   );
   const [embedFooterIcon, setEmbedFooterIcon] = useState(
-    "https://i.imgur.com/AtomicShield.png",
+    "https://atomic-shield.com/static/assets/images/logo.png",
   );
   const [embedFields, setEmbedFields] = useState([
     { name: "Date", value: "{date}", inline: true },
@@ -928,13 +939,13 @@ export function AntiCheatConfigurationPage() {
       description:
         "Player **{player_name}** has been banned by {admin}\n\n**Reason:** {reason}\n**Duration:** {duration}",
       color: "#dc2626", // Red
-      thumbnail: "",
+      thumbnail: "https://atomic-shield.com/static/assets/images/logo.png",
       footer: {
         text: "AtomicShield Security System",
-        icon: "https://i.imgur.com/AtomicShield.png",
+        icon: "https://atomic-shield.com/static/assets/images/logo.png",
       },
       fields: [
-        { name: "��� Player", value: "{player_name}", inline: true },
+        { name: "👥 Player", value: "{player_name}", inline: true },
         { name: "👮 Admin", value: "{admin}", inline: true },
         { name: "📅 Date", value: "{date}", inline: true },
         { name: "🌐 Server", value: "{server_name}", inline: true },
@@ -947,10 +958,10 @@ export function AntiCheatConfigurationPage() {
       description:
         "Player **{player_name}** has been kicked by {admin}\n\n**Reason:** {reason}",
       color: "#f59e0b", // Orange
-      thumbnail: "",
+      thumbnail: "https://atomic-shield.com/static/assets/images/logo.png",
       footer: {
         text: "AtomicShield Security System",
-        icon: "https://i.imgur.com/AtomicShield.png",
+        icon: "https://atomic-shield.com/static/assets/images/logo.png",
       },
       fields: [
         { name: "🎮 Player", value: "{player_name}", inline: true },
@@ -964,15 +975,15 @@ export function AntiCheatConfigurationPage() {
       title: "✅ Player Unbanned",
       description: "Player **{player_name}** has been unbanned by {admin}",
       color: "#16a34a", // Green
-      thumbnail: "",
+      thumbnail: "https://atomic-shield.com/static/assets/images/logo.png",
       footer: {
         text: "AtomicShield Security System",
-        icon: "https://i.imgur.com/AtomicShield.png",
+        icon: "https://atomic-shield.com/static/assets/images/logo.png",
       },
       fields: [
         { name: "🎮 Player", value: "{player_name}", inline: true },
         { name: "👮 Admin", value: "{admin}", inline: true },
-        { name: "���� Date", value: "{date}", inline: true },
+        { name: "👥� Date", value: "{date}", inline: true },
         { name: "🌐 Server", value: "{server_name}", inline: true },
         { name: "🆔 Player ID", value: "{player_id}", inline: true },
       ],
@@ -982,10 +993,10 @@ export function AntiCheatConfigurationPage() {
       description:
         "Player **{player_name}** has been warned by {admin}\n\n**Reason:** {reason}",
       color: "#eab308", // Yellow
-      thumbnail: "",
+      thumbnail: "https://atomic-shield.com/static/assets/images/logo.png",
       footer: {
         text: "AtomicShield Security System",
-        icon: "https://i.imgur.com/AtomicShield.png",
+        icon: "https://atomic-shield.com/static/assets/images/logo.png",
       },
       fields: [
         { name: "🎮 Player", value: "{player_name}", inline: true },
@@ -1002,17 +1013,23 @@ export function AntiCheatConfigurationPage() {
       thumbnail: "{screenshot_url}",
       footer: {
         text: "AtomicShield Security System",
-        icon: "https://i.imgur.com/AtomicShield.png",
+        icon: "https://atomic-shield.com/static/assets/images/logo.png",
       },
       fields: [
         { name: "🎮 Player", value: "{player_name}", inline: true },
         { name: "👮 Admin", value: "{admin}", inline: true },
-        { name: "��� Date", value: "{date}", inline: true },
+        { name: "👥 Date", value: "{date}", inline: true },
         { name: "🌐 Server", value: "{server_name}", inline: true },
         { name: "🆔 Player ID", value: "{player_id}", inline: true },
       ],
     },
   });
+  const embedTemplatesRef = useRef(embedTemplates);
+  useEffect(() => {
+    embedTemplatesRef.current = embedTemplates;
+  }, [embedTemplates]);
+
+
 
   const fetchConfigurations = async () => {
     if (!serverId) {
@@ -1033,32 +1050,42 @@ export function AntiCheatConfigurationPage() {
         const loadedStatic = loadedConfigs?.static || {};
         const loadedDynamic = loadedConfigs?.dynamic || {};
 
-        updateConfig((prev) => ({
+        console.log("✅ Configurations fetched:", loadedStatic);
+
+        // Set configData directly to fetched values
+        updateConfig(() => ({
           static: {
-            ...prev.static,
-            ...(loadedStatic.serverName && {
-              serverName: loadedStatic.serverName,
-            }),
-            ...(loadedStatic.serverIp && {
-              serverIp: loadedStatic.serverIp,
-            }),
-            ...(loadedStatic.imageUrl && { imageUrl: loadedStatic.imageUrl }),
-            ...(loadedStatic.webhookUrls && {
-              webhookUrls: loadedStatic.webhookUrls,
-            }),
-            ...(loadedStatic.embedTemplates && {
-              embedTemplates: loadedStatic.embedTemplates,
-            }),
+            ...loadedStatic,
           },
           dynamic: {
-            ...prev.dynamic,
             ...loadedDynamic,
           },
         }));
-        if (loadedConfigs) {
-          console.log("setting image url");
-          setServerImagePreview(loadedConfigs.static.imageUrl);
+
+        // Set embedTemplates state if present in fetched data
+        if (loadedStatic.embedTemplates) {
+          const updatedTemplates = {
+            ...embedTemplates, // Keep defaults as fallback
+            ...loadedStatic.embedTemplates // Override with server values
+          };
+          setEmbedTemplates(updatedTemplates);
+          embedTemplatesRef.current = updatedTemplates;
+
+          // Apply the template after a short delay to ensure state is updated
+          setTimeout(() => {
+            applyTemplate("ban"); // Load default template
+          }, 100);
+        } else {
+          // If no templates from server, apply the default template
+          applyTemplate("ban");
         }
+
+        // Set server image preview if present
+        if (loadedStatic.imageUrl) {
+          setServerImagePreview(loadedStatic.imageUrl);
+        }
+
+        console.log("Embed Templates Loaded:", loadedStatic.embedTemplates);
       } else {
         // Handle API response failure - show the response message
         const errorMessage =
@@ -1083,6 +1110,9 @@ export function AntiCheatConfigurationPage() {
           },
           dynamic: { categories: [] },
         }));
+
+        // Apply default template even on error
+        applyTemplate("ban");
       }
     } catch (err) {
       console.error("Error fetching configurations:", err);
@@ -1108,6 +1138,9 @@ export function AntiCheatConfigurationPage() {
         },
         dynamic: { categories: [] },
       }));
+
+      // Apply default template even on error
+      applyTemplate("ban");
     } finally {
       setIsLoading(false);
     }
@@ -1120,12 +1153,58 @@ export function AntiCheatConfigurationPage() {
   // Load embedTemplates from server data if available
   useEffect(() => {
     if (configData?.static?.embedTemplates) {
-      setEmbedTemplates((prev) => ({
-        ...prev,
+      const updatedTemplates = {
+        ...embedTemplatesRef.current,
         ...configData.static.embedTemplates,
-      }));
+      };
+      setEmbedTemplates(updatedTemplates);
+      embedTemplatesRef.current = updatedTemplates;
     }
   }, [configData]);
+
+
+  // Apply embed settings from fetched data when templates are loaded
+  // useEffect(() => {
+  //   if (
+  //     configData?.static?.embedSettings &&
+  //     Object.keys(embedTemplates).length > 0
+  //   ) {
+  //     const embedSettings = configData.static.embedSettings;
+
+  //     // Use the fetched embed settings directly if available, otherwise use template
+  //     updateStaticConfig((prev) => ({
+  //       ...prev,
+  //       embedSettings: {
+  //         ...prev.embedSettings,
+  //         title:
+  //           embedSettings.title ||
+  //           embedTemplates[selectedEventType]?.title ||
+  //           "AtomicShield Alert",
+  //         description:
+  //           embedSettings.description ||
+  //           embedTemplates[selectedEventType]?.description ||
+  //           "Player {player_name} has been banned by {admin} for: {reason}",
+  //         color:
+  //           embedSettings.color ||
+  //           embedTemplates[selectedEventType]?.color ||
+  //           "#ff0000",
+  //         thumbnail:
+  //           embedSettings.thumbnail ||
+  //           embedTemplates[selectedEventType]?.thumbnail ||
+  //           "",
+  //         footer: embedSettings.footer ||
+  //           embedTemplates[selectedEventType]?.footer || {
+  //             text: "AtomicShield Security System",
+  //             icon: "https://atomic-shield.com/static/assets/images/logo.png",
+  //           },
+  //         fields:
+  //           embedSettings.fields ||
+  //           embedTemplates[selectedEventType]?.fields ||
+  //           [],
+  //       },
+  //     }));
+  //   }
+  // }, [configData, embedTemplates, selectedEventType]);
 
   const handleServerImageUpload = async (file: File) => {
     if (!file.type.match(/^image\/(png|jpg|jpeg)$/)) {
@@ -1174,16 +1253,17 @@ export function AntiCheatConfigurationPage() {
     });
   };
 
+  // --- FIXED handleSave ---
+  // After a successful save, fetch and apply the latest configs before clearing local state.
   const handleSave = async () => {
     setIsSaving(true);
 
     try {
-      // Save current template changes before saving
-      saveCurrentTemplateChanges();
+      // Save current template changes and get the fresh object
+      const updatedTemplates = saveCurrentTemplateChanges();
 
       // Get only changed values
-      const { static: staticChanges, dynamic: dynamicChanges } =
-        getChangedValues();
+      const { static: staticChanges, dynamic: dynamicChanges } = getChangedValues();
       const payload: any = {};
 
       if (staticChanges) {
@@ -1194,10 +1274,10 @@ export function AntiCheatConfigurationPage() {
         payload.dynamic = dynamicChanges;
       }
 
-      // Always include embedTemplates in the save payload
+      // Always include the fresh embedTemplates in the save payload
       payload.static = {
         ...(payload.static || {}),
-        embedTemplates: embedTemplates,
+        embedTemplates: updatedTemplates,
       };
 
       if (serverImage) {
@@ -1223,6 +1303,9 @@ export function AntiCheatConfigurationPage() {
       );
 
       if (response.success) {
+        // Fetch latest configs and apply them before clearing local state
+        // await fetchConfigurations();
+
         setHasChanges(false);
         resetChanges();
         setServerImage(null); // Clear uploaded file after save
@@ -1230,7 +1313,6 @@ export function AntiCheatConfigurationPage() {
           title: "Configuration Saved",
           description: "Your settings have been saved successfully.",
         });
-        await fetchConfigurations();
       } else {
         throw new Error(response.error || "Failed to save configuration");
       }
@@ -1300,18 +1382,99 @@ export function AntiCheatConfigurationPage() {
   };
 
   const resetEmbedToDefault = () => {
-    setEmbedTitle("AtomicShield Alert");
-    setEmbedDescription(
-      "Player {player_name} has been banned by {admin} for: {reason}",
+    setEmbedTemplates(
+      {
+        ban: {
+          title: "🚫 Player Banned",
+          description:
+            "Player **{player_name}** has been banned by {admin}\n\n**Reason:** {reason}\n**Duration:** {duration}",
+          color: "#dc2626", // Red
+          thumbnail: "https://atomic-shield.com/static/assets/images/logo.png",
+          footer: {
+            text: "AtomicShield Security System",
+            icon: "https://atomic-shield.com/static/assets/images/logo.png",
+          },
+          fields: [
+            { name: "👥 Player", value: "{player_name}", inline: true },
+            { name: "👮 Admin", value: "{admin}", inline: true },
+            { name: "📅 Date", value: "{date}", inline: true },
+            { name: "🌐 Server", value: "{server_name}", inline: true },
+            { name: "⏰ Duration", value: "{duration}", inline: true },
+            { name: "🆔 Player ID", value: "{player_id}", inline: true },
+          ],
+        },
+        kick: {
+          title: "⚠️ Player Kicked",
+          description:
+            "Player **{player_name}** has been kicked by {admin}\n\n**Reason:** {reason}",
+          color: "#f59e0b", // Orange
+          thumbnail: "https://atomic-shield.com/static/assets/images/logo.png",
+          footer: {
+            text: "AtomicShield Security System",
+            icon: "https://atomic-shield.com/static/assets/images/logo.png",
+          },
+          fields: [
+            { name: "🎮 Player", value: "{player_name}", inline: true },
+            { name: "👮 Admin", value: "{admin}", inline: true },
+            { name: "📅 Date", value: "{date}", inline: true },
+            { name: "🌐 Server", value: "{server_name}", inline: true },
+            { name: "🆔 Player ID", value: "{player_id}", inline: true },
+          ],
+        },
+        unban: {
+          title: "✅ Player Unbanned",
+          description: "Player **{player_name}** has been unbanned by {admin}",
+          color: "#16a34a", // Green
+          thumbnail: "https://atomic-shield.com/static/assets/images/logo.png",
+          footer: {
+            text: "AtomicShield Security System",
+            icon: "https://atomic-shield.com/static/assets/images/logo.png",
+          },
+          fields: [
+            { name: "🎮 Player", value: "{player_name}", inline: true },
+            { name: "👮 Admin", value: "{admin}", inline: true },
+            { name: "👥� Date", value: "{date}", inline: true },
+            { name: "🌐 Server", value: "{server_name}", inline: true },
+            { name: "🆔 Player ID", value: "{player_id}", inline: true },
+          ],
+        },
+        warning: {
+          title: "⚠️ Warning Issued",
+          description:
+            "Player **{player_name}** has been warned by {admin}\n\n**Reason:** {reason}",
+          color: "#eab308", // Yellow
+          thumbnail: "https://atomic-shield.com/static/assets/images/logo.png",
+          footer: {
+            text: "AtomicShield Security System",
+            icon: "https://atomic-shield.com/static/assets/images/logo.png",
+          },
+          fields: [
+            { name: "🎮 Player", value: "{player_name}", inline: true },
+            { name: "👮 Admin", value: "{admin}", inline: true },
+            { name: "📅 Date", value: "{date}", inline: true },
+            { name: "🌐 Server", value: "{server_name}", inline: true },
+            { name: "🆔 Player ID", value: "{player_id}", inline: true },
+          ],
+        },
+        screenshot: {
+          title: "📸 Screenshot Taken",
+          description: "Screenshot taken of player **{player_name}** by {admin}",
+          color: "#3b82f6", // Blue
+          thumbnail: "{screenshot_url}",
+          footer: {
+            text: "AtomicShield Security System",
+            icon: "https://atomic-shield.com/static/assets/images/logo.png",
+          },
+          fields: [
+            { name: "🎮 Player", value: "{player_name}", inline: true },
+            { name: "👮 Admin", value: "{admin}", inline: true },
+            { name: "👥 Date", value: "{date}", inline: true },
+            { name: "🌐 Server", value: "{server_name}", inline: true },
+            { name: "🆔 Player ID", value: "{player_id}", inline: true },
+          ],
+        },
+      }
     );
-    setEmbedColor("#ff0000");
-    setEmbedThumbnail("");
-    setEmbedFooterText("AtomicShield Security System");
-    setEmbedFooterIcon("https://i.imgur.com/AtomicShield.png");
-    setEmbedFields([
-      { name: "Date", value: "{date}", inline: true },
-      { name: "Server", value: "{server_name}", inline: true },
-    ]);
     setHasChanges(true);
     toast({
       title: "Embed Reset",
@@ -1353,9 +1516,9 @@ export function AntiCheatConfigurationPage() {
 
   const getPreviewDescription = () => {
     return embedDescription
-      .replace(/{player_name}/g, "ExamplePlayer")
-      .replace(/{admin}/g, "AdminJohn")
-      .replace(/{reason}/g, "Aimbot detection")
+      .replace(/{player_name}/g, "John")
+      .replace(/{admin}/g, "AtomicShield AntiCheat")
+      .replace(/{reason}/g, "External Cheats")
       .replace(/{date}/g, new Date().toLocaleString())
       .replace(/{server_name}/g, "FiveCity RP");
   };
@@ -1373,16 +1536,29 @@ export function AntiCheatConfigurationPage() {
   };
 
   const renderCategoryStaticSections = (category: Category) => {
+    const placeholders = {
+      player_name: "Player Name",
+      time: "Time",
+      server_name: "Server Name",
+      admin: "Admin",
+      steam_id: "Steam ID",
+      discord_id: "Discord ID",
+      fivem_license: "FiveM License",
+      ip: "IP",
+      screenshot_url: "Screenshot URL",
+      reason: "Reason",
+      duration: "Duration",
+    };
     const embedSettings = configData.static.embedSettings || {
       enabled: true,
       title: "AtomicShield Alert",
       description:
         "Player {player_name} has been banned by {admin} for: {reason}",
       color: "#ff0000",
-      thumbnail: "",
+      thumbnail: "https://atomic-shield.com/static/assets/images/logo.png",
       footer: {
         text: "AtomicShield Security System",
-        icon: "https://i.imgur.com/AtomicShield.png",
+        icon: "https://atomic-shield.com/static/assets/images/logo.png",
       },
       fields: [
         { name: "Date", value: "{date}", inline: true },
@@ -1901,23 +2077,26 @@ export function AntiCheatConfigurationPage() {
                           ...prev,
                           embedSettings: {
                             ...prev.embedSettings,
-                            title: "AtomicShield Alert",
+
+                            title: "🚫 Player Banned",
                             description:
-                              "Player {player_name} has been banned by {admin} for: {reason}",
-                            color: "#ff0000",
-                            thumbnail: "",
+                              "Player **{player_name}** has been banned by {admin}\n\n**Reason:** {reason}\n**Duration:** {duration}",
+                            color: "#dc2626", // Red
+                            thumbnail: "https://atomic-shield.com/static/assets/images/logo.png",
                             footer: {
                               text: "AtomicShield Security System",
-                              icon: "https://i.imgur.com/AtomicShield.png",
+                              icon: "https://atomic-shield.com/static/assets/images/logo.png",
                             },
                             fields: [
-                              { name: "Date", value: "{date}", inline: true },
-                              {
-                                name: "Server",
-                                value: "{server_name}",
-                                inline: true,
-                              },
+                              { name: "👥 Player", value: "{player_name}", inline: true },
+                              { name: "👮 Admin", value: "{admin}", inline: true },
+                              { name: "📅 Date", value: "{date}", inline: true },
+                              { name: "🌐 Server", value: "{server_name}", inline: true },
+                              { name: "⏰ Duration", value: "{duration}", inline: true },
+                              { name: "🆔 Player ID", value: "{player_id}", inline: true },
                             ],
+
+
                           },
                         }));
                         setHasChanges(true);
@@ -2076,6 +2255,19 @@ export function AntiCheatConfigurationPage() {
                           </div>
                           <div className="space-y-1.5">
                             <div className="flex flex-wrap gap-x-4 gap-y-1">
+                              {Object.entries(placeholders).map(([key, value]) => (
+                                <button
+                                  key={key}
+                                  onClick={() => insertVariable(`{${key}}`)}
+                                  className="inline-flex items-center gap-1 hover:text-foreground hover:bg-blue-500/10 transition-colors px-2 py-1 rounded-md group"
+                                >
+                                  <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono group-hover:bg-blue-500/20">
+                                    {`{${key}}`}
+                                  </code>
+                                  <span>{value}</span>
+                                </button>
+                              ))}
+
                               <button
                                 onClick={() => insertVariable("{player_name}")}
                                 className="inline-flex items-center gap-1 hover:text-foreground hover:bg-blue-500/10 transition-colors px-2 py-1 rounded-md group"
@@ -2435,7 +2627,7 @@ export function AntiCheatConfigurationPage() {
                                   }}
                                 />
                                 <div
-                                  className="hidden w-16 h-16 rounded border border-gray-600 bg-gray-700 items-center justify-center text-xs text-gray-400"
+                                  className="hidden w-16 h-16 rounded border border-gray-600 bg-gray-700 items-center justify-center"
                                   style={{ display: "none" }}
                                 >
                                   <LucideIcons.ImageOff className="w-4 h-4" />
@@ -2572,41 +2764,41 @@ export function AntiCheatConfigurationPage() {
 
                           {(configData.static.embedSettings.footer.text ||
                             configData.static.embedSettings.footer.icon) && (
-                            <div className="flex items-center gap-2 pt-2 text-xs text-gray-400">
-                              {configData.static.embedSettings.footer.icon && (
-                                <div className="relative">
-                                  <img
-                                    src={
-                                      configData.static.embedSettings.footer
-                                        .icon
-                                    }
-                                    alt="Footer icon"
-                                    className="w-4 h-4 rounded"
-                                    onError={(e) => {
-                                      const target = e.currentTarget;
-                                      target.style.display = "none";
-                                      const fallback =
-                                        target.nextElementSibling as HTMLElement;
-                                      if (fallback)
-                                        fallback.style.display = "block";
-                                    }}
-                                  />
-                                  <div
-                                    className="hidden w-4 h-4 rounded bg-gray-600 flex items-center justify-center"
-                                    style={{ display: "none" }}
-                                  >
-                                    <LucideIcons.ImageOff className="w-2 h-2" />
+                              <div className="flex items-center gap-2 pt-2 text-xs text-gray-400">
+                                {configData.static.embedSettings.footer.icon && (
+                                  <div className="relative">
+                                    <img
+                                      src={
+                                        configData.static.embedSettings.footer
+                                          .icon
+                                      }
+                                      alt="Footer icon"
+                                      className="w-4 h-4 rounded"
+                                      onError={(e) => {
+                                        const target = e.currentTarget;
+                                        target.style.display = "none";
+                                        const fallback =
+                                          target.nextElementSibling as HTMLElement;
+                                        if (fallback)
+                                          fallback.style.display = "block";
+                                      }}
+                                    />
+                                    <div
+                                      className="hidden w-4 h-4 rounded bg-gray-600 flex items-center justify-center"
+                                      style={{ display: "none" }}
+                                    >
+                                      <LucideIcons.ImageOff className="w-2 h-2" />
+                                    </div>
                                   </div>
-                                </div>
-                              )}
-                              {configData.static.embedSettings.footer.text && (
-                                <span>
-                                  {configData.static.embedSettings.footer.text}
-                                </span>
-                              )}
-                              <span>• {new Date().toLocaleString()}</span>
-                            </div>
-                          )}
+                                )}
+                                {configData.static.embedSettings.footer.text && (
+                                  <span>
+                                    {configData.static.embedSettings.footer.text}
+                                  </span>
+                                )}
+                                <span>• {new Date().toLocaleString()}</span>
+                              </div>
+                            )}
                         </div>
                       </div>
                     </div>

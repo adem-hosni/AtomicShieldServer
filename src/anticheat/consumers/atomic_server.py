@@ -2,7 +2,7 @@ import asyncio
 import json
 import logging
 from time import time
-from shared.enums import SafeServerPacketID, WebSocketGroupNames
+from shared.enums import AtomicServerPacketID, WebSocketGroupNames
 from utils import check_request_body_key
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.contrib.auth.models import User
@@ -44,8 +44,26 @@ class AtomicServerConsumer(AsyncWebsocketConsumer):
         super().__init__(*args, **kwargs)
         self._group_name = ""
         self._owner: User = None
-        self._game_server = None  # Remove type hint here to avoid needing GameServer
+        from dashboard.models import GameServer
+        self._game_server: GameServer = None  # Remove type hint here to avoid needing GameServer
         self._pending_responses = {}
+        self.hearbeat_task = None
+
+    async def send_heartbeats(self):
+        """Send periodic heartbeats to keep connection alive"""
+        from services.websocket import fivem_conn_manager
+
+        try:
+            while True:
+                await asyncio.sleep(10)
+                if hasattr(self, "channel_name"):
+                    await fivem_conn_manager.redis_manager.update_heartbeat(self.channel_name)
+                    await self.send(AtomicServerPacketID.HEARBEAT, {})
+        except asyncio.CancelledError:
+            pass
+        except Exception as e:
+            logger.error(f"Server Heartbeat error: {e}")
+
 
     async def connect(self):
         """
@@ -61,7 +79,7 @@ class AtomicServerConsumer(AsyncWebsocketConsumer):
 
     async def send(
         self,
-        packet_id: SafeServerPacketID,
+        packet_id: AtomicServerPacketID,
         data: Union[Dict[Any, Any], str, bytes],
         bytes_data=None,
         close=False,
@@ -81,7 +99,7 @@ class AtomicServerConsumer(AsyncWebsocketConsumer):
             Awaitable: An awaitable object for the send operation.
         """
         # Check the packet id belongs to our registred packet ids
-        if not packet_id in SafeServerPacketID.__members__.values():
+        if not packet_id in AtomicServerPacketID.__members__.values():
             raise ValueError(f"Invalid Packet ID, got {packet_id}")
 
         # If data is bytes, decode it to a string
@@ -154,7 +172,7 @@ class AtomicServerConsumer(AsyncWebsocketConsumer):
         
         try:
             # Convert the 'type' field to a PacketID
-            request_body["type"] = SafeServerPacketID(request_body["type"])
+            request_body["type"] = AtomicServerPacketID(request_body["type"])
         except ValueError:
             logger.warning(f"Undefined request type (given: {request_body['type']})")
             return await self.close()
@@ -173,15 +191,15 @@ class AtomicServerConsumer(AsyncWebsocketConsumer):
 
         # Handle the request based on its type
         match request_body["type"]:
-            case SafeServerPacketID.NETWORK_JOIN:
+            case AtomicServerPacketID.NETWORK_JOIN:
                 await handle_network_join(self, request_body)
-            case SafeServerPacketID.SYNC_ANTICHEAT_CONFIGS:
+            case AtomicServerPacketID.SYNC_ANTICHEAT_CONFIGS:
                 await handle_sync_anticheat_configs(self, request_body)
-            case SafeServerPacketID.REQUEST_PLAYER_JOIN:
+            case AtomicServerPacketID.REQUEST_PLAYER_JOIN:
                 await handle_request_player_join(self, request_body)
-            case SafeServerPacketID.PLAYER_QUIT:
+            case AtomicServerPacketID.PLAYER_QUIT:
                 await handle_player_quit(self, request_body)
-            case SafeServerPacketID.ENGINE_CHECK:
+            case AtomicServerPacketID.ENGINE_CHECK:
                 await handle_engine_check(self, request_body)
 
     async def disconnect(self, code):
@@ -252,7 +270,7 @@ class AtomicServerConsumer(AsyncWebsocketConsumer):
         self._owner = value
 
     @property
-    def game_server(self) -> Any:  # Remove GameServer type hint
+    def game_server(self):
         """
         Get the game server.
 
@@ -286,14 +304,14 @@ class AtomicServerConsumer(AsyncWebsocketConsumer):
     async def kick_player(self, player_scanner, reason: Optional[str] = ""):
         if player_scanner.connected_server == self:
             await self.send(
-                SafeServerPacketID.PLAYER_KICK,
+                AtomicServerPacketID.PLAYER_KICK,
                 {"ip": player_scanner.address[0], "reason": reason},
             )
 
     async def request_status(self) -> Dict[str, Union[str, bool, int, float]]:
         response_future = asyncio.get_event_loop().create_future()
-        self._pending_responses[SafeServerPacketID.REQUEST_STATUS] = response_future
-        await self.send(SafeServerPacketID.REQUEST_STATUS, {})
+        self._pending_responses[AtomicServerPacketID.REQUEST_STATUS] = response_future
+        await self.send(AtomicServerPacketID.REQUEST_STATUS, {})
         
         response = await response_future
         return response

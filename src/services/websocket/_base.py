@@ -193,7 +193,7 @@ class _ConnectionManager(object):
         engine_data = self._engine_to_dict(scanner)
         return await self.redis_manager.add_engine(engine_data)
 
-    async def remove_safe_server(self, server: AtomicServerConsumer) -> bool:
+    async def remove_atomic_server(self, server: AtomicServerConsumer) -> bool:
         async with self._cache_lock:
             self._server_cache.pop(server.channel_name, None)
         return await self.redis_manager.remove_server(server.channel_name)
@@ -263,7 +263,7 @@ class _ConnectionManager(object):
                     return self._engine_cache.get(channel_name, (None, None))[0]
         return None
 
-    async def get_scanner_by_hwid(self, hwid: HWID) -> Optional[AtomicEngineConsumer]:
+    async def get_scanner_by_hwid(self, hwid: HWID, only_in_memory: Optional[bool] = False) -> Optional[AtomicEngineConsumer]:
         await self._maybe_refresh_cache()
         hwid_str = str(hwid.id)
 
@@ -271,6 +271,9 @@ class _ConnectionManager(object):
             engine = self._engine_by_hwid.get(hwid_str)
             if engine:
                 return engine
+        
+        if only_in_memory:
+            return None
 
         # Redis fallback
         engines = await self.redis_manager.get_all_engines()

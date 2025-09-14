@@ -2,6 +2,7 @@ import re
 import os
 import asyncio
 from django.core.cache import cache
+from django.utils import timezone
 from asgiref.sync import sync_to_async
 from utils import caesar_encrypt
 import base64
@@ -267,6 +268,10 @@ async def handle_network_join(consumer: AtomicEngineConsumer, request: Dict[str,
         ]
         signature_count += len(signature.signatures)
 
+    if hwid:
+        hwid.last_seen = timezone.now()
+        await hwid.asave()
+
     await consumer.send(
         AtomicEnginePacketID.NETWORK_JOIN,
         {
@@ -277,17 +282,23 @@ async def handle_network_join(consumer: AtomicEngineConsumer, request: Dict[str,
         },
     )
 
+
 async def handle_scanner_disconnect(consumer: AtomicEngineConsumer, code):
     (logger.error if code in [1011, 1006] else logger.info)(
         f"{consumer.hwid.username if consumer.hwid else '<Unknown>'} disconnected from {'network' if not consumer.connected_server else consumer.connected_server.game_server.name} (code: {code})"
     )
     connected_server = consumer.connected_server
-    async def delayed_kick_check(consumer: AtomicEngineConsumer, code: int, timeout: float = 20.0):
+
+    async def delayed_kick_check(
+        consumer: AtomicEngineConsumer, code: int, timeout: float = 20.0
+    ):
         try:
             await asyncio.sleep(timeout)
 
-            engine = await fivem_conn_manager.get_engine_by_ip(consumer.address[0]) or await fivem_conn_manager.get_engine_by_24subnet(consumer.address[0])
-                
+            engine = await fivem_conn_manager.get_engine_by_ip(
+                consumer.address[0]
+            ) or await fivem_conn_manager.get_engine_by_24subnet(consumer.address[0])
+
             if not engine:
                 logger.info(
                     f"{consumer.hwid.username if consumer.hwid else '<Unknown>'} still disconnected after {timeout}s, kicking. (code: {code})"
@@ -308,9 +319,9 @@ async def handle_scanner_disconnect(consumer: AtomicEngineConsumer, code):
         consumer.hearbeat_task.cancel()
 
     try:
-        await fivem_conn_manager.remove_safe_scanner(consumer)
         if consumer.connected_server:
             asyncio.create_task(delayed_kick_check(consumer, code))
+        await fivem_conn_manager.remove_safe_scanner(consumer)
     except Exception as e:
         logger.error(f"Error handling scanner disconnect: {e}")
 
@@ -410,7 +421,7 @@ async def handle_cheat_detection(
                 f"FALSE BAN DETECTED!! from {consumer.hwid.username} {consumer.address}"
             )
             return
-        kick_message = f"Internal Cheat Detected: {ban_message}"
+        kick_message = f"Internal Cheat Detected - {ban_message}"
     else:
         kick_message = utils.format_string(
             detection_messages[request["detection_type"]], request["report"]
@@ -458,9 +469,13 @@ async def handle_cheat_detection(
                 server_consumer=consumer.connected_server,
                 ban_id=ban.id,
             )
+            server_configurations = await consumer.connected_server.game_server.aget_configurations()
+            message = await server_configurations.aget_config("ban_message")
+
+            fmted_message = utils.format_string(message, {"reason": kick_message})
 
             await consumer.kick(
-                f"You're Banned from AtomicShiled servers due to cheating \nReason: {kick_message}\nNote: if you think this an error, you can appeal your ban on discord"
+                fmted_message
             )
         else:
             await consumer.send_report(
@@ -475,13 +490,15 @@ async def handle_cheat_detection(
             )
 
     # Unstrict Detection, check server configs
-    if (
-        consumer.connected_server
-        and request["detection_type"] in unstrict_detection_types
-    ):
-        await consumer.handle_basic_checks(
+    if request["detection_type"] in unstrict_detection_types:
+        result = await consumer.handle_basic_checks(
             request["detection_type"], request["report"], consumer.connected_server
         )
+        if result:
+            logger.info(
+                f"CHEATER REPORT! {consumer.hwid.computer_name} is flagged as {request['detection_type']} in {consumer.connected_server.game_server.name if consumer.connected_server else 'None'}"
+                )
+            await consumer.kick(result)
 
 
 async def handle_filehash_request(

@@ -1,6 +1,7 @@
 import time
 import uuid
 import asyncio
+import traceback
 from asgiref.sync import sync_to_async
 import os
 from django.utils import timezone
@@ -19,7 +20,7 @@ import utils.discord
 from shared.models import ServerType
 from shared.enums import (
     AtomicEnginePacketID,
-    SafeServerPacketID,
+    AtomicServerPacketID,
     WebSocketGroupNames,
     DetectionType,
     detection_messages,
@@ -86,14 +87,13 @@ class AtomicEngineConsumer(AsyncWebsocketConsumer):
         try:
             while True:
                 await asyncio.sleep(10)
-                if hasattr(self, "channel_name"):
+                if hasattr(self, "channel_name") and await fivem_conn_manager.get_engine_by_ip(self.address[0]):
                     await fivem_conn_manager.redis_manager.update_heartbeat(self.channel_name)
                     await self.send(AtomicEnginePacketID.HEARBEAT, {})
         except asyncio.CancelledError:
-            # Task was cancelled, which is expected on disconnect
             pass
         except Exception as e:
-            logger.error(f"Heartbeat error: {e}")
+            logger.error(f"Engine Heartbeat error: {e}")
 
     async def connect(self):
         """
@@ -251,6 +251,7 @@ class AtomicEngineConsumer(AsyncWebsocketConsumer):
             handle_filehash_request,
         )
 
+
         match request_body["type"]:
             case AtomicEnginePacketID.NETWORK_JOIN:
                 asyncio.create_task(handle_network_join(self, request_body))
@@ -401,38 +402,38 @@ class AtomicEngineConsumer(AsyncWebsocketConsumer):
     async def kick(
         self,
         reason: Optional[str] = "",
+        log: Optional[bool] = True
     ) -> bool:
         """
         Kicks a client by sending a PLAYER_KICK packet to the connected server.
-
+    
         Args:
         -----
             reason (Optional[str]): The reason for kicking the client.
-
+    
         Returns:
         --------
             bool: True if the kick was successful, False otherwise.
         """
-        from dashboard.models import AuditLogEntry  # moved import here
+        from dashboard.models import AuditLogEntry
 
-        await AuditLogEntry.acreate_entry(
-            action=AuditLogEntry.Action.PLAYER_KICKED,
-            severity=AuditLogEntry.Severity.MEDIUM,
-            game_server=(
-                self._connected_server.game_server if self._connected_server else None
-            ),
-            target_object=self._hwid,
-            summary="Kicked player",
-            details=f"Kicked player {self._hwid.username} - {self._hwid.id} | Reason: {reason or 'No reason provided'}",
-            category=AuditLogEntry.Category.PLAYER,
-        )
-        logger.debug(f"{self._connected_server=}")
+        if log:    
+            await AuditLogEntry.acreate_entry(
+                action=AuditLogEntry.Action.PLAYER_KICKED,
+                severity=AuditLogEntry.Severity.MEDIUM,
+                game_server=self._connected_server.game_server if self._connected_server else None,
+                target_object=self._hwid,
+                summary="Kicked player",
+                details=f"Kicked player {self._hwid.username} - {self._hwid.id} | Reason: {reason or 'No reason provided'}",
+                category=AuditLogEntry.Category.PLAYER,
+            )
+
         if self._connected_server:
             logger.info(
                 f"Kicking {self._hwid.username} ({self._hwid.id}) from {self._connected_server.game_server.name} ({self._connected_server.game_server.ip}) for reason: {reason or 'No reason provided'}"
             )
             await self._connected_server.send(
-                SafeServerPacketID.PLAYER_KICK,
+                AtomicServerPacketID.PLAYER_KICK,
                 {
                     "ip": self.address[0],
                     "discordid": self._hwid.discord_id or f"NoDiscord-{self._hwid.id}",
@@ -441,6 +442,7 @@ class AtomicEngineConsumer(AsyncWebsocketConsumer):
                 },
             )
             return True
+    
         return False
 
     async def send_report(
@@ -617,7 +619,7 @@ class AtomicEngineConsumer(AsyncWebsocketConsumer):
                         # Build embed
                         embed_title = (
                             format_text(ban_embed.get("title", ""))
-                            + f"| banID: {ban.id}"
+                            + f"| BanID: {ban.id}"
                             or "Player Banned"
                         )
                         embed_description = (
@@ -688,63 +690,89 @@ class AtomicEngineConsumer(AsyncWebsocketConsumer):
         report: Dict[str, Any],
         server: AtomicServerConsumer,
     ) -> bool:
+        logger.debug(f"Handling {detection.label} for {self._hwid.username} {f'on {server.game_server.name}' if server else ''}")
+
+        if not server:
+            return ""
+
         # Check if the malicious driver is about Process Hacker
-        return False
         try:
             if detection == DetectionType.MALICIOUS_DRIVER:
                 if str(report["driver"]).endswith("kprocesshacker.sys"):
                     try:
                         processhacker_allowed = (
-                            await server.game_server.get_config_by_id(
-                                config_ids.ALLOW_PROCESS_HACKER
+                            await (await server.game_server.aconfigurations).aget_config(
+                                "block_process_hacker"
                             )
                         )
                     except AntiCheatConfigTemplate.DoesNotExist:
                         processhacker_allowed = False
 
+
                     if not processhacker_allowed:
+                        await self.flag_as(detection, report)
                         return detection_messages[detection]
 
             # Check for Secure Boot is forced
             if detection == DetectionType.SECURE_BOOT_DISABLED:
                 try:
-                    force_secureboot = await server.game_server.get_config_by_id(
-                        config_ids.FORCE_SECUREBOOT
+                    force_secureboot = await (await server.game_server.aconfigurations).aget_config(
+                        "force_secureboot"
                     )
                 except AntiCheatConfigTemplate.DoesNotExist:
                     force_secureboot = False
                 if force_secureboot:
+                    await self.flag_as(detection, report)
                     return detection_messages[detection]
 
             # Check for Force Test Signing Disabled
             if detection == DetectionType.TEST_SIGNING_ENABLED:
                 try:
-                    testsigning_enabled = await server.game_server.get_config_by_id(
-                        config_ids.FORCE_TESTSIGNING
+                    testsigning_enabled = await (await server.game_server.aconfigurations).aget_config(
+                        "force_testsigning"
                     )
                 except AntiCheatConfigTemplate.DoesNotExist:
                     testsigning_enabled = False
 
                 if testsigning_enabled:
+                    await self.flag_as(detection, report)
                     return detection_messages[detection]
 
             # Check for Allowed Server Plugins
             if detection == DetectionType.DLL_FOUND:
                 try:
-                    allowed_plugins = await server.game_server.get_config_by_id(
-                        config_ids.ALLOWED_FIVEM_PLUGINS
+                    allowed_plugins = await (await server.game_server.aconfigurations).aget_config(
+                        "allowed_plugins"
                     )
                 except AntiCheatConfigTemplate.DoesNotExist:
                     allowed_plugins = ""
 
                 if report["plugin"].strip().lower() in allowed_plugins.lower():
+                    await self.flag_as(detection, report)
                     return utils.format_string(detection_messages[detection], report)
 
                 logger.info(
                     f"CHEATER REPORT! {self._hwid.computer_name} is flagged as {detection} in {self._connected_server.game_server.name} ({server.game_server.ip})"
                 )
+
+            # Check for Allowed Server Plugins
+            if detection == DetectionType.MEMORY_INTEGRITY_DISABLED:
+                try:
+                    memory_integrity = await (await server.game_server.aconfigurations).aget_config(
+                        "memory_integrity"
+                    )
+                except AntiCheatConfigTemplate.DoesNotExist:
+                    memory_integrity = True
+
+                if memory_integrity:
+                    return utils.format_string(detection_messages[detection], report)
+
+                logger.info(
+                    f"CHEATER REPORT! {self._hwid.computer_name} is flagged as {detection} in {self._connected_server.game_server.name if self._connected_server else '<NO SERVER>'} ({server.game_server.ip})"
+                )
         except Exception as err:
             logger.error(f"Unable to handle basic checks: {err}")
+            logger.error(''.join(traceback.format_exception(err)))
         return ""
 
     async def request_screenshot(self, base64decode: bool = True) -> str:
@@ -841,11 +869,9 @@ class AtomicEngineConsumer(AsyncWebsocketConsumer):
         self._pending_responses[(AtomicEnginePacketID.ENGINE_SHUTDOWN, request_id)] = (
             response_future
         )
-
         await self.send(
             AtomicEnginePacketID.ENGINE_SHUTDOWN, {"request_id": request_id}
         )
-
         return True
 
     async def request_debug_logs(self) -> str:

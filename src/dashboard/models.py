@@ -220,7 +220,7 @@ class GameServer(models.Model):
 
 
     def has_permission_for(self, user: User, permission: Union[str, Any]):
-        if user == self.owner:
+        if user == self.owner or user.is_superuser:
             return True
         try:
             target_moderator = self.moderators.get(user__id=user.id)
@@ -250,12 +250,9 @@ class GameServer(models.Model):
         except ServerSubscription.DoesNotExist:
             ...
 
-
     @property
     def is_online(self) -> bool:
         return async_to_sync(fivem_conn_manager.is_server_running)(self.ip)
-
-
 
     @property
     async def active_players(self) -> List[AtomicServerConsumer]:
@@ -297,6 +294,10 @@ class GameServer(models.Model):
 
     @classmethod
     def get_for_user(cls, server_id: int, user, **kwargs):
+        if user.is_superuser:
+            return cls.objects.get(
+                Q(id=server_id, **kwargs)
+            )
         return cls.objects.get(
             Q(id=server_id, **kwargs) &
             (
@@ -307,6 +308,11 @@ class GameServer(models.Model):
 
     @classmethod
     def get_user_servers(cls, user, **kwargs):
+        if user.is_superuser:
+            return cls.objects.filter(
+                Q(**kwargs)
+                & Q(id__in=[record.id for record in cls.objects.all() if fivem_conn_manager.get_server_by_ip(record.ip)])
+            )
         return cls.objects.filter(
             Q(**kwargs) & (
                 Q(owner=user) |

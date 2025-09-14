@@ -1,3 +1,4 @@
+from asgiref.sync import sync_to_async
 from shared.models import ServerType
 from django.utils import timezone
 from datetime import datetime
@@ -111,6 +112,7 @@ class AntiCheatConfigurations(models.Model):
         return self.config.get(str(config.id), config.default_value)
 
     async def aget_config(self, config_name):
+        return await sync_to_async(self.get_config)(config_name)
         config = await AntiCheatConfigTemplate.objects.aget(pseudo_name=config_name)
         return self.config.get(str(config.id), config.default_value)
 
@@ -160,6 +162,9 @@ class HWID(models.Model):
     steam = models.CharField(max_length=64, null=True)
     discord_id = models.CharField(max_length=64, null=True)
     history = HistoricalRecords()
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_seen = models.DateTimeField(auto_now=True)
 
     class Meta:
         verbose_name = "HWID"

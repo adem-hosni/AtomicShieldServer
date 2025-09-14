@@ -47,12 +47,14 @@ class ClientHWIDAdmin(SimpleHistoryAdmin, ModelAdmin):
 
         def queryset(self, request, queryset):
             filter_value = self.value()
+            online_engines = [engine.get("hwid") for engine in async_to_sync(fivem_conn_manager.redis_manager.get_all_engines)()]
+
             if filter_value == "online":
                 queryset = queryset.filter(
                     id__in=[
                         record.id
                         for record in queryset
-                        if async_to_sync(fivem_conn_manager.is_engine_connected_by_hwid)(record)
+                        if str(record.id) in online_engines
                     ]
                 )
             elif filter_value == "offline":
@@ -60,7 +62,7 @@ class ClientHWIDAdmin(SimpleHistoryAdmin, ModelAdmin):
                     id__in=[
                         record.id
                         for record in queryset
-                        if not async_to_sync(fivem_conn_manager.is_engine_connected_by_hwid)(record)
+                        if not str(record.id) in online_engines
                     ]
                 )
             return queryset
@@ -85,7 +87,7 @@ class ClientHWIDAdmin(SimpleHistoryAdmin, ModelAdmin):
                             obj.id
                             for obj in queryset
                             if (
-                                (engine := async_to_sync(fivem_conn_manager.get_scanner_by_hwid)(obj))
+                                (engine := async_to_sync(fivem_conn_manager.get_scanner_by_hwid)(obj, True))
                                 and engine.connected_server
                                 and engine.connected_server.game_server.id == server_id
                             )
@@ -226,7 +228,7 @@ class ClientHWIDAdmin(SimpleHistoryAdmin, ModelAdmin):
         # Match by IP address (hwid.address[0])
         matching_ids = []
         for obj in self.model.objects.all():
-            engine = async_to_sync(fivem_conn_manager.get_scanner_by_hwid)(obj)
+            engine = async_to_sync(fivem_conn_manager.get_scanner_by_hwid)(obj, only_in_memory=True)
             if engine and engine.address:
                 ip = engine.address[0]
                 if search_term in ip:
@@ -243,8 +245,8 @@ class ClientHWIDAdmin(SimpleHistoryAdmin, ModelAdmin):
     @admin.display(description="Build")
     def display_build_timestamp(self, obj: HWID):
         return (
-            async_to_sync(fivem_conn_manager.get_scanner_by_hwid)(obj).build_timestamp
-            if async_to_sync(fivem_conn_manager.get_scanner_by_hwid)(obj)
+            async_to_sync(fivem_conn_manager.get_scanner_by_hwid)(obj, True).build_timestamp
+            if async_to_sync(fivem_conn_manager.get_scanner_by_hwid)(obj, True)
             else "N/A"
         )
 
@@ -254,11 +256,11 @@ class ClientHWIDAdmin(SimpleHistoryAdmin, ModelAdmin):
 
     @admin.display(description="IP Address")
     def ip(self, obj: HWID):
-        return async_to_sync(fivem_conn_manager.get_scanner_by_hwid)(obj).address[0] if async_to_sync(fivem_conn_manager.get_scanner_by_hwid)(obj) else "Not Found"
+        return async_to_sync(fivem_conn_manager.get_scanner_by_hwid)(obj, True).address[0] if async_to_sync(fivem_conn_manager.get_scanner_by_hwid)(obj) else "Not Found"
 
     @admin.display(description="Connected Server")
     def display_connected_server(self, obj: HWID):
-        engine = async_to_sync(fivem_conn_manager.get_scanner_by_hwid)(obj)
+        engine = async_to_sync(fivem_conn_manager.get_scanner_by_hwid)(obj, True)
         if engine:
             server = engine.connected_server
             return server.game_server.name if server else "No Server Connected"
@@ -266,7 +268,7 @@ class ClientHWIDAdmin(SimpleHistoryAdmin, ModelAdmin):
 
     @admin.display(description="Online", boolean=True)
     def display_online(self, obj: HWID):
-        return bool(async_to_sync(fivem_conn_manager.get_scanner_by_hwid)(obj))
+        return bool(async_to_sync(fivem_conn_manager.get_scanner_by_hwid)(obj, True))
 
     class Meta:
         model = HWID

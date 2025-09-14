@@ -1266,17 +1266,12 @@ export function AntiCheatConfigurationPage() {
       const { static: staticChanges, dynamic: dynamicChanges } = getChangedValues();
       const payload: any = {};
 
-      if (staticChanges) {
-        payload.static = staticChanges;
-      }
-
-      if (dynamicChanges) {
-        payload.dynamic = dynamicChanges;
-      }
+      payload.static = staticChanges;
+      payload.dynamic = dynamicChanges;
 
       // Always include the fresh embedTemplates in the save payload
       payload.static = {
-        ...(payload.static || {}),
+        ...(payload.static || {}), 
         embedTemplates: updatedTemplates,
       };
 
@@ -2267,85 +2262,6 @@ export function AntiCheatConfigurationPage() {
                                   <span>{value}</span>
                                 </button>
                               ))}
-
-                              <button
-                                onClick={() => insertVariable("{player_name}")}
-                                className="inline-flex items-center gap-1 hover:text-foreground hover:bg-blue-500/10 transition-colors px-2 py-1 rounded-md group"
-                              >
-                                <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono group-hover:bg-blue-500/20">
-                                  {"{player_name}"}
-                                </code>
-                                <span>player name</span>
-                              </button>
-                              <button
-                                onClick={() => insertVariable("{admin}")}
-                                className="inline-flex items-center gap-1 hover:text-foreground hover:bg-green-500/10 transition-colors px-2 py-1 rounded-md group"
-                              >
-                                <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono group-hover:bg-green-500/20">
-                                  {"{admin}"}
-                                </code>
-                                <span>admin name</span>
-                              </button>
-                              <button
-                                onClick={() => insertVariable("{reason}")}
-                                className="inline-flex items-center gap-1 hover:text-foreground hover:bg-orange-500/10 transition-colors px-2 py-1 rounded-md group"
-                              >
-                                <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono group-hover:bg-orange-500/20">
-                                  {"{reason}"}
-                                </code>
-                                <span>action reason</span>
-                              </button>
-                            </div>
-                            <div className="flex flex-wrap gap-x-4 gap-y-1">
-                              <button
-                                onClick={() => insertVariable("{date}")}
-                                className="inline-flex items-center gap-1 hover:text-foreground hover:bg-purple-500/10 transition-colors px-2 py-1 rounded-md group"
-                              >
-                                <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono group-hover:bg-purple-500/20">
-                                  {"{date}"}
-                                </code>
-                                <span>current date</span>
-                              </button>
-                              <button
-                                onClick={() => insertVariable("{server_name}")}
-                                className="inline-flex items-center gap-1 hover:text-foreground hover:bg-cyan-500/10 transition-colors px-2 py-1 rounded-md group"
-                              >
-                                <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono group-hover:bg-cyan-500/20">
-                                  {"{server_name}"}
-                                </code>
-                                <span>server name</span>
-                              </button>
-                              <button
-                                onClick={() => insertVariable("{player_id}")}
-                                className="inline-flex items-center gap-1 hover:text-foreground hover:bg-indigo-500/10 transition-colors px-2 py-1 rounded-md group"
-                              >
-                                <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono group-hover:bg-indigo-500/20">
-                                  {"{player_id}"}
-                                </code>
-                                <span>player ID</span>
-                              </button>
-                            </div>
-                            <div className="flex flex-wrap gap-x-4 gap-y-1">
-                              <button
-                                onClick={() => insertVariable("{duration}")}
-                                className="inline-flex items-center gap-1 hover:text-foreground hover:bg-yellow-500/10 transition-colors px-2 py-1 rounded-md group"
-                              >
-                                <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono group-hover:bg-yellow-500/20">
-                                  {"{duration}"}
-                                </code>
-                                <span>ban duration</span>
-                              </button>
-                              <button
-                                onClick={() =>
-                                  insertVariable("{screenshot_url}")
-                                }
-                                className="inline-flex items-center gap-1 hover:text-foreground hover:bg-pink-500/10 transition-colors px-2 py-1 rounded-md group"
-                              >
-                                <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono group-hover:bg-pink-500/20">
-                                  {"{screenshot_url}"}
-                                </code>
-                                <span>screenshot URL</span>
-                              </button>
                             </div>
                           </div>
                         </div>
@@ -2872,7 +2788,7 @@ export function AntiCheatConfigurationPage() {
                       description={configuration.subtitle}
                       tooltip={configuration.tip}
                     >
-                      <Input
+                      <Textarea
                         value={configuration.value}
                         onChange={(e) => {
                           updateConfigurationValue(
@@ -3057,7 +2973,6 @@ export function AntiCheatConfigurationPage() {
                     disabled={isSaving}
                     className="bg-[#2970ff] hover:bg-[#1e5eff] text-white font-semibold shadow-lg flex-1 sm:flex-none"
                   >
-                    <LucideIcons.Save className="h-4 w-4 mr-2" />
                     {isSaving ? (
                       <>
                         <LucideIcons.Loader2 className="h-4 w-4 mr-2 animate-spin" />

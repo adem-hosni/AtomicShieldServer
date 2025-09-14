@@ -67,6 +67,7 @@ from utils.aseclient import ASEQueryClient, ASEParser
 from utils import discord
 from utils import analytics
 from .models import Release, ReleaseAsset
+from django_ratelimit.decorators import ratelimit
 
 logger = logging.getLogger(__name__)
 
@@ -1636,6 +1637,15 @@ def add_moderators(request: HttpRequest, server_id: int) -> Response:
                 "message": "Only server owner can add moderators with 'manage moderators' permission",
             }
         )
+    
+    if to_user_id == request.user.id:
+        return Response(
+            {
+                "success": False,
+                "message": "Cannot add your account as a moderator.",
+            }
+        )
+
 
     if not len(permissions):
         return Response(
@@ -1715,6 +1725,7 @@ def search_for_moderator(request: HttpRequest) -> Response:
 @api_view(["GET", "POST"])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
+@ratelimit(key='ip', rate='5/m', block=True)   # max 5 requests per minute per IP
 def download_assets_view(request: HttpRequest) -> Response:
     """
     GET  -> Return list of releases + their assets
@@ -2605,6 +2616,7 @@ def check_server(request: HttpRequest) -> HttpResponse:
 @api_view(["POST", "GET"])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
+@ratelimit(key='ip', rate='3/m', block=True)   
 def refresh_server_key(request: HttpRequest) -> HttpResponse:
     if request.method == "POST":
         try:
@@ -2789,6 +2801,7 @@ def render_quicksetup(request: HttpRequest) -> HttpResponse:
 @api_view(["POST", "GET"])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
+@ratelimit(key='ip', rate='5/m', block=True)
 def subscriptions_api(request):
     if request.method == "GET":
         subscriptions_data = [
@@ -3033,7 +3046,9 @@ def list_players(request, server_id):
                             response.update(
                                 {
                                     "success": True,
-                                    "image_base64": image_base64,
+                                    "data": {
+                                        "image_base64": image_base64,
+                                    }
                                 }
                             )
                         else:

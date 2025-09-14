@@ -19,23 +19,25 @@ class RedisConnectionManager:
             cls._instance._initialized = False
         return cls._instance
 
-
     def __init__(self, redis_url: str):
         if self._initialized:
             return
         self.redis_url = redis_url
-        self.redis_client = redis.from_url(redis_url, decode_responses=True, retry_on_timeout=True)
+        self.redis_client = redis.from_url(
+            redis_url, decode_responses=True, retry_on_timeout=True
+        )
         self.engine_key = "atomicshield:engines"
         self.server_key = "atomicshield:servers"
         self.heartbeat_key = "atomicshield:heartbeats"
         self.lock_key_prefix = "atomicshield:lock:"
         self._initialized = True
-    
+
     def get_client(self):
         if not self.redis_client:
-            self.redis_client = redis.from_url(self.redis_url, decode_responses=True, retry_on_timeout=True)
+            self.redis_client = redis.from_url(
+                self.redis_url, decode_responses=True, retry_on_timeout=True
+            )
         return self.redis_client
-
 
     @asynccontextmanager
     async def acquire_lock(self, lock_name, timeout=10):
@@ -105,7 +107,6 @@ class RedisConnectionManager:
         except Exception as e:
             logger.error(f"Error removing engine from Redis: {e}")
             return False
-
 
     async def get_engine(self, channel_name: str) -> Optional[Dict]:
         """Get an engine by channel name with activity check"""
@@ -195,6 +196,7 @@ class RedisConnectionManager:
     async def clear_all(self):
         """Clear all connection data (use with caution)"""
         try:
+            logger.debug(f"Clearing redis old data...")
             await self.redis_client.delete(
                 self.engine_key, self.server_key, self.heartbeat_key
             )

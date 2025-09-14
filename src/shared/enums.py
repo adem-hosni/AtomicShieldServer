@@ -2,7 +2,7 @@ from enum import Enum
 from django.db import models
 
 
-class SafeServerPacketID(Enum):
+class AtomicServerPacketID(Enum):
     NETWORK_JOIN = 1
     SYNC_ANTICHEAT_CONFIGS = 2
     REQUEST_STATUS = 3
@@ -13,6 +13,7 @@ class SafeServerPacketID(Enum):
     PLAYER_QUIT = 8
     MANAGE_ONLINE_PLAYER = 9
     ENGINE_CHECK = 10
+    HEARBEAT = 11
 
 
 class AtomicEnginePacketID(Enum):

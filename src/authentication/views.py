@@ -17,9 +17,12 @@ import requests
 from django.conf import settings
 from django.shortcuts import redirect
 from django.http import JsonResponse
+from django_ratelimit.decorators import ratelimit
+from django.utils.decorators import method_decorator
 
 logger = logging.getLogger(__name__)
 
+@method_decorator(ratelimit(key='ip', rate='5/m', block=True), name='dispatch')
 class SignInView(APIView):
     permission_classes = [AllowAny]
 
@@ -62,7 +65,7 @@ class SignInView(APIView):
             },
         })
 
-
+@method_decorator(ratelimit(key='ip', rate='5/m', block=True), name='dispatch')
 class SignUpView(APIView):
     permission_classes = [AllowAny]
 

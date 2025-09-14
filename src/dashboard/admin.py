@@ -100,6 +100,28 @@ class GameServerAdmin(ModelAdmin):
 
     list_filter = [OnlineFilter, "type"]
 
+    actions = ["restart"]
+
+    def restart(self, request, queryset):
+        if request.method != "POST":
+            return
+        
+        for obj in queryset:
+            server = fivem_conn_manager.get_server_by_ip(obj.ip)
+            if server:
+                try:
+                    async_to_sync(server.close)(1000, "Restart")
+                    self.message_user(request, "Server Connection Reset", "success")
+                except Exception as e:
+                    logger.error(f"Error reseting connection: {e}")
+                    self.message_user(
+                        request, "Error reseting connection", "error"
+                    )
+            else:
+                self.message_user(
+                    request, f"{obj.name} is not online!", "error"
+                )
+
     @admin.display(description="Address")
     def address(self, obj: GameServer):
         return f"{obj.ip}"

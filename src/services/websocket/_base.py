@@ -214,6 +214,23 @@ class _ConnectionManager(object):
     async def is_engine_connected_by_hwid(self, hwid: HWID) -> bool:
         return bool(await self.get_scanner_by_hwid(hwid))
 
+    async def get_engine_by_steam(self, steam: str) -> Optional[AtomicEngineConsumer]:
+        try:
+            target_hwid = (
+                await HWID.objects.filter(steam=steam)
+                .order_by("-last_seen")
+                .afirst()
+            )
+
+            if not target_hwid:
+                return None
+
+            return await self.get_scanner_by_hwid(target_hwid)
+
+        except Exception as err:
+            logger.error(f"An error occurred while retrieving engine by steam in get_engine_by_steam(): {err}")
+            return None
+
     async def get_engine_by_ip(self, scanner_ip: str) -> Optional[AtomicEngineConsumer]:
         await self._maybe_refresh_cache()
 

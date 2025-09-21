@@ -1,5 +1,5 @@
-import re
 import os
+from time import time
 import asyncio
 from django.core.cache import cache
 from django.utils import timezone
@@ -9,16 +9,16 @@ import base64
 from datetime import timedelta
 from ..consumers.atomic_engine import AtomicEngineConsumer
 from django.core.files.base import ContentFile
-from django.db.models.functions import Lower
 from services.websocket import fivem_conn_manager
 from shared.enums import (
     WebSocketGroupNames,
     AtomicEnginePacketID,
     DetectionType,
+    AtomicEngineHardKickReason,
+    AtomicHeartbeatType,
     unstrict_detection_types,
     detection_messages,
 )
-from shared.flags import Flag
 import utils
 from asgiref.sync import sync_to_async
 from django.db.models import Q
@@ -32,7 +32,6 @@ from ..models import (
 from dashboard.models import AuditLogEntry
 from typing import Dict, Any
 import logging
-from .atomic_server import handle_request_player_join
 
 logger = logging.getLogger(__name__)
 
@@ -185,6 +184,9 @@ async def handle_network_join(consumer: AtomicEngineConsumer, request: Dict[str,
     #         )
 
     # Create a HWID if it's does not exists
+    steam = request_hwid.get("steam")
+    if steam:
+        steam = steam[len("steam:"):] if steam.startswith("steam:") else steam
     if not hwid:
         hwid = HWID(
             username=request_hwid["username"],
@@ -194,6 +196,7 @@ async def handle_network_join(consumer: AtomicEngineConsumer, request: Dict[str,
             bios_version=request_hwid["bios"],
             computer_name=request_hwid["computer_name"],
             pnp_device=request_hwid["pnp_device"],
+            steam=steam
         )
         await hwid.asave()
         logger.info(f'"{hwid.username}" HWID registred!')
@@ -206,6 +209,7 @@ async def handle_network_join(consumer: AtomicEngineConsumer, request: Dict[str,
         hwid.motherboard_serial = request_hwid["motherboard_serial"]
         hwid.username = request_hwid["username"]
         hwid.pnp_device = request_hwid["pnp_device"]
+        hwid.steam = steam
 
         changes = await hwid.get_changes()
 
@@ -227,7 +231,7 @@ async def handle_network_join(consumer: AtomicEngineConsumer, request: Dict[str,
         )
 
     logger.info(
-        f"{request_hwid['username']}'s engine asking for network join (Computer Name: \"{hwid.computer_name}\", Bios Version: \"{hwid.bios_version}\", CPU ID: \"{hwid.cpuid}\", Motherboard Serial: \"{hwid.motherboard_serial}\")"
+        f"{request_hwid['username']}'s engine asking for network join (Computer Name: \"{hwid.computer_name}\", Bios Version: \"{hwid.bios_version}\", CPU ID: \"{hwid.cpuid}\", Motherboard Serial: \"{hwid.motherboard_serial}\", Steam: \"{hwid.steam}\") from {consumer.address}"
     )
 
     # Join the consumer to the network
@@ -254,7 +258,8 @@ async def handle_network_join(consumer: AtomicEngineConsumer, request: Dict[str,
     logger.info(
         f"{consumer.hwid.username}'s engine joined network successfuly [{consumer.received_ip}]!"
     )
-    consumer.hearbeat_task = asyncio.create_task(consumer.send_heartbeats())
+
+    consumer.start_tasks()
 
     signatures = await sync_to_async(list)(
         MaliciousSignatures.objects.filter(type=consumer.type)
@@ -559,3 +564,42 @@ async def handle_filehash_request(
                 "message": "",
             },
         )
+
+async def handle_hard_kick(consumer: AtomicEngineConsumer, request: Dict[str, Any]):
+    if not utils.check_request_body_key(request, "reason", int):
+        logger.warning(
+            f"Missing reason in the request from {consumer.address}, closing connection"
+        )
+        return await consumer.close()
+
+    if not request["reason"] in AtomicEngineHardKickReason.values:
+        logger.warning(
+            f"Invalid reason in the request from {consumer.address}, closing connection"
+        )
+        return await consumer.close()
+
+    if not consumer.hwid:
+        return
+
+    request["reason"] = AtomicEngineHardKickReason(request["reason"])
+    logger.info(
+        f"Hard kick request from {consumer.hwid.username} ({consumer.address}), reason: {request['reason'].name}")
+    await consumer.kick(f"AtomicShield AntiCheat was forcefully disconnected. Reason: {request['reason'].label}")
+
+
+async def handle_heartbeat(consumer: AtomicEngineConsumer, request: Dict[str, Any]):
+    if not utils.check_request_body_key(request, "heartbeat_type", int):
+        logger.warning(
+            f"Missing heartbeat type in the request from {consumer.address}, closing connection"
+        )
+        return await consumer.close()
+
+    heartbeat_type = request["heartbeat_type"]
+    if heartbeat_type not in AtomicHeartbeatType.values:
+        logger.warning(
+            f"Invalid heartbeat type in the request from {consumer.address}, closing connection"
+        )
+        return await consumer.close()
+    
+    heartbeat_type = AtomicHeartbeatType(heartbeat_type)
+    consumer.last_heartbeats[heartbeat_type] = time()

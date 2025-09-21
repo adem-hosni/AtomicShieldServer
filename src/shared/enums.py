@@ -16,6 +16,15 @@ class AtomicServerPacketID(Enum):
     HEARBEAT = 11
 
 
+class AtomicEngineHardKickReason(models.IntegerChoices):
+    GUARD_TIMEDOUT = 1, "Guard Timed Out"
+    PROCESS_TERMINATED = 2, "Process Terminated"
+
+class AtomicHeartbeatType(models.IntegerChoices):
+    HEURISTIC_GUARD = 1, "Heuristic Guard"
+    PROCESS_GUARD = 2, "Process Guard"
+
+
 class AtomicEnginePacketID(Enum):
     NETWORK_JOIN = 1
     SYNC_SIGNATURES = 2
@@ -30,7 +39,8 @@ class AtomicEnginePacketID(Enum):
     REQUEST_DEBUG_LOGS = 11
     REQUEST_FILEHASH = 12
     REQUEST_FILE_UPLOAD = 13
-    HEARBEAT = 14
+    HEARTBEAT = 14
+    FORCE_HARD_KICK = 15
 
 
 class WebSocketGroupNames(Enum):

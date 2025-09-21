@@ -105,6 +105,7 @@ class ClientHWIDAdmin(SimpleHistoryAdmin, ModelAdmin):
         "motherboard_serial",
         "display_discord_id",
         "display_connected_server",
+        "last_seen",
         "display_build_timestamp",
         "display_online",
     ]
@@ -125,7 +126,7 @@ class ClientHWIDAdmin(SimpleHistoryAdmin, ModelAdmin):
         "username",
     )
 
-    list_filter = [OnlineFilter, ConnectedServerFilter]
+    list_filter = [OnlineFilter, ConnectedServerFilter, 'last_seen']
     actions = ["download_debug_logs", "shutdown"]
 
     def download_debug_logs(self, request, queryset):

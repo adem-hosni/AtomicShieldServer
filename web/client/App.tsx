@@ -112,7 +112,6 @@ export const PromoBanner = () => {
 
 
 const App = () => {
-  useFavicon();
 
   return (
     <HelmetProvider>
@@ -120,7 +119,7 @@ const App = () => {
       <AuthProvider>
         <LanguageProvider>
           <TooltipProvider>
-          <PromoBanner />
+      {/*     <PromoBanner />*/}
             <Toaster />
             <Sonner />
             <BrowserRouter>

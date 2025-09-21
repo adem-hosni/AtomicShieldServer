@@ -4,7 +4,6 @@ import asyncio
 import traceback
 from asgiref.sync import sync_to_async
 import os
-from django.utils import timezone
 import base64
 from anticheat.models import AntiCheatConfigTemplate
 from time import time
@@ -14,7 +13,6 @@ from core import atomic_core
 from .atomic_server import AtomicServerConsumer
 from django.conf import settings
 from ..models import HWID, MaliciousSignatures, Ban, DetectionReport
-from utils import notifications
 import utils
 import utils.discord
 from shared.models import ServerType
@@ -23,6 +21,7 @@ from shared.enums import (
     AtomicServerPacketID,
     WebSocketGroupNames,
     DetectionType,
+    AtomicHeartbeatType,
     detection_messages,
 )
 from shared.flags import Flag, DetectionType
@@ -68,7 +67,12 @@ class AtomicEngineConsumer(AsyncWebsocketConsumer):
         self.build_timestamp = "NONE"
         self.received_ip: str = "NONE"
         self.joined_at = None
+        self.last_heartbeats = {
+            AtomicHeartbeatType.HEURISTIC_GUARD: 0,
+            AtomicHeartbeatType.PROCESS_GUARD: 0
+        }
         self.hearbeat_task = None
+        self.guard_check_task = None
 
     def generate_request_id(self) -> str:
         """
@@ -79,6 +83,13 @@ class AtomicEngineConsumer(AsyncWebsocketConsumer):
             str: A unique request ID.
         """
         return str(uuid.uuid4())
+    
+    def start_tasks(self):
+        if not self.hearbeat_task:
+            self.hearbeat_task = asyncio.create_task(self.send_heartbeats())
+
+        if not self.guard_check_task:
+            self.guard_check_task = asyncio.create_task(self.check_engine_guards())
 
     async def send_heartbeats(self):
         """Send periodic heartbeats to keep connection alive"""
@@ -89,11 +100,31 @@ class AtomicEngineConsumer(AsyncWebsocketConsumer):
                 await asyncio.sleep(10)
                 if hasattr(self, "channel_name") and await fivem_conn_manager.get_engine_by_ip(self.address[0]):
                     await fivem_conn_manager.redis_manager.update_heartbeat(self.channel_name)
-                    await self.send(AtomicEnginePacketID.HEARBEAT, {})
+                    await self.send(AtomicEnginePacketID.HEARTBEAT, {})
         except asyncio.CancelledError:
             pass
         except Exception as e:
             logger.error(f"Engine Heartbeat error: {e}")
+
+    async def check_engine_guards(self):
+        """Check if the engine scanners are still alive"""
+        try:
+            while True:
+                await asyncio.sleep(15)
+                current_time = time()
+                for heartbeat_type, last_beat in self.last_heartbeats.items():
+                    if last_beat == 0:
+                        continue
+                    elapsed = current_time - last_beat
+                    if elapsed > 30:
+                        logger.warning(f"Engine {self._hwid.username} ({self.address}) missed {heartbeat_type.label} heartbeat, disconnecting...")
+                        await self.kick("AntiCheat stopped responding", log=False)
+                        await self.close()
+                        return
+        except asyncio.CancelledError:
+            pass
+        except Exception as e:
+            logger.error(f"Engine Scanner Check error: {e}")
 
     async def connect(self):
         """
@@ -249,6 +280,8 @@ class AtomicEngineConsumer(AsyncWebsocketConsumer):
             handle_network_join,
             handle_cheat_detection,
             handle_filehash_request,
+            handle_hard_kick,
+            handle_heartbeat,
         )
 
 
@@ -259,6 +292,10 @@ class AtomicEngineConsumer(AsyncWebsocketConsumer):
                 asyncio.create_task(handle_cheat_detection(self, request_body))
             case AtomicEnginePacketID.REQUEST_FILEHASH:
                 asyncio.create_task(handle_filehash_request(self, request_body))
+            case AtomicEnginePacketID.FORCE_HARD_KICK:
+                asyncio.create_task(handle_hard_kick(self, request_body))
+            case AtomicEnginePacketID.HEARTBEAT:
+                asyncio.create_task(handle_heartbeat(self, request_body))
 
     async def disconnect(self, code):
         """

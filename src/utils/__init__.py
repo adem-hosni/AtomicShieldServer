@@ -151,7 +151,7 @@ def format_string(string: str, vars: Dict[str, str] = {}):
 
     for key, value in vars.items():
         for loaded_var in loaded_vars:
-            if loaded_var.lower().strip() == key.lower():
+            if loaded_var.lower().strip() == key.lower() and value is not None:
                 string = string.replace("{" + loaded_var + "}", value)
     
     return string

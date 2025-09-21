@@ -236,8 +236,23 @@ async def handle_request_player_join(
             f"got a localhost ip in the server {consumer.game_server.name} {consumer.address}"
         )
     else:
-        # Check if the AtomicShield agent is connected
-        engine = await fivem_conn_manager.get_engine_by_ip(request["ip"])
+        # if request["steam"].strip().lower() != "unknown":
+        #     engine = await fivem_conn_manager.get_engine_by_steam(request["steam"])
+        # Check if the AtomicShield agent is connected by ip
+        if not engine:
+            engine = await fivem_conn_manager.get_engine_by_ip(request["ip"])
+        else:
+            if not request["steam"] or request["steam"].lower() == "unknown":
+                response["message"] = "Please open Steam before joining the server."
+                logger.warning(
+                    f'Connection refused for "{request["name"]}" ({request["ip"]}): Steam not running'
+                )
+            else:
+                engine = await fivem_conn_manager.get_engine_by_steam(request["steam"])
+                if engine:
+                    logger.info(
+                        f"Engine found by steam: {engine.hwid.steam} ({request['steam']})"
+                    )
         if not engine:
             engine = await fivem_conn_manager.get_engine_by_24subnet(request["ip"])
             if engine:
@@ -247,6 +262,8 @@ async def handle_request_player_join(
                 cached_engine_data = await cache.aget(f"ac:engine:{request['ip']}")
                 if cached_engine_data:
                     response["join"] = True
+        else:
+            logger.info(f"Engine found by ip: {engine.address[0]}")
 
         response["join"] = not engine is None
         if not response["join"]:
@@ -257,6 +274,8 @@ async def handle_request_player_join(
                 f'Connection refused: "AtomicShield Agent is Not Connected" (requested ip: {request['ip']})'
             )
         else:
+            logger.info(f'Engine found for "{request["name"]}" ({request["ip"]})')
+            
             if len(request["steam"]) and request["steam"] != "Unknown":
                 engine.hwid.steam = request["steam"]
             if len(request["license"]) and request["license"] != "Unknown":
@@ -342,7 +361,7 @@ async def handle_request_player_join(
 
         # Store the given data from the FxServer
         engine.hwid.fivem_license = request["license"]
-        engine.hwid.steam = request["steam"]
+        # engine.hwid.steam = request["steam"]
         engine.hwid.discord_id = request["discord"]
 
         for token in request["token"]:

@@ -116,8 +116,8 @@ class AtomicEngineConsumer(AsyncWebsocketConsumer):
                     if last_beat == 0:
                         continue
                     elapsed = current_time - last_beat
-                    if elapsed > 30:
-                        logger.warning(f"Engine {self._hwid.username} ({self.address}) missed {heartbeat_type.label} heartbeat, disconnecting...")
+                    if elapsed > 35:
+                        logger.warning(f"Engine {self._hwid.username} ({self.address}) missed {heartbeat_type.label} heartbeat, kicking...")
                         await self.kick("AntiCheat stopped responding", log=False)
                         await self.close()
                         return

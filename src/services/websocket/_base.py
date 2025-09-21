@@ -234,20 +234,27 @@ class _ConnectionManager(object):
     async def get_engine_by_ip(self, scanner_ip: str) -> Optional[AtomicEngineConsumer]:
         await self._maybe_refresh_cache()
 
-        # fast map lookup under lock for snapshot consistency
         async with self._cache_lock:
             engine = self._engine_by_ip.get(scanner_ip)
             if engine:
+                if engine.connected_server and not engine.connected_server.closed:
+                    logger.warning(
+                        f"Duplicate IP attempt detected: {scanner_ip} already in use by {engine.hwid.username}"
+                    )
+                    return None  
                 return engine
 
-            # fallback: iterate in-memory small cache (rare)
             for eng, _ in self._engine_cache.values():
                 if (getattr(eng, "address", None) and eng.address and eng.address[0] == scanner_ip) or (
                     getattr(eng, "received_ip", None) and scanner_ip in eng.received_ip
                 ):
-                    return eng
+                  if eng.connected_server and not eng.connected_server.closed:
+                    logger.warning(
+                        f"Duplicate IP attempt detected: {scanner_ip} already in use by {eng.hwid.username}"
+                    )
+                    return None
+                return eng
 
-        # Redis fallback: return in-memory instance if channel present (can't construct engine object from Redis-only data)
         engines = await self.redis_manager.get_all_engines()
         for engine_data in engines:
             address = engine_data.get("address", [""])
@@ -255,8 +262,13 @@ class _ConnectionManager(object):
             if (address and address[0] == scanner_ip) or (scanner_ip in received_ip):
                 channel_name = engine_data.get("channel_name")
                 async with self._cache_lock:
-                    return self._engine_cache.get(channel_name, (None, None))[0]
-
+                    eng = self._engine_cache.get(channel_name, (None, None))[0]
+                    if eng and eng.connected_server and not eng.connected_server.closed:
+                        logger.warning(
+                            f"Duplicate IP attempt detected: {scanner_ip} already in use by {eng.hwid.username}"
+                        )
+                        return None
+                    return eng
         return None
 
     async def get_engine_by_24subnet(self, ip: str) -> Optional[AtomicEngineConsumer]:

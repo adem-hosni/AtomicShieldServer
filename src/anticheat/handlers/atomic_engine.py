@@ -55,17 +55,16 @@ async def handle_network_join(consumer: AtomicEngineConsumer, request: Dict[str,
     #     return consumer.close()
 
     request_hwid = request["hwid"]
-    # request_hwid_cache = request["cache"]
-    # if not len(request_hwid) or not len(request_hwid_cache):
-    if not len(request_hwid):
-        await consumer.send(
-            AtomicEnginePacketID.NETWORK_JOIN,
-            {"success": False, "message": "Unable to validate your machine!"},
-        )
-        logger.warning(
-            f"got Empty {'HWID,' if not len(request_hwid) else ''}{'HWID Cache' if not len([]) else ''} on {consumer.address}"
-        )
-        return consumer.close()
+    request_hwid_cache = request["cache"]
+    #if not len(request_hwid) or not len(request_hwid_cache):
+    #    await consumer.send(
+    #        AtomicEnginePacketID.NETWORK_JOIN,
+    #        {"success": False, "message": "Unable to validate your machine!"},
+    #    )
+    #    logger.warning(
+    #        f"got Empty {'HWID,' if not len(request_hwid) else ''}{'HWID Cache' if not len([]) else ''} on {consumer.address}"
+    #    )
+    #    return consumer.close()
 
     for component in request_hwid.keys():
         component_value = request_hwid[component]

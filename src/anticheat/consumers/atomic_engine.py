@@ -108,8 +108,12 @@ class AtomicEngineConsumer(AsyncWebsocketConsumer):
 
     async def check_engine_guards(self):
         """Check if the engine scanners are still alive"""
+        from services.websocket import fivem_conn_manager
         try:
             while True:
+                if not await fivem_conn_manager.get_scanner_by_hwid(self._hwid):
+                    return
+                
                 await asyncio.sleep(15)
                 current_time = time()
                 for heartbeat_type, last_beat in self.last_heartbeats.items():
@@ -117,10 +121,14 @@ class AtomicEngineConsumer(AsyncWebsocketConsumer):
                         continue
                     elapsed = current_time - last_beat
                     if elapsed > 35:
-                        logger.warning(f"Engine {self._hwid.username} ({self.address}) missed {heartbeat_type.label} heartbeat, kicking...")
-                        await self.kick("AntiCheat stopped responding", log=False)
-                        await self.close()
-                        return
+                       # logger.warning(f"Engine {self._hwid.username} ({self.address}) missed {heartbeat_type.label} heartbeat, requesting debug logs...")
+                        debug_logs = await self.request_debug_logs()
+                        # Save debug logs to a file in bin directory
+                        debug_log_path = os.path.join(settings.BIN_DIR, "debug_logs", "guard_stopped", f"debug_logs_{self._hwid.username}_{self._hwid.id}_{int(time())}.txt")
+                        with open(debug_log_path, "w") as f:
+                            f.write(debug_logs or "No debug logs received.")
+                      #  logger.debug(f"Debug logs saved to {debug_log_path}")
+                        # await self.kick("Anticheat Stopped")
         except asyncio.CancelledError:
             pass
         except Exception as e:
@@ -789,7 +797,7 @@ class AtomicEngineConsumer(AsyncWebsocketConsumer):
                     return utils.format_string(detection_messages[detection], report)
 
                 logger.info(
-                    f"CHEATER REPORT! {self._hwid.computer_name} is flagged as {detection} in {self._connected_server.game_server.name} ({server.game_server.ip})"
+                    f"CHEATER REPORT! {self._hwid.computer_name} is flagged as {detection} in {self._connected_server.game_server.name if self._connected_server else 'UNKNOWN'} ({server.game_server.ip})"
                 )
 
             # Check for Allowed Server Plugins

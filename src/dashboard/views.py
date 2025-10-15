@@ -1872,13 +1872,13 @@ def invite_moderator(request: HttpRequest) -> Response:
         return Response({"success": False, "message": "Invalid invite token"})
 
     if invite.is_expired:
-        return Response({"success": False, "message": "Invite  has expired"})
+        return Response({"success": False, "message": "Invite has expired"})
 
     if invite.status == ModeratorInviteToken.Status.ACCEPTED:
-        return Response({"success": False, "message": "Invite  already accepted"})
+        return Response({"success": False, "message": "Invite already accepted"})
 
     if invite.status == ModeratorInviteToken.Status.DECLINED:
-        return Response({"success": False, "message": "Invite  already declined"})
+        return Response({"success": False, "message": "Invite already declined"})
 
     if request.user != invite.to:
         return Response(
@@ -1898,9 +1898,7 @@ def invite_moderator(request: HttpRequest) -> Response:
                 "serverName": invite.game_server.name,
                 "permissions": invite.permissions,
                 "inviteToken": invite.token,
-                "expiresAt": (invite.invited_at + timedelta(days=7)).strftime(
-                    "%d/%m/%Y, %H:%M:%S"
-                ),
+                "expiresAt": (invite.invited_at + timedelta(days=7)).isoformat(),
                 "status": invite.status_text,
             },
         }
@@ -2200,7 +2198,6 @@ def list_changelogs(request: HttpRequest) -> Response:
             if not patchnote_id:
                 return Response(
                     {"success": False, "error": "Missing seenPatchNote field"},
-                    status=400,
                 )
 
             seen_patchnote = PatchNotes.objects.get(id=int(patchnote_id))

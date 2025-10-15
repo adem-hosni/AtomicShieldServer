@@ -46,25 +46,25 @@ async def handle_network_join(consumer: AtomicEngineConsumer, request: Dict[str,
         logger.warning(f"Missing player HWID on {consumer.address}")
         return consumer.close()
 
-    # if not utils.check_request_body_key(request, "cache", dict):
-    #     await consumer.send(
-    #         SafeEnginePacketID.NETWORK_JOIN,
-    #         {"success": False, "message": "Unable to validate your machine!"},
-    #     )
-    #     logger.warning(f"Missing player HWID on {consumer.address}")
-    #     return consumer.close()
+    if not utils.check_request_body_key(request, "cache", dict):
+        await consumer.send(
+            AtomicEnginePacketID.NETWORK_JOIN,
+            {"success": False, "message": "Unable to validate your machine!"},
+        )
+        logger.warning(f"Missing player HWID on {consumer.address}")
+        return consumer.close()
 
     request_hwid = request["hwid"]
-    request_hwid_cache = request["cache"]
-    #if not len(request_hwid) or not len(request_hwid_cache):
-    #    await consumer.send(
-    #        AtomicEnginePacketID.NETWORK_JOIN,
-    #        {"success": False, "message": "Unable to validate your machine!"},
-    #    )
-    #    logger.warning(
-    #        f"got Empty {'HWID,' if not len(request_hwid) else ''}{'HWID Cache' if not len([]) else ''} on {consumer.address}"
-    #    )
-    #    return consumer.close()
+    # request_hwid_cache = request["cache"]
+    if not len(request_hwid):
+        await consumer.send(
+            AtomicEnginePacketID.NETWORK_JOIN,
+            {"success": False, "message": "Unable to validate your machine!"},
+        )
+        logger.warning(
+            f"got Empty {'HWID,' if not len(request_hwid) else ''}{'HWID Cache' if not len([]) else ''} on {consumer.address}"
+        )
+        return consumer.close()
 
     for component in request_hwid.keys():
         component_value = request_hwid[component]
@@ -357,7 +357,8 @@ async def handle_cheat_detection(
         logger.warning(
             f"CHEATER REPORT, Missing detection screenshot in the packet from {consumer.address}"
         )
-        return await consumer.close()
+        # return await consumer.close()
+        return
 
     if not hasattr(consumer, "hwid"):
         logger.warning(f"CHEATER REPORT RECEIVED WITHOUT A CONSUMER HWID!")
@@ -601,4 +602,5 @@ async def handle_heartbeat(consumer: AtomicEngineConsumer, request: Dict[str, An
         return await consumer.close()
     
     heartbeat_type = AtomicHeartbeatType(heartbeat_type)
+    # logger.debug(f"Heartbeat {heartbeat_type.name} received from {f'{consumer.hwid.username} - {consumer.hwid.id}' if consumer.hwid else '<Unknown>'} ({consumer.address})")
     consumer.last_heartbeats[heartbeat_type] = time()

@@ -111,9 +111,10 @@ class AtomicEngineConsumer(AsyncWebsocketConsumer):
         from services.websocket import fivem_conn_manager
         try:
             while True:
-                if not await fivem_conn_manager.get_scanner_by_hwid(self._hwid):
+                if not await fivem_conn_manager.get_scanner_by_hwid(self._hwid, True):
+                    logger.warning(f"Engine {self._hwid.username} - {self._hwid.id} disconnected, stopping guard checks")
                     return
-                
+
                 await asyncio.sleep(15)
                 current_time = time()
                 for heartbeat_type, last_beat in self.last_heartbeats.items():
@@ -121,14 +122,10 @@ class AtomicEngineConsumer(AsyncWebsocketConsumer):
                         continue
                     elapsed = current_time - last_beat
                     if elapsed > 35:
-                       # logger.warning(f"Engine {self._hwid.username} ({self.address}) missed {heartbeat_type.label} heartbeat, requesting debug logs...")
-                        debug_logs = await self.request_debug_logs()
-                        # Save debug logs to a file in bin directory
-                        debug_log_path = os.path.join(settings.BIN_DIR, "debug_logs", "guard_stopped", f"debug_logs_{self._hwid.username}_{self._hwid.id}_{int(time())}.txt")
-                        with open(debug_log_path, "w") as f:
-                            f.write(debug_logs or "No debug logs received.")
-                      #  logger.debug(f"Debug logs saved to {debug_log_path}")
+                        logger.warning(f"Engine heartbeat {heartbeat_type.name} missed for {self._hwid.username} - {self._hwid.id} ({elapsed}s)")
                         # await self.kick("Anticheat Stopped")
+                    else:
+                        await fivem_conn_manager.redis_manager.update_heartbeat(self.channel_name)
         except asyncio.CancelledError:
             pass
         except Exception as e:

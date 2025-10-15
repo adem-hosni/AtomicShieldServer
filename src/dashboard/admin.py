@@ -54,12 +54,30 @@ class UserAdmin(BaseUserAdmin, ModelAdmin):
     list_display = ("username", "email", "date_joined", "last_login", "is_staff")
     list_display_links = list_display
 
+    autocomplete_fields = ["groups", "user_permissions"]
+    fieldsets = (
+        (_("Account Info"), {"fields": ("username", "email", "password", "date_joined", "last_login"), "classes": ("section", "tab-account")}),
+        (_("Permissions"), {"fields": ("is_staff", "is_active", "is_superuser", "groups", "user_permissions"), "classes": ("section", "tab-perms")}),
+
+        (_("Personal"), {"fields": ("first_name", "last_name"), "classes": ("section", "tab-personal")}),
+
+    )
+    list_filter_submit = True
+    list_filter_sheet = True
+
     def has_delete_permission(self, request, obj=...):
         return False
 
 
 @admin.register(Group)
-class GroupAdmin(BaseGroupAdmin, ModelAdmin): ...
+class GroupAdmin(BaseGroupAdmin, ModelAdmin):
+    autocomplete_fields = ["permissions"]
+    fieldsets = (
+        (_("Group Info"), {"fields": ("name", "permissions"), "classes": ("section", "tab-group")}),
+
+    )
+    list_filter_submit = True
+    list_filter_sheet = True
 
 
 class GameServerAdmin(ModelAdmin):
@@ -146,12 +164,15 @@ class GameServerAdmin(ModelAdmin):
     def display_online(self, obj: GameServer):
         return bool(fivem_conn_manager.get_server_by_ip(obj.ip))
 
-    # def formfield_for_manytomany(self, db_field, request, **kwargs):
-    #     if db_field.name == "subscriptions":
-    #         kwargs["queryset"] = ServerSubscription.objects.filter(
-    #             Q(owner=self.owner) | Q(owner__isnull=True)
-    #         )
-    #     return super().formfield_for_manytomany(db_field, request, **kwargs)
+    autocomplete_fields = ["owner", "subscriptions"]
+    fieldsets = (
+        (_("General"), {"fields": ("name", "ip", "owner", "type"), "classes": ("section", "tab-general")}),
+
+        (_("Subscriptions"), {"fields": ("subscriptions",), "classes": ("section", "tab-subscriptions")}),
+
+    )
+    list_filter_submit = True
+    list_filter_sheet = True
 
 
 class AnnouncementAdmin(ModelAdmin):
@@ -176,6 +197,14 @@ class AnnouncementAdmin(ModelAdmin):
     @admin.display(description="Viewed by")
     def display_views(self, obj: Announcements):
         return obj.seens.count()
+
+    autocomplete_fields = ["author", "seens"]
+    fieldsets = (
+        (_("Announcement"), {"fields": ("title", "author", "announcement", "seens"), "classes": ("section", "tab-announcement")}),
+
+    )
+    list_filter_submit = True
+    list_filter_sheet = True
 
 
 class ReleaseAssetInline(TabularInline):
@@ -232,6 +261,14 @@ class PatchNotesAdmin(ModelAdmin):
     def display_views(self, obj: Announcements):
         return obj.seens.count()
 
+    autocomplete_fields = ["author", "seens"]
+    fieldsets = (
+        (_("Patch Notes"), {"fields": ("version", "author", "description", "seens"), "classes": ("section", "tab-patchnotes")}),
+
+    )
+    list_filter_submit = True
+    list_filter_sheet = True
+
 
 class ServerSubscriptionAdmin(ModelAdmin):
     form = SubscriptionCustomForm
@@ -273,6 +310,14 @@ class ServerSubscriptionAdmin(ModelAdmin):
                     ),
                 )
         super().save_model(request, obj, form, change)
+
+    autocomplete_fields = ["owner"]
+    fieldsets = (
+        (_("Subscription Info"), {"fields": ("name", "key", "owner", "plan", "remaining", "status", "type", "started_at"), "classes": ("section", "tab-subscription")}),
+
+    )
+    list_filter_submit = True
+    list_filter_sheet = True
 
 
 class GameServerModeratorAdmin(ModelAdmin):
@@ -341,6 +386,22 @@ class GameServerModeratorAdmin(ModelAdmin):
 
     permission_summary.short_description = "Permissions"
 
+    autocomplete_fields = ["user", "game_server"]
+    fieldsets = (
+        (_("Platform Account"), {"fields": ("user", "status", "last_login", "game_server"), "classes": ("section", "tab-account")}),
+
+        (_("Dashboard Access"), {"fields": ("can_view_dashboard", "can_view_analytics"), "classes": ("collapse", "section", "tab-dashboard")}),
+
+        (_("Player Moderation"), {"fields": ("can_kick_players", "can_ban_players", "can_screenshot_players", "can_view_anticheat_logs"), "classes": ("collapse", "section", "tab-moderation")}),
+
+        (_("System Configuration"), {"fields": ("can_manage_configuration", "can_manage_webhook_settings"), "classes": ("collapse", "section", "tab-config")}),
+
+        (_("Advanced Features"), {"fields": ("can_access_interactive_map", "can_access_multi_stream", "can_manage_moderators"), "classes": ("collapse", "section", "tab-advanced")}),
+
+    )
+    list_filter_submit = True
+    list_filter_sheet = True
+
 
 @admin.register(ModeratorInviteToken)
 class ModeratorInviteTokenAdmin(ModelAdmin):
@@ -371,6 +432,14 @@ class ModeratorInviteTokenAdmin(ModelAdmin):
         return ", ".join(obj.permissions) if obj.permissions else "(none)"
 
     permissions_display.short_description = "Permissions"
+
+    autocomplete_fields = ["invited_by", "to"]
+    fieldsets = (
+        (_("Invite Info"), {"fields": ("invited_by", "to", "permissions", "status", "invited_at", "is_expired"), "classes": ("section", "tab-invite")}),
+
+    )
+    list_filter_submit = True
+    list_filter_sheet = True
 
 
 @admin.register(AuditLogEntry)

@@ -216,6 +216,13 @@ class _ConnectionManager(object):
 
     async def get_engine_by_steam(self, steam: str) -> Optional[AtomicEngineConsumer]:
         try:
+            if not steam or steam.lower() == "unknown":
+                logger.debug(f"get_engine_by_steam() called with invalid steam='{steam}'")
+                return None
+
+            logger.debug(f"get_engine_by_steam(): looking up steam='{steam}' in HWID DB")
+
+            # Try to fetch HWID from DB
             target_hwid = (
                 await HWID.objects.filter(steam=steam)
                 .order_by("-last_seen")
@@ -223,38 +230,97 @@ class _ConnectionManager(object):
             )
 
             if not target_hwid:
+                logger.debug(f"get_engine_by_steam(): no HWID entry found in DB for steam='{steam}'")
                 return None
 
-            return await self.get_scanner_by_hwid(target_hwid)
+            logger.debug(
+                f"get_engine_by_steam(): found HWID in DB for steam='{steam}' "
+                f"(username='{target_hwid.username}', id={target_hwid.id})"
+            )
+
+            # Try to map HWID -> active engine
+            engine = await self.get_scanner_by_hwid(target_hwid)
+            if engine:
+                logger.debug(
+                    f"get_engine_by_steam(): mapped HWID id={target_hwid.id} "
+                    f"to active engine at {engine.address}"
+                )
+                return engine
+            else:
+                logger.debug(
+                    f"get_engine_by_steam(): HWID id={target_hwid.id} found, "
+                    f"but no active engine connection (agent might not be running)"
+                )
+                return None
 
         except Exception as err:
-            logger.error(f"An error occurred while retrieving engine by steam in get_engine_by_steam(): {err}")
+            logger.error(
+                f"❌ get_engine_by_steam(): error while retrieving engine by steam='{steam}': {err}"
+            )
             return None
+
+    # function to retreive multiple engines by 24subnet or partial ip match
+    async def get_multiple_engines_by_24subnet(self, ip) -> List[AtomicEngineConsumer]:
+        await self._maybe_refresh_cache()
+        found_engines = []
+        async with self._cache_lock:
+            for engine, _ in self._engine_cache.values():
+                try:
+                    if getattr(engine, "address", None) and engine.address and utils.is_same_subnet_24(ip, engine.address[0]):
+                        found_engines.append(engine)
+                except Exception:
+                    continue
+        return found_engines
+
+
+    async def get_multiple_engines_by_ip(self, ip) -> List[AtomicEngineConsumer]:
+        await self._maybe_refresh_cache()
+        found_engines = []
+        async with self._cache_lock:
+            for engine, _ in self._engine_cache.values():
+                try:
+                    if (getattr(engine, "address", None) and engine.address and engine.address[0] in ip) or (
+                        getattr(engine, "received_ip", None) and any(rip in ip for rip in engine.received_ip)
+                    ):
+                        found_engines.append(engine)
+                except Exception:
+                    continue
+        return found_engines
+
+        if found_engines:
+            return found_engines
+
+        # Redis fallback
+        engines = await self.redis_manager.get_all_engines()
+        for engine_data in engines:
+            address = engine_data.get("address", [""])
+            received_ip = engine_data.get("received_ip", [])
+            if (address and address[0] in ip) or any(rip in ip for rip in received_ip):
+                channel_name = engine_data.get("channel_name")
+                async with self._cache_lock:
+                    engine = self._engine_cache.get(channel_name, (None, None))[0]
+                    if engine and engine not in found_engines:
+                        found_engines.append(engine)
+
+        return found_engines
 
     async def get_engine_by_ip(self, scanner_ip: str) -> Optional[AtomicEngineConsumer]:
         await self._maybe_refresh_cache()
 
+        # fast map lookup under lock for snapshot consistency
         async with self._cache_lock:
             engine = self._engine_by_ip.get(scanner_ip)
             if engine:
-                if engine.connected_server and not engine.connected_server.closed:
-                    logger.warning(
-                        f"Duplicate IP attempt detected: {scanner_ip} already in use by {engine.hwid.username}"
-                    )
-                    return None  
                 return engine
 
+            # fallback: iterate in-memory small cache (rare)
             for eng, _ in self._engine_cache.values():
                 if (getattr(eng, "address", None) and eng.address and eng.address[0] == scanner_ip) or (
                     getattr(eng, "received_ip", None) and scanner_ip in eng.received_ip
                 ):
-                  if eng.connected_server and not eng.connected_server.closed:
-                    logger.warning(
-                        f"Duplicate IP attempt detected: {scanner_ip} already in use by {eng.hwid.username}"
-                    )
-                    return None
-                return eng
+                    return eng
 
+        # Redis fallback: return in-memory instance if channel present (can't construct engine object from Redis-only data)
         engines = await self.redis_manager.get_all_engines()
         for engine_data in engines:
             address = engine_data.get("address", [""])
@@ -262,13 +328,8 @@ class _ConnectionManager(object):
             if (address and address[0] == scanner_ip) or (scanner_ip in received_ip):
                 channel_name = engine_data.get("channel_name")
                 async with self._cache_lock:
-                    eng = self._engine_cache.get(channel_name, (None, None))[0]
-                    if eng and eng.connected_server and not eng.connected_server.closed:
-                        logger.warning(
-                            f"Duplicate IP attempt detected: {scanner_ip} already in use by {eng.hwid.username}"
-                        )
-                        return None
-                    return eng
+                    return self._engine_cache.get(channel_name, (None, None))[0]
+
         return None
 
     async def get_engine_by_24subnet(self, ip: str) -> Optional[AtomicEngineConsumer]:

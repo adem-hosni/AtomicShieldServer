@@ -19,6 +19,7 @@ class AtomicServerPacketID(Enum):
 class AtomicEngineHardKickReason(models.IntegerChoices):
     GUARD_TIMEDOUT = 1, "Guard Timed Out"
     PROCESS_TERMINATED = 2, "Process Terminated"
+    DEBUGGER_DETECTED = 3, "Debugger Detected"
 
 class AtomicHeartbeatType(models.IntegerChoices):
     HEURISTIC_GUARD = 1, "Heuristic Guard"

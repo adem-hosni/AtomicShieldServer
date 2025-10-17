@@ -220,18 +220,15 @@ async def handle_network_join(consumer: AtomicEngineConsumer, request: Dict[str,
                 f"{request_hwid['username']}'s engine HWID updated (retreived from cache) components ({', '.join(changed_fields)}), Spoofed HWID?"
             )
 
-    old_engine = await fivem_conn_manager.get_engine_by_ip(consumer.address[0])
+    # old_engine = await fivem_conn_manager.get_engine_by_ip(consumer.address[0])
+    old_engine = await fivem_conn_manager.get_engine_by_hwid(hwid)
     if old_engine:
-        await fivem_conn_manager.remove_safe_scanner(old_engine)
+        logger.info(f"Found existing engine for HWID {hwid.username} - {hwid.id}, disconnecting old engine...")
+        await fivem_conn_manager.remove_engine(old_engine)
         await old_engine.shutdown()
         await old_engine.close(1000, "Another agent connected to the network")
-        logger.warning(
-            f"{hwid.username if hwid else '<Unknown>'} {consumer.address} disconnected from network, another engine connected to the network"
-        )
 
-    logger.info(
-        f"{request_hwid['username']}'s engine asking for network join (Computer Name: \"{hwid.computer_name}\", Bios Version: \"{hwid.bios_version}\", CPU ID: \"{hwid.cpuid}\", Motherboard Serial: \"{hwid.motherboard_serial}\", Steam: \"{hwid.steam}\") from {consumer.address}"
-    )
+    logger.info(f"{hwid.username}'s engine is joining the network...")
 
     # Join the consumer to the network
     consumer.group_name = WebSocketGroupNames.SAFE_ENGINES.value
@@ -325,7 +322,7 @@ async def handle_scanner_disconnect(consumer: AtomicEngineConsumer, code):
     try:
         if consumer.connected_server:
             asyncio.create_task(delayed_kick_check(consumer, code))
-        await fivem_conn_manager.remove_safe_scanner(consumer)
+        await fivem_conn_manager.remove_engine(consumer)
     except Exception as e:
         logger.error(f"Error handling scanner disconnect: {e}")
 

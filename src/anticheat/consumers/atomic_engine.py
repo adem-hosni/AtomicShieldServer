@@ -111,7 +111,7 @@ class AtomicEngineConsumer(AsyncWebsocketConsumer):
         from services.websocket import fivem_conn_manager
         try:
             while True:
-                if not await fivem_conn_manager.get_scanner_by_hwid(self._hwid, True):
+                if not await fivem_conn_manager.get_engine_by_hwid(self._hwid, True):
                     logger.warning(f"Engine {self._hwid.username} - {self._hwid.id} disconnected, stopping guard checks")
                     return
 
@@ -469,6 +469,8 @@ class AtomicEngineConsumer(AsyncWebsocketConsumer):
                 details=f"Kicked player {self._hwid.username} - {self._hwid.id} | Reason: {reason or 'No reason provided'}",
                 category=AuditLogEntry.Category.PLAYER,
             )
+        
+        logger.debug(f"Attempting to kick {self._hwid.username} ({self._hwid.id}) - {reason} from server...")
 
         if self._connected_server:
             logger.info(

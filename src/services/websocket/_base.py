@@ -198,7 +198,7 @@ class _ConnectionManager(object):
             self._server_cache.pop(server.channel_name, None)
         return await self.redis_manager.remove_server(server.channel_name)
 
-    async def remove_safe_scanner(self, scanner: AtomicEngineConsumer) -> bool:
+    async def remove_engine(self, scanner: AtomicEngineConsumer) -> bool:
         async with self._cache_lock:
             removed = self._engine_cache.pop(scanner.channel_name, None)
             # If removed, also remove index entries that pointed to it
@@ -212,7 +212,7 @@ class _ConnectionManager(object):
         return bool(await self.get_engine_by_ip(scanner_ip))
 
     async def is_engine_connected_by_hwid(self, hwid: HWID) -> bool:
-        return bool(await self.get_scanner_by_hwid(hwid))
+        return bool(await self.get_engine_by_hwid(hwid))
 
     async def get_engine_by_steam(self, steam: str) -> Optional[AtomicEngineConsumer]:
         try:
@@ -239,7 +239,7 @@ class _ConnectionManager(object):
             )
 
             # Try to map HWID -> active engine
-            engine = await self.get_scanner_by_hwid(target_hwid)
+            engine = await self.get_engine_by_hwid(target_hwid)
             if engine:
                 logger.debug(
                     f"get_engine_by_steam(): mapped HWID id={target_hwid.id} "
@@ -353,7 +353,7 @@ class _ConnectionManager(object):
                     return self._engine_cache.get(channel_name, (None, None))[0]
         return None
 
-    async def get_scanner_by_hwid(self, hwid: HWID, only_in_memory: Optional[bool] = False) -> Optional[AtomicEngineConsumer]:
+    async def get_engine_by_hwid(self, hwid: HWID, only_in_memory: Optional[bool] = False) -> Optional[AtomicEngineConsumer]:
         await self._maybe_refresh_cache()
         hwid_str = str(hwid.id)
 

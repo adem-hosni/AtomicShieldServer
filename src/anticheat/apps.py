@@ -10,6 +10,6 @@ class ServerManagerConfig(AppConfig):
     def ready(self):
         from services.websocket import fivem_conn_manager
 
-        # async_to_sync(fivem_conn_manager.redis_manager.clear_all)()
+        async_to_sync(fivem_conn_manager.redis_manager.clear_all)()
 
         return super().ready()

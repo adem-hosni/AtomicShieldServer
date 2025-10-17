@@ -64,7 +64,7 @@ logger = logging.getLogger(__name__)
 def _get_engine_for_hwid(hwid: HWID, only_in_memory: bool = False):
     """Safe helper to fetch the in-memory engine wrapper for a given HWID."""
     try:
-        return async_to_sync(fivem_conn_manager.get_scanner_by_hwid)(hwid, only_in_memory)
+        return async_to_sync(fivem_conn_manager.get_engine_by_hwid)(hwid, only_in_memory)
     except Exception:
         logger.exception("Failed to fetch engine for HWID %s", getattr(hwid, "id", hwid))
         return None
@@ -190,12 +190,13 @@ class ClientHWIDAdmin(SimpleHistoryAdmin, ModelAdmin):
                 servers = async_to_sync(fivem_conn_manager.get_servers)()
                 return [(s.game_server.id, s.game_server.name) for s in servers]
             except Exception:
-                logger.exception("ConnectedServerFilter.lookups failed")
+                logger.error("ConnectedServerFilter.lookups failed")
                 return []
 
         def queryset(self, request, queryset):
             sid = self.value()
             if not sid:
+                logger.debug("ConnectedServerFilter: no sid value provided")
                 return queryset
             try:
                 sid_int = int(sid)
@@ -210,7 +211,7 @@ class ClientHWIDAdmin(SimpleHistoryAdmin, ModelAdmin):
                     matching.append(obj.id)
             return queryset.filter(id__in=matching)
 
-    list_filter = ["last_seen", OnlineFilter, ConnectedServerFilter]
+    list_filter = [OnlineFilter, ConnectedServerFilter, "last_seen"]
 
     # ---- Actions -----
     @admin.action(description="📥 Download debug logs")
@@ -322,7 +323,7 @@ class ClientHWIDAdmin(SimpleHistoryAdmin, ModelAdmin):
             return _("Not Connected")
         server = getattr(engine, "connected_server", None)
         if server and server.game_server:
-            return format_html('<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm">{}</span>', server.game_server.name)
+            return server.game_server.name
         return _("No Server Connected")
 
     @display(description="Online", boolean=True)

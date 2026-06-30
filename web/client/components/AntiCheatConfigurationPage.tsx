@@ -2788,7 +2788,7 @@ export function AntiCheatConfigurationPage() {
                       description={configuration.subtitle}
                       tooltip={configuration.tip}
                     >
-                      <Textarea
+                      <Input
                         value={configuration.value}
                         onChange={(e) => {
                           updateConfigurationValue(

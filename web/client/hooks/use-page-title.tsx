@@ -30,14 +30,14 @@ export function useFavicon() {
     if (favicon) {
       // Use the AtomicShield logo from CDN as favicon
       favicon.href =
-        "https://media.discordapp.net/attachments/1358161868450959550/1416397323122249858/atomic-removebg-preview_2_2.png?ex=68c6b24d&is=68c560cd&hm=4385610f35744f1ce4d7958878852d98c4a3b68df11f9e48ab200f1d8562bc3f&=&format=webp&quality=lossless&width=40&height=40";
+        "https://cdn.builder.io/api/v1/image/assets%2Fded3bb25d27f4acca47097c7c5d9349e%2F9c3bb44456604be2871a4b72bb7f176b?format=webp&width=32";
     } else {
       // Create favicon if it doesn't exist
       const newFavicon = document.createElement("link");
       newFavicon.rel = "icon";
       newFavicon.type = "image/webp";
       newFavicon.href =
-        "https://media.discordapp.net/attachments/1358161868450959550/1416397323122249858/atomic-removebg-preview_2_2.png?ex=68c6b24d&is=68c560cd&hm=4385610f35744f1ce4d7958878852d98c4a3b68df11f9e48ab200f1d8562bc3f&=&format=webp&quality=lossless&width=40&height=40";
+        "https://cdn.builder.io/api/v1/image/assets%2Fded3bb25d27f4acca47097c7c5d9349e%2F9c3bb44456604be2871a4b72bb7f176b?format=webp&width=32";
       document.head.appendChild(newFavicon);
     }
   }, []);

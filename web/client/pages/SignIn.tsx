@@ -93,9 +93,10 @@ const SignIn = () => {
   const handleSocialAuth = (provider: string) => {
     const apiUrl = import.meta.env.VITE_API_URL || "/api";
 
-if (provider === "discord") {
-  const state = encodeURIComponent(returnUrl);
-  window.location.href = `${apiUrl}/auth/discord/login?returnUrl=${state}`;
+    if (provider === "discord") {
+      const backendRedirectUri =
+        "http://localhost:8000/api/auth/discord/callback";
+      window.location.href = `${apiUrl}/auth/discord/login?redirect=${encodeURIComponent(backendRedirectUri)}&returnUrl=${encodeURIComponent(returnUrl)}`;
     } else if (provider === "google") {
       const state = encodeURIComponent(returnUrl);
       window.location.href = `${apiUrl}/auth/google/login?returnUrl=${state}`;

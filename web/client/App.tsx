@@ -58,7 +58,6 @@ import SignUp from "./pages/SignUp";
 import ForgotPassword from "./pages/ForgotPassword";
 import GoogleAuthCallback from "./pages/GoogleAuthCallback";
 import OAuthJsonCallback from "./pages/OAuthJsonCallback";
-import { ArrowRight } from "lucide-react"; // icon
 
 const queryClient = new QueryClient();
 
@@ -92,26 +91,9 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => (
   </div>
 );
 
-
-
-export const PromoBanner = () => {
-  return (
-    <div className="fixed top-0 left-0 right-0 w-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-sm font-medium px-4 py-2 flex items-center justify-center gap-2 shadow-lg z-[9999]">
-      <span>
-        🎉 Join our Discord to get <strong>50% discount code</strong> – Hurry up!
-      </span>
-      <button
-        onClick={() => window.open("https://discord.gg/CYjSj5ne", "_blank")}
-        className="flex items-center gap-1 hover:underline hover:opacity-90 transition"
-      >
-        Join Now <ArrowRight className="w-4 h-4" />
-      </button>
-    </div>
-  );
-};
-
-
 const App = () => {
+  // Initialize favicon with AtomicShield logo
+  useFavicon();
 
   return (
     <HelmetProvider>
@@ -119,7 +101,6 @@ const App = () => {
       <AuthProvider>
         <LanguageProvider>
           <TooltipProvider>
-      {/*     <PromoBanner />*/}
             <Toaster />
             <Sonner />
             <BrowserRouter>

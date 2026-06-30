@@ -3,7 +3,7 @@ import { RequestHandler } from "express";
 // Discord OAuth configuration
 const DISCORD_CLIENT_ID = "1404072529684861058";
 const DISCORD_CLIENT_SECRET = "6_Ne6-v2aaYWHLzeSVXHBAtchTnnYD2W";
-const DISCORD_REDIRECT_URI = "http://atomic-shield.com/api/auth/discord/callback";
+const DISCORD_REDIRECT_URI = "http://localhost:8000/api/auth/discord/callback";
 
 interface DiscordUser {
   id: string;

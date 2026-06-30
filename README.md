@@ -79,8 +79,8 @@ AtomicShield Server is the **central command hub** for the AtomicShield anti-che
 ### Installation
 
 ```bash
-# Clone the repository
-git clone https://github.com/your-org/AtomicShieldServer.git
+# Clone the repository (with submodules)
+git clone --recurse-submodules https://github.com/adem-hosni/AtomicShieldServer.git
 cd AtomicShieldServer
 
 # Create and activate virtual environment

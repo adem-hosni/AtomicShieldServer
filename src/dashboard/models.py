@@ -1,5 +1,6 @@
 import logging
 import secrets
+from asgiref.sync import async_to_sync
 from django.db import models
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
@@ -9,10 +10,10 @@ from django.utils import timezone
 from django.db.models import Q
 from datetime import datetime, timedelta
 from utils import represent_timedelta_string
-from anticheat.consumers.safe_server import SafeServerConsumer
+from anticheat.consumers.atomic_server import AtomicServerConsumer
 from django.contrib.auth.models import User
 from asgiref.sync import sync_to_async
-from guards import fivem_guard
+from services.websocket import fivem_conn_manager
 from anticheat.models import AntiCheatConfigurations, AntiCheatConfigTemplate
 from shared.models import ServerType
 from typing import Dict, Any, Union, List, Optional
@@ -214,8 +215,12 @@ class GameServer(models.Model):
         """
         return await sync_to_async(lambda: self.configurations)()
 
+    async def aget_configurations(self) -> AntiCheatConfigurations:
+        return await sync_to_async(lambda: self.configurations)()
+
+
     def has_permission_for(self, user: User, permission: Union[str, Any]):
-        if user == self.owner:
+        if user == self.owner or user.is_superuser:
             return True
         try:
             target_moderator = self.moderators.get(user__id=user.id)
@@ -247,20 +252,27 @@ class GameServer(models.Model):
 
     @property
     def is_online(self) -> bool:
-        return fivem_guard.is_server_running(self.ip)
+        return async_to_sync(fivem_conn_manager.is_server_running)(self.ip)
 
     @property
-    def active_players(self) -> List[SafeServerConsumer]:
+    async def active_players(self) -> List[AtomicServerConsumer]:
         active_players = []
-        for engine in fivem_guard.engines:
-            if engine.connected_server:
-                if engine.connected_server.game_server == self:
-                    active_players.append(engine)
+        engines = await fivem_conn_manager.get_engines()  # async
+        for engine in engines:
+            if engine.connected_server and engine.connected_server.game_server == self:
+                active_players.append(engine)
         return active_players
 
     @property
-    def active_player_count(self) -> int:
-        return len(self.active_players)
+    async def active_player_count(self) -> int:
+        return len(await self.active_players)
+
+    async def aget_active_player_count(self) -> int:
+        return len(await self.active_players)
+
+    def get_active_player_count(self) -> int:
+        return async_to_sync(self.aget_active_player_count)()
+
 
     class Meta:
         db_table = "gameservers"
@@ -282,6 +294,10 @@ class GameServer(models.Model):
 
     @classmethod
     def get_for_user(cls, server_id: int, user, **kwargs):
+        if user.is_superuser:
+            return cls.objects.get(
+                Q(id=server_id, **kwargs)
+            )
         return cls.objects.get(
             Q(id=server_id, **kwargs) &
             (
@@ -292,6 +308,11 @@ class GameServer(models.Model):
 
     @classmethod
     def get_user_servers(cls, user, **kwargs):
+        if user.is_superuser:
+            return cls.objects.filter(
+                Q(**kwargs)
+                & Q(id__in=[record.id for record in cls.objects.all() if fivem_conn_manager.get_server_by_ip(record.ip)])
+            )
         return cls.objects.filter(
             Q(**kwargs) & (
                 Q(owner=user) |
@@ -407,6 +428,7 @@ class GameServerModerator(models.Model):
         CAN_VIEW_ANALYTICS = "view_analytics", "Can View Analytics"
         CAN_KICK_PLAYERS = "kick_players", "Can Kick Players"
         CAN_BAN_PLAYERS = "ban_players", "Can Ban Players"
+        CAN_SCREENSHOT_PLAYERS = "screenshot_players", "Can Screenshot Players"
         CAN_VIEW_ANTICHEAT_LOGS = "view_anticheat_logs", "Can View Anticheat Logs"
         CAN_MANAGE_CONFIGURATION = "manage_configuration", "Can Manage Configuration"
         CAN_MANAGE_WEBHOOK_SETTINGS = (
@@ -431,6 +453,7 @@ class GameServerModerator(models.Model):
     can_view_analytics = models.BooleanField(default=False)
     can_kick_players = models.BooleanField(default=False)
     can_ban_players = models.BooleanField(default=False)
+    can_screenshot_players = models.BooleanField(default=False)
     can_view_anticheat_logs = models.BooleanField(default=False)
     can_manage_configuration = models.BooleanField(default=False)
     can_manage_webhook_settings = models.BooleanField(default=False)
@@ -456,14 +479,12 @@ class GameServerModerator(models.Model):
             perms.append(GameServerModerator.Permissions.CAN_KICK_PLAYERS)
         if self.can_ban_players:
             perms.append(GameServerModerator.Permissions.CAN_BAN_PLAYERS)
+        if self.can_screenshot_players:
+            perms.append(GameServerModerator.Permissions.CAN_SCREENSHOT_PLAYERS)
         if self.can_view_anticheat_logs:
             perms.append(GameServerModerator.Permissions.CAN_VIEW_ANTICHEAT_LOGS)
         if self.can_manage_configuration:
             perms.append(GameServerModerator.Permissions.CAN_MANAGE_CONFIGURATION)
-        if self.can_manage_webhook_settings:
-            perms.append(GameServerModerator.Permissions.CAN_MANAGE_WEBHOOK_SETTINGS)
-        if self.can_access_interactive_map:
-            perms.append(GameServerModerator.Permissions.CAN_ACCESS_INTERACTIVE_MAP)
         if self.can_access_multi_stream:
             perms.append(GameServerModerator.Permissions.CAN_ACCESS_MULTI_STREAM)
         if self.can_manage_moderators:

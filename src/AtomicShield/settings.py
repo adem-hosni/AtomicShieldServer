@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 
 from pathlib import Path
 from django.utils.translation import gettext_lazy as _
+from datetime import timedelta
 from django.templatetags.static import static
 import os
 
@@ -28,7 +29,7 @@ CONFIG_DIR = os.path.join(BASE_DIR.parent, "config")
 SECRET_KEY = "mr9y5jf)fp5^==jhccttp!d!9&hh@57@dbb+0-idp!-d!i0%r+"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 # Bin directory
 if DEBUG:
@@ -36,26 +37,29 @@ if DEBUG:
 else:
     BIN_DIR = os.path.join(BASE_DIR.parent, "bin", "production")
 
-#ALLOWED_HOSTS = [
-#    "*",
-#    ".atomic-shield.com",
-#]
-ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
+ALLOWED_HOSTS = [
+    "*",
+    ".atomic-shield.com",
+    "atomic-shield.com",
+]
 
 CSRF_TRUSTED_ORIGINS = (
     [
-        "http://localhost:8080",
         "https://atomic-shield.com",
         "https://www.atomic-shield.com",
+        "http://31.97.180.157:8000",
     ]
     if not DEBUG
     else ["http://31.97.180.157:553"]
 )
 
+CORS_ALLOWED_ORIGINS = CSRF_TRUSTED_ORIGINS
+CORS_ALLOW_ALL_ORIGINS = True
 # Application definition
 
 INSTALLED_APPS = [
-    "daphne",
+    # "daphne",
+    "channels",
     "unfold",
     "django.contrib.admin",
     "django.contrib.auth",
@@ -81,21 +85,22 @@ INSTALLED_APPS = [
     "rest_framework.authtoken",
     "dj_rest_auth",
     "dj_rest_auth.registration",
-    "allauth",
-    "allauth.account",
-    "allauth.socialaccount",
-    "allauth.socialaccount.providers.discord",
+    # "allauth",
+    # "allauth.account",
+    # "allauth.socialaccount",
+    # "allauth.socialaccount.providers.discord",
     "rest_framework_simplejwt",
     "corsheaders",
 ]
 
-
 SITE_ID = 1
 ASGI_APPLICATION = "AtomicShield.asgi.application"
 
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
+
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
-    "allauth.account.middleware.AccountMiddleware",
+    # "allauth.account.middleware.AccountMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django_hosts.middleware.HostsRequestMiddleware",
     "django_browser_reload.middleware.BrowserReloadMiddleware",  # Debug
@@ -107,66 +112,26 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "simple_history.middleware.HistoryRequestMiddleware",
     "AtomicShield.middleware.ExceptionHandlerMiddleware",
-    # "whitenoise.middleware.WhiteNoiseMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django_hosts.middleware.HostsResponseMiddleware",
 ]
 
-AUTHENTICATION_BACKENDS = [
-    "django.contrib.auth.backends.ModelBackend",
-    "allauth.account.auth_backends.AuthenticationBackend",
-]
-
-CORS_ALLOW_ALL_ORIGINS = True
-
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:8080"
-]
-CORS_ALLOW_CREDENTIALS = True
-
-DISCORD_CLIENT_ID="1404072529684861058"
-DISCORD_CLIENT_SECRET="6GZ-gYHXbOxg4F3wWNh7o_hX8whrE0TC"
-DISCORD_REDIRECT_URI="http://localhost:8000/api/auth/discord/callback"
-
-GOOGLE_CLIENT_ID = "1091637385561-5l7jpbubori3m6jekd6nn1bu7g999p3f.apps.googleusercontent.com"
-GOOGLE_CLIENT_SECRET = "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"
-GOOGLE_REDIRECT_URI = "http://localhost:8000/api/auth/google/callback"
-
-REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
-    ),
-}
-
-REST_USE_JWT = True
-
-ACCOUNT_EMAIL_VERIFICATION = "optional"
-ACCOUNT_LOGIN_METHODS = ["email", "username"]
-ACCOUNT_SIGNUP_FIELDS = ["email", "username*", "password1*", "password2*"]
-
-SOCIALACCOUNT_PROVIDERS = {
-    "discord": {
-        "APP": {
-            "client_id": "YOUR_DISCORD_CLIENT_ID",
-            "secret": "YOUR_DISCORD_CLIENT_SECRET",
-            "key": "",
-        },
-        "SCOPE": [
-            "identify",
-            "email",
-        ],
-    }
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=1),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
 }
 
 if DEBUG:
     INSTALLED_APPS.append("django_browser_reload")
+    # INSTALLED_APPS.append("debug_toolbar")
+
+    # MIDDLEWARE.append("debug_toolbar.middleware.DebugToolbarMiddleware")
 
     INTERNAL_IPS = [
         "127.0.0.1",
     ]
 
 ROOT_URLCONF = "AtomicShield.urls"
-
-APPEND_SLASH=True
 
 # Domain Settings
 ROOT_HOSTCONF = "AtomicShield.hosts"
@@ -231,25 +196,32 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 # Cache settings
-# CACHES = {
-#     "default": {
-#         "BACKEND": "django_redis.cache.RedisCache",
-#         "LOCATION": "redis://127.0.0.1:6379/1",
-#         "OPTIONS": {
-#             "CLIENT_CLASS": "django_redis.client.DefaultClient",
-#         }
-#     }
-# }
+REDIS_URL = "redis://127.0.0.1:6379/1"
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": REDIS_URL,
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+}
 
 CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer",
-
-        # "CONFIG": {
-        #     "hosts": [("31.97.180.157", 6379)],
-        # },
+        "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
     },
 }
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework.authentication.TokenAuthentication",
+    ),
+}
+REST_USE_JWT = False
 
 
 # Internationalization
@@ -272,8 +244,7 @@ STATICFILES_DIRS = [
 
 STATIC_URL = "static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
-# STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
-
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # Media Configurations
 MEDIA_URL = "/media/"
@@ -296,11 +267,13 @@ LOGGING = {
         },
     },
     "handlers": {
+        # Console: only show INFO+ (no debug)
         "console": {
             "class": "rich.logging.RichHandler",
             "rich_tracebacks": True,
             "show_time": True,
             "show_path": False,
+            "level": "DEBUG",
         },
         "alltypes": {
             "level": "INFO",
@@ -314,14 +287,22 @@ LOGGING = {
             "filename": os.path.join(BASE_DIR, "../logs/error.log"),
             "formatter": "verbose",
         },
+        # Debug-only goes to file
+        "debug_file": {
+            "level": "DEBUG",
+            "class": "logging.FileHandler",
+            "filename": os.path.join(BASE_DIR, "../logs/debug.log"),
+            "formatter": "verbose",
+        },
     },
     "root": {
-        "handlers": ["alltypes", "console", "error_file"],
-        "level": "INFO",
+        # removed "console" here so DEBUG doesn’t hit stdout
+        "handlers": ["console", "alltypes", "error_file", "debug_file"],
+        "level": "DEBUG",
     },
     "loggers": {
         "django": {
-            "handlers": ["console", "alltypes", "error_file"],
+            "handlers": ["console", "alltypes", "error_file"],  # console still here, but INFO+ only
             "level": "INFO",
             "propagate": False,
         },
@@ -330,23 +311,31 @@ LOGGING = {
             "level": "INFO",
             "propagate": False,
         },
-        "daphne": {
-            "handlers": ["console", "alltypes", "error_file"],
-            "level": "INFO",
+        "channels": {
+            # If you don’t want DEBUG spam in terminal, drop console here too
+            "handlers": ["alltypes", "error_file", "debug_file"],
+            "level": "DEBUG",
             "propagate": False,
         },
-        "uvicorn.error": {
-            "handlers": ["console", "alltypes", "error_file"],
-            "level": "ERROR",
+        "hypercorn": {
+            # If you don’t want DEBUG spam in terminal, drop console here too
+            "handlers": ["console", "alltypes", "error_file", "debug_file"],
+            "level": "DEBUG",
             "propagate": False,
         },
-        "uvicorn.access": {
-            "handlers": ["console", "alltypes", "error_file"],
-            "level": "INFO",
+        "autobahn": {
+            "handlers": ["console", "alltypes", "error_file", "debug_file"],
+            "level": "DEBUG",
+            "propagate": False,
+        },
+        "twisted": {
+            "handlers": ["console", "alltypes", "error_file", "debug_file"],
+            "level": "DEBUG",
             "propagate": False,
         },
     },
 }
+
 
 # Project names
 ANTICHEAT_NAME = "AtomicShield"
@@ -420,39 +409,40 @@ LOGIN_REDIRECT_URL = "/dashboard/main/"
 PASSWORD_RESET_TIMEOUT = 60 * 60 * 24 * 1  # 1 Day
 
 # Sessions
-SESSION_ENGINE = "django.contrib.sessions.backends.db"
+SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_COOKIE_AGE = (60 * 60 * 24) / 2  # 12h
 SESSION_CACHE_ALIAS = "default"
-
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    )
-}
-
-from datetime import timedelta
-
-SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(days=1),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
-    "ROTATE_REFRESH_TOKENS": True,
-    "BLACKLIST_AFTER_ROTATION": True,
-    "ALGORITHM": "HS256",
-    "SIGNING_KEY": SECRET_KEY,
-    "AUTH_HEADER_TYPES": ("Bearer",),
-    "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
-    "USER_ID_FIELD": "id",
-    "USER_ID_CLAIM": "user_id",
-}
 
 # Captcha Settings
 RECAPTCHA_PUBLIC_KEY = "6Lee-LoqAAAAAO4gH6AC1DR0R-6V6lPpFzf2nYlx"
 RECAPTCHA_PRIVATE_KEY = "6Lee-LoqAAAAAIPaRqeCahr1sC8ABgaKeRU1tsE9"
 RECAPTCHA_REQUIRED_SCORE = 0.6
 
+DISCORD_CLIENT_ID="1404072529684861058"
+DISCORD_CLIENT_SECRET="N43jrx37HOUzTyXxY5ZP0N-SzdlMh4_e"
+DISCORD_REDIRECT_URI="http://atomic-shield.com/api/auth/discord/callback"
+
+GOOGLE_CLIENT_ID = "1091637385561-5l7jpbubori3m6jekd6nn1bu7g999p3f.apps.googleusercontent.com"
+GOOGLE_CLIENT_SECRET = "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"
+GOOGLE_REDIRECT_URI = "https://atomic-shield.com/api/auth/google/callback"
+
+SOCIALACCOUNT_PROVIDERS = {
+    "discord": {
+        "APP": {
+            "client_id": "YOUR_DISCORD_CLIENT_ID",
+            "secret": "YOUR_DISCORD_CLIENT_SECRET",
+            "key": "",
+        },
+        "SCOPE": [
+            "identify",
+            "email",
+        ],
+    }
+}
 
 # Admin Settings
 ADMINS = [("Hyper", "hosniadem400@gmail.com")]
+APPEND_SLASH = True
 
 # Mail Settings
 DEFAULT_FROM_EMAIL = "AtomicShield@localhost"
@@ -463,19 +453,19 @@ TEBEX_SECRET_KEY = "433788188a0ba1d3bb38b21fc39b2967"
 
 if not DEBUG:
     # Redirect from http to https
-    # SECURE_SSL_REDIRECT = True
-    # SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-
+    # SECURE_SSL_REDIRECT = False
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     USE_X_FORWARDED_HOST = True
 
     SECURE_HSTS_PRELOAD = True
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_SECONDS = 31536000  # Enforce HTTPS for 1 year
 
-    SESSION_COOKIE_SECURE = True
-    SESSION_COOKIE_SAMESITE = None
+    SESSION_COOKIE_SECURE = False
+    SESSION_COOKIE_SAMESITE = "Lax"
     SESSION_COOKIE_HTTPONLY = True
 
-    CSRF_COOKIE_SECURE = True
-    CSRF_COOKIE_HTTPONLY = True
-    CSRF_USE_SESSIONS = True
+    CSRF_COOKIE_SECURE = False
+    CSRF_COOKIE_SAMESITE = False
+    CSRF_COOKIE_HTTPONLY = False
+    CSRF_USE_SESSIONS = False

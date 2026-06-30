@@ -3,7 +3,7 @@ from django.http import HttpRequest, HttpResponse
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 from utils import check_request_body_key
-from guards import fivem_guard
+from services.websocket import fivem_conn_manager
 from core import atomic_core
 from .models import CrashReport
 import logging
@@ -26,20 +26,18 @@ def agent_status(request: HttpRequest) -> HttpResponse:
 
 
 @csrf_exempt
-def is_client_connected(request: HttpRequest) -> HttpResponse:
-    return HttpResponse(
-        atomic_core.encode(
-            {
-                "success": fivem_guard.is_engine_connected(
-                    request.META.get(
-                        "HTTP_X_FORWARDED_FOR", request.META.get("REMOTE_ADDR", "")
-                    )
-                    .split(",")[0]
-                    .strip()
-                )
-            }
+async def is_client_connected(request: HttpRequest) -> HttpResponse:
+    success = await fivem_conn_manager.is_engine_connected(
+        request.META.get(
+            "HTTP_X_FORWARDED_FOR", request.META.get("REMOTE_ADDR", "")
         )
+        .split(",")[0]
+        .strip()
     )
+    return HttpResponse(
+        atomic_core.encode({"success": success})
+    )
+
 
 
 @csrf_exempt
@@ -124,7 +122,7 @@ def crash_report_upload(request: HttpRequest) -> HttpResponse:
         except CrashReport.DoesNotExist:
             ...
 
-        crash_by = fivem_guard.get_scanner_by_ip(request_ip)
+        crash_by = fivem_conn_manager.get_engine_by_ip(request_ip)
         report = CrashReport.objects.create(
             crash_by=crash_by.hwid,
             error=request_body.get("error", "CRASHED"),

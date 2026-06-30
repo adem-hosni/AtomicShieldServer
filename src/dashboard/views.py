@@ -37,9 +37,9 @@ from django.contrib.humanize.templatetags.humanize import intcomma
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.contrib.auth.models import User
-from guards import fivem_guard
+from services.websocket import fivem_conn_manager
 from utils import check_request_body_key, represent_timedelta_string
-from anticheat.models import Ban, DetectionReport, HWID
+from anticheat.models import Ban, DetectionReport, HWID, AntiCheatConfigDataTypes
 from shared.enums import DetectionType
 from .models import (
     Announcements,
@@ -67,6 +67,7 @@ from utils.aseclient import ASEQueryClient, ASEParser
 from utils import discord
 from utils import analytics
 from .models import Release, ReleaseAsset
+from django_ratelimit.decorators import ratelimit
 
 logger = logging.getLogger(__name__)
 
@@ -197,10 +198,11 @@ def dashboard_overview(request: HttpRequest) -> Response:
             "isPositive": True,
         },
     }
+    engines_count = fivem_conn_manager.total_engines()
 
     # Network Players
     network_players = {
-        "value": fivem_guard.total_engines,
+        "value": engines_count,
         "subtitle": "Across all servers",
         "trend": {"value": "+45 today", "isPositive": True},
     }
@@ -208,9 +210,7 @@ def dashboard_overview(request: HttpRequest) -> Response:
     all_threats = DetectionReport.objects.all()
 
     # Threat Level
-    threats_today = all_threats.filter(
-        detected_at__date=timezone.now().date()
-    ).count()
+    threats_today = all_threats.filter(detected_at__date=timezone.now().date()).count()
     threat_level = {
         "value": threats_today,
         "subtitle": (
@@ -234,8 +234,8 @@ def dashboard_overview(request: HttpRequest) -> Response:
         {
             "id": server.id,
             "name": server.name,
-            "description": "Server Description",
-            "playerCount": server.active_player_count,
+            "description": f"{Ban.objects.filter(game_server=server).count()} bans",
+            "playerCount": server.get_active_player_count(),
             "status": "Online" if server.is_online else "Offline",
             "statusColor": "green" if server.is_online else "gray",
             "imageUrl": (
@@ -249,11 +249,14 @@ def dashboard_overview(request: HttpRequest) -> Response:
 
     # Select last detections
     user_servers = GameServer.get_user_servers(request.user)
-    recent_activities = AuditLogEntry.objects.filter(game_server__in=user_servers).order_by("-timestamp")[:5]
+    recent_activities = AuditLogEntry.objects.filter(
+        game_server__in=user_servers
+    ).order_by("-timestamp")[:5]
     recent_activities_data = [
         {
             "action": event.get_action_display(),
-            "user": event.target_username or f"By {event.actor_username}",
+            "user": event.target_username
+            or f"By {event.actor_username or event.source}",
             "time": event.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
             "severity": event.get_severity_display().lower(),
         }
@@ -271,31 +274,37 @@ def dashboard_overview(request: HttpRequest) -> Response:
         detected_at__date=timezone.now().date() - timedelta(days=30)
     )
     threat_activity = [
-    {
-        "time": dp["time"].strftime("%H:%M"),  # <--- use the new alias here
-        "threatDetections": dp["threatDetections"],
-        "falsePositives": dp["falsePositives"],
-        "blockedAttempts": dp["blockedAttempts"],
-        "severity": dp.get("severity", "low"),  # placeholder, you can calculate severity inline if needed
-    }
-    for dp in (
-        DetectionReport.objects
-        .annotate(time=TruncHour('detected_at'))  # <--- rename annotation
-        .values('time')
-        .annotate(
-            threatDetections=Count('id'),
-            falsePositives=Count('id', filter=Q(report__false_positive=True)),
-            blockedAttempts=Count('id', filter=Q(report__blocked=True)),
+        {
+            "time": dp["time"].strftime("%H:%M"),  # <--- use the new alias here
+            "threatDetections": dp["threatDetections"],
+            "falsePositives": dp["falsePositives"],
+            "blockedAttempts": dp["blockedAttempts"],
+            "severity": dp.get(
+                "severity", "low"
+            ),  # placeholder, you can calculate severity inline if needed
+        }
+        for dp in (
+            DetectionReport.objects.annotate(
+                time=TruncHour("detected_at")
+            )  # <--- rename annotation
+            .values("time")
+            .annotate(
+                threatDetections=Count("id"),
+                falsePositives=Count("id", filter=Q(report__false_positive=True)),
+                blockedAttempts=Count("id", filter=Q(report__blocked=True)),
+            )
+            .order_by("time")
         )
-        .order_by('time')
-    )
-]
+    ]
     # Global Stats
     global_stats_data = {
         "totalBans24h": Ban.objects.filter(
             banned_at__date=timezone.now().date()
         ).count(),
-        "kicks24h": AuditLogEntry.objects.filter(action=AuditLogEntry.Action.PLAYER_KICKED, timestamp__date=timezone.now().date()).count(),
+        "kicks24h": AuditLogEntry.objects.filter(
+            action=AuditLogEntry.Action.PLAYER_KICKED,
+            timestamp__date=timezone.now().date(),
+        ).count(),
         "warnings24h": 0,
         "cleanSessions": 0,
     }
@@ -504,7 +513,7 @@ def add_server(request: HttpRequest) -> Response:
     )
 
     AuditLogEntry.create_entry(
-        action=AuditLogEntry.Action.PLAYER_UNBANNED,
+        action=AuditLogEntry.Action.SERVER_CREATED,
         severity=AuditLogEntry.Severity.LOW,
         actor=request.user,
         game_server=new_server,
@@ -588,13 +597,7 @@ def list_announcements(request: HttpRequest) -> HttpResponse:
 @permission_classes([IsAuthenticated])
 def server_dashboard(request: HttpRequest, server_id: int) -> Response:
     try:
-        game_server = GameServer.objects.get(
-            Q(id=server_id)
-            & (
-                Q(owner=request.user)
-                | Q(moderators__user=request.user, moderators__status="active")
-            )
-        )
+        game_server = GameServer.get_for_user(server_id, request.user)
     except GameServer.DoesNotExist:
         logger.warning(
             f"{request.user.username} tried to access a non-existing server ({server_id})!"
@@ -616,19 +619,32 @@ def server_dashboard(request: HttpRequest, server_id: int) -> Response:
             }
         )
 
+    if not game_server.has_permission_for(
+        request.user, GameServerModerator.Permissions.CAN_VIEW_DASHBOARD
+    ):
+        logger.warning(
+            f"{request.user.username} tried to access dashboard of a server with no permissions ({server_id})!"
+        )
+        return Response(
+            {
+                "success": False,
+                "message": "You dont have an access to perform this operation",
+            }
+        )
+
     server_info = {
         "id": game_server.id,
         "name": game_server.name,
         "ip": game_server.ip,
         "description": "Server Description",
-        "playerCount": game_server.active_player_count,
-        "maxPlayers": game_server.active_player_count,
+        "playerCount": game_server.get_active_player_count(),
+        "maxPlayers": game_server.get_active_player_count(),
         "uptime": 0,
     }
 
     server_stats = {
         "currentPlayers": {
-            "value": game_server.active_player_count,
+            "value": game_server.get_active_player_count(),
             "trend": {"value": "+5 today", "isPositive": True},
         },
         "totalBans": {
@@ -682,35 +698,34 @@ def list_servers(request: HttpRequest) -> Response:
     """
     List all servers owned by the user.
     """
-    user = request.user
     game_servers = GameServer.get_user_servers(request.user)
-    servers = []
-
-    for server in game_servers:
-        servers.append(
-            {
-                "id": server.id,
-                "name": server.name,
-                "ip": server.ip,
-                "status": "active" if server.is_online else "inactive",
-                "subscriptionPlan": (
-                    server.subscriptions.last().plan
-                    if server.subscriptions.exists()
-                    else "None"
-                ),
-                "createdAt": "",
-                "imageUrl": (
-                    request.build_absolute_uri(server.configurations.server_image.url)
-                    if server.configurations.server_image
-                    else ""
-                ),
-            }
-        )
-
     return Response(
         {
             "success": True,
-            "data": {"servers": servers},
+            "data": {
+                "servers": sorted([
+                    {
+                        "id": server.id,
+                        "name": server.name,
+                        "ip": server.ip,
+                        "status": "active" if server.is_online else "inactive",
+                        "subscriptionPlan": (
+                            server.subscriptions.last().plan
+                            if server.subscriptions.exists()
+                            else "None"
+                        ),
+                        "createdAt": "",
+                        "imageUrl": (
+                            request.build_absolute_uri(
+                                server.configurations.server_image.url
+                            )
+                            if server.configurations.server_image
+                            else ""
+                        ),
+                    }
+                    for server in game_servers
+                ], key=lambda x: x['status'] == "active")
+            },
             "message": "Servers retrieved successfully.",
         }
     )
@@ -763,17 +778,15 @@ def list_bans(request: HttpRequest, server_id: int) -> Response:
                         ),
                         "bannedAt": ban.banned_at.strftime("%Y-%m-%d %H:%M:%S"),
                         "firstJoin": (
-                            AuditLogEntry.objects
-                            .filter(
+                            AuditLogEntry.objects.filter(
                                 target_object_id=ban.hwid.id,
                                 action=AuditLogEntry.Action.PLAYER_REQUEST_JOIN,
-                                timestamp__lte=ban.banned_at
+                                timestamp__lte=ban.banned_at,
                             )
                             .values_list("timestamp", flat=True)
                             .order_by("timestamp")
                             .first()
                         ),
-
                         "expiresAt": None,
                         "adminName": "zebi",
                         "reason": ban.reason,
@@ -1022,7 +1035,7 @@ def report_false_positive(
 @permission_classes([IsAuthenticated])
 def list_configurations(request: HttpRequest, server_id: int) -> Response:
     try:
-        game_server = GameServer.objects.get(owner=request.user, id=server_id)
+        game_server = GameServer.get_for_user(server_id, request.user)
     except GameServer.DoesNotExist:
         logger.warning(
             f"{request.user.username} tried to access configurations of a non-existing server ({server_id})!"
@@ -1041,6 +1054,19 @@ def list_configurations(request: HttpRequest, server_id: int) -> Response:
             {
                 "success": False,
                 "message": "An unexpected error occurred while accessing the server.",
+            }
+        )
+
+    if not game_server.has_permission_for(
+        request.user, GameServerModerator.Permissions.CAN_MANAGE_CONFIGURATION
+    ):
+        logger.warning(
+            f"{request.user.username} tried to access configurations with no permissions"
+        )
+        return Response(
+            {
+                "success": False,
+                "message": "You dont have an access to perform this operation",
             }
         )
 
@@ -1098,8 +1124,21 @@ def list_configurations(request: HttpRequest, server_id: int) -> Response:
                                                 "title": config.name,
                                                 "subtitle": config.subtitle,
                                                 "tip": config.tip,
-                                                "value": game_server.configurations.config.get(
-                                                    str(config.id), config.default_value
+                                                "value": (
+                                                    int
+                                                    if config.config_type
+                                                    == AntiCheatConfigDataTypes.NUMBER
+                                                    else (
+                                                        bool
+                                                        if config.config_type
+                                                        == AntiCheatConfigDataTypes.BOOLEAN
+                                                        else str
+                                                    )
+                                                )(
+                                                    game_server.configurations.config.get(
+                                                        str(config.id),
+                                                        config.default_value,
+                                                    )
                                                 ),
                                                 "icon": config.icon,
                                                 "extra": config.extra,
@@ -1127,7 +1166,7 @@ def list_configurations(request: HttpRequest, server_id: int) -> Response:
 @permission_classes([IsAuthenticated])
 def save_configurations(request: HttpRequest, server_id: int) -> Response:
     try:
-        game_server = GameServer.objects.get(owner=request.user, id=server_id)
+        game_server = GameServer.get_for_user(server_id, request.user)
     except GameServer.DoesNotExist:
         logger.warning(
             f"{request.user.username} tried to access configurations of a non-existing server ({server_id})!"
@@ -1146,6 +1185,19 @@ def save_configurations(request: HttpRequest, server_id: int) -> Response:
             {
                 "success": False,
                 "message": "An unexpected error occurred while accessing the server.",
+            }
+        )
+
+    if not game_server.has_permission_for(
+        request.user, GameServerModerator.Permissions.CAN_MANAGE_CONFIGURATION
+    ):
+        logger.warning(
+            f"{request.user.username} tried to save configurations with no permissions"
+        )
+        return Response(
+            {
+                "success": False,
+                "message": "You dont have an access to perform this operation",
             }
         )
 
@@ -1195,7 +1247,6 @@ def save_configurations(request: HttpRequest, server_id: int) -> Response:
         dynamic_configs = values.get("dynamic", {})
         if dynamic_configs:
             for key, value in dynamic_configs.items():
-                logger.info(f"Saving {key=} {value=}")
                 game_server.configurations.config[str(key)] = value
 
     except Exception as err:
@@ -1219,7 +1270,6 @@ def save_configurations(request: HttpRequest, server_id: int) -> Response:
         details=f"{request.user} updated server configurations",
         category=AuditLogEntry.Category.MODERATION,
     )
-
 
     return Response(
         {
@@ -1267,7 +1317,6 @@ def list_moderators(request: HttpRequest, server_id: int) -> Response:
                 "message": "You dont have an access to perform this operation",
             }
         )
-
 
     moderators = target_server.moderators.all()
 
@@ -1351,6 +1400,14 @@ def update_moderators(request: HttpRequest, server_id: int, moderator_id) -> Res
             }
         )
 
+    if target_moderator.user == request.user:
+        return Response(
+            {
+                "success": False,
+                "message": "You cannot update your own permissions, ask server owner to do this operation.",
+            }
+        )
+
     if target_moderator.user == target_server.owner:
         logger.warning(
             f"{request.user.username} tried to change server owner permissions"
@@ -1376,6 +1433,7 @@ def update_moderators(request: HttpRequest, server_id: int, moderator_id) -> Res
     target_moderator.can_view_dashboard = False
     target_moderator.can_kick_players = False
     target_moderator.can_ban_players = False
+    target_moderator.can_screenshot_players = False
     target_moderator.can_view_anticheat_logs = False
     target_moderator.can_manage_configuration = False
     target_moderator.can_manage_webhook_settings = False
@@ -1579,6 +1637,15 @@ def add_moderators(request: HttpRequest, server_id: int) -> Response:
                 "message": "Only server owner can add moderators with 'manage moderators' permission",
             }
         )
+    
+    if to_user_id == request.user.id:
+        return Response(
+            {
+                "success": False,
+                "message": "Cannot add your account as a moderator.",
+            }
+        )
+
 
     if not len(permissions):
         return Response(
@@ -1658,12 +1725,13 @@ def search_for_moderator(request: HttpRequest) -> Response:
 @api_view(["GET", "POST"])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
+@ratelimit(key='ip', rate='5/m', block=True)   # max 5 requests per minute per IP
 def download_assets_view(request: HttpRequest) -> Response:
     """
     GET  -> Return list of releases + their assets
     POST -> Create a release (optional, admin use)
     """
-    
+
     if request.method == "POST":
         asset_id = request.data.get("assetId")
         try:
@@ -1698,37 +1766,66 @@ def download_assets_view(request: HttpRequest) -> Response:
         temp_zip_path = os.path.join(
             os.path.dirname(asset_path), f"temp-{random.randint(10, 100)}.zip"
         )
+        user_servers = GameServer.get_user_servers(request.user)
+        if not user_servers.count():
+            return Response(
+                {
+                    "success": False,
+                    "message": "You do not have any servers to download the asset for.",
+                }
+            )
+
         shutil.copyfile(asset_path, temp_zip_path)
 
         if os.path.isfile(temp_zip_path):
             key_path = "AtomicShield/server.key"
+            new_temp_zip_path = temp_zip_path + ".new"
 
-            if os.path.isfile(temp_zip_path):
-                with (
-                    ZipFile(asset_path, "r") as zip_read,
-                    ZipFile(temp_zip_path, "w") as zip_write,
-                ):
-                    for item in zip_read.infolist():
-                        if item.filename != key_path:
-                            zip_write.writestr(item, zip_read.read(item.filename))
-                        else:
-                            server_key = "<YOUR ATOMICSHIELD SERVER KEY>"
-                            try:
-                                target_server = GameServer.objects.get(
-                                    id=request.session.get("selected_server", -1),
-                                    owner=request.user,
-                                )
+            with (
+                ZipFile(temp_zip_path, "r") as zip_read,
+                ZipFile(new_temp_zip_path, "w") as zip_write,
+            ):
+                for item in zip_read.infolist():
+                    if item.filename != key_path:
+                        zip_write.writestr(item, zip_read.read(item.filename))
+                    else:
+                        server_key = "<YOUR ATOMICSHIELD SERVER KEY>"
+                        try:
+                            if user_servers.count() == 1:
+                                target_server = user_servers.first()
                                 server_key = target_server.key
-                            except GameServer.DoesNotExist:
-                                ...
+                        except GameServer.DoesNotExist:
+                            ...
+                        zip_write.writestr(key_path, server_key)
 
-                            zip_write.writestr(key_path, server_key)
-                asset_path = temp_zip_path
-        return FileResponse(
+            asset_path = new_temp_zip_path
+
+        response = FileResponse(
             open(asset_path, "rb"),
             filename=f"{asset.release.title} - {asset.release.version}.{asset.release.format.lower().strip()}",
             as_attachment=True,
         )
+
+        def cleanup_file(file, path):
+            file.close()
+            try:
+                os.remove(path)
+            except OSError:
+                pass
+
+        orig_close = response.close
+        file = response.file_to_stream
+        path = asset_path
+
+        def cleanup_and_close():
+            try:
+                orig_close()
+            finally:
+                cleanup_file(file, path)
+
+        response.close = cleanup_and_close
+
+        return response
 
     else:
         releases = Release.objects.all().prefetch_related("assets")
@@ -1775,13 +1872,13 @@ def invite_moderator(request: HttpRequest) -> Response:
         return Response({"success": False, "message": "Invalid invite token"})
 
     if invite.is_expired:
-        return Response({"success": False, "message": "Invite  has expired"})
+        return Response({"success": False, "message": "Invite has expired"})
 
     if invite.status == ModeratorInviteToken.Status.ACCEPTED:
-        return Response({"success": False, "message": "Invite  already accepted"})
+        return Response({"success": False, "message": "Invite already accepted"})
 
     if invite.status == ModeratorInviteToken.Status.DECLINED:
-        return Response({"success": False, "message": "Invite  already declined"})
+        return Response({"success": False, "message": "Invite already declined"})
 
     if request.user != invite.to:
         return Response(
@@ -1801,9 +1898,7 @@ def invite_moderator(request: HttpRequest) -> Response:
                 "serverName": invite.game_server.name,
                 "permissions": invite.permissions,
                 "inviteToken": invite.token,
-                "expiresAt": (invite.invited_at + timedelta(days=7)).strftime(
-                    "%d/%m/%Y, %H:%M:%S"
-                ),
+                "expiresAt": (invite.invited_at + timedelta(days=7)).isoformat(),
                 "status": invite.status_text,
             },
         }
@@ -1925,7 +2020,19 @@ def list_audit_logs(request: HttpRequest, server_id: int) -> Response:
                 "message": "An unexpected error occurred while accessing the server.",
             }
         )
-    
+
+    if not server.has_permission_for(
+        request.user, GameServerModerator.Permissions.CAN_VIEW_ANTICHEAT_LOGS
+    ):
+        logger.warning(
+            f"{request.user.username} tried to access audit logs with no permissions"
+        )
+        return Response(
+            {
+                "success": False,
+                "message": "You dont have an access to perform this operation",
+            }
+        )
 
     audit_logs = AuditLogEntry.objects.filter(game_server=server)
 
@@ -1979,10 +2086,11 @@ def test_webhook(request: HttpRequest) -> Response:
                 for field in embed_template.get("fields", {})
             ],
             footer_icon_url=embed_template["footer"]["icon"],
-
         )
     except Exception as err:
-        logger.error(f"An error occured while testing webhook url for {request.user}: {err}")
+        logger.error(
+            f"An error occured while testing webhook url for {request.user}: {err}"
+        )
         return Response(
             {"success": False, "message": "An error occured while sending request"}
         )
@@ -2090,7 +2198,6 @@ def list_changelogs(request: HttpRequest) -> Response:
             if not patchnote_id:
                 return Response(
                     {"success": False, "error": "Missing seenPatchNote field"},
-                    status=400,
                 )
 
             seen_patchnote = PatchNotes.objects.get(id=int(patchnote_id))
@@ -2367,7 +2474,7 @@ def render_servers(request: HttpRequest) -> HttpResponse:
                     "port": server.port,
                     "name": server.name,
                     "type": server.type,
-                    "status": fivem_guard.is_server_running(server.ip),
+                    "status": async_to_sync(fivem_conn_manager.is_server_running)(server.ip),
                     "subscription_status": server.subscriptions.last() or "Not Found",
                     "expired": (
                         not server.subscriptions.last().is_valid_for_now()
@@ -2506,6 +2613,7 @@ def check_server(request: HttpRequest) -> HttpResponse:
 @api_view(["POST", "GET"])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
+@ratelimit(key='ip', rate='3/m', block=True)   
 def refresh_server_key(request: HttpRequest) -> HttpResponse:
     if request.method == "POST":
         try:
@@ -2690,6 +2798,7 @@ def render_quicksetup(request: HttpRequest) -> HttpResponse:
 @api_view(["POST", "GET"])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
+@ratelimit(key='ip', rate='5/m', block=True)
 def subscriptions_api(request):
     if request.method == "GET":
         subscriptions_data = [
@@ -2772,9 +2881,7 @@ def subscriptions_api(request):
         )
 
     if not subscription.is_valid_for_now():
-        return Response(
-            {"success": False, "error": "Expired Subscription"}, status=200
-        )
+        return Response({"success": False, "error": "Expired Subscription"}, status=200)
 
     if subscription.game_servers.count():
         return Response(
@@ -2831,27 +2938,38 @@ def list_players(request, server_id):
         )
 
     # Get the FiveM server
-    server = fivem_guard.get_server_by_ip(target_server.ip)
+    server = fivem_conn_manager.get_server_by_ip(target_server.ip)
     if server:
         try:
             status = async_to_sync(server.request_status)()
             retreived_players = status.get("players", [])
-            
+
             for player in retreived_players:
-                engine = fivem_guard.get_scanner_by_ip(player["ip"])
+                engine = async_to_sync(fivem_conn_manager.get_engine_by_ip)(player["ip"])
                 if engine:
-                    players.append({
-                        **player,
-                        "joined_at": datetime.fromtimestamp(engine.joined_at),
-                        "play_time": utils.represent_timedelta_string(engine.play_time),
-                    })
+                    players.append(
+                        {
+                            **player,
+                            "joinedAt": (
+                                datetime.fromtimestamp(engine.joined_at).strftime(
+                                    "%Y-%m-%d %H:%M:%S"
+                                )
+                                if engine.joined_at
+                                else "Unknown"
+                            ),
+                            "playtime": utils.represent_timedelta_string(
+                                engine.play_time
+                            ),  # float to timedelta string
+                        }
+                    )
                 else:
-                    players.append({**player, "joined_at": "Unknown", "play_time": "Unknown"})
-                
-                
+                    players.append(
+                        {**player, "joined_at": "Unknown", "play_time": "Unknown"}
+                    )
+
         except Exception as e:
             logger.error(f"Failed to get server status: {e}")
-            message = "Server is offline"
+            message = "An error occurred while fetching server status."
     else:
         message = "Server is offline"
 
@@ -2877,8 +2995,7 @@ def list_players(request, server_id):
                 {"success": False, "message": "Cannot find the target player"}
             )
 
-        engine = fivem_guard.get_scanner_by_ip(player_ip)
-        logger.info(player_ip)
+        engine = async_to_sync(fivem_conn_manager.get_engine_by_ip)(player_ip)
         if not engine:
             return Response(
                 {"success": False, "message": "Cannot retrieve the target player"}
@@ -2920,23 +3037,25 @@ def list_players(request, server_id):
                     response["message"] = "Failed to ban the player."
             case "screenshot":
                 try:
-                    image_path = async_to_sync(engine.get_screenshot)()
-                    if image_path:
-                        response.update(
-                            {
-                                "success": True,
-                                "url": (
-                                    request.build_absolute_uri(image_path)
-                                    if image_path
-                                    else ""
-                                ),
-                            }
-                        )
+                    if target_server.has_permission_for(request.user, "screenshot_players"):
+                        image_base64 = async_to_sync(engine.get_screenshot)()
+                        if image_base64:
+                            response.update(
+                                {
+                                    "success": True,
+                                    "data": {
+                                        "image_base64": image_base64,
+                                    }
+                                }
+                            )
+                        else:
+                            response["message"] = "Cannot retrieve screenshot."
                     else:
-                        response["message"] = "Cannot retrieve screenshot."
+                        response["message"] = "You don't have permission to perform this action"
                 except Exception as e:
                     logger.error(f"Screenshot error: {e}")
                     response["message"] = "Failed to retrieve screenshot."
+
             case _:
                 response["message"] = "Invalid action."
 
@@ -2952,7 +3071,8 @@ def list_players(request, server_id):
         players = [
             player
             for player in players
-            if search_text.lower() in player["name"].lower() or search_text in player["id"]
+            if search_text.lower() in player["name"].lower()
+            or search_text in player["id"]
         ]
         current_page = 0
 
@@ -2960,7 +3080,7 @@ def list_players(request, server_id):
     max_pages = max(1, -(-len(players) // page_size))  # ceil division
     current_page = max(0, min(current_page, max_pages - 1))
     players_to_show = players[page_size * current_page : page_size * (current_page + 1)]
-    
+
     return Response(
         {
             "success": True,
@@ -2972,10 +3092,9 @@ def list_players(request, server_id):
             "data": {
                 "players": players_to_show,
                 "peakPlayers": analytics.get_peak_players_today(target_server),
-                "onlinePlayers": target_server.active_player_count,
+                "onlinePlayers": target_server.get_active_player_count(),
                 "newPlayers": analytics.get_new_joins_today(target_server),
-                "actionsTaken": analytics.get_actions_taken_today(target_server)
+                "actionsTaken": analytics.get_actions_taken_today(target_server),
             },
-            
         }
     )

@@ -1,3 +1,4 @@
+from asgiref.sync import sync_to_async
 from shared.models import ServerType
 from django.utils import timezone
 from datetime import datetime
@@ -111,6 +112,7 @@ class AntiCheatConfigurations(models.Model):
         return self.config.get(str(config.id), config.default_value)
 
     async def aget_config(self, config_name):
+        return await sync_to_async(self.get_config)(config_name)
         config = await AntiCheatConfigTemplate.objects.aget(pseudo_name=config_name)
         return self.config.get(str(config.id), config.default_value)
 
@@ -160,6 +162,9 @@ class HWID(models.Model):
     steam = models.CharField(max_length=64, null=True)
     discord_id = models.CharField(max_length=64, null=True)
     history = HistoricalRecords()
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_seen = models.DateTimeField(auto_now=True)
 
     class Meta:
         verbose_name = "HWID"
@@ -242,23 +247,19 @@ class FalsePositiveReport(models.Model):
         REJECTED = "rejected", "Rejected"
 
     ban = models.OneToOneField(
-        Ban,
-        on_delete=models.DO_NOTHING,
-        related_name="false_positive_report"
+        Ban, on_delete=models.DO_NOTHING, related_name="false_positive_report"
     )
 
     reported_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.DO_NOTHING,
-        related_name="false_positive_reports"
+        related_name="false_positive_reports",
     )
 
     reason = models.TextField()
 
     status = models.CharField(
-        max_length=20,
-        choices=Status.choices,
-        default=Status.PENDING
+        max_length=20, choices=Status.choices, default=Status.PENDING
     )
 
     reviewed_by = models.ForeignKey(
@@ -266,7 +267,7 @@ class FalsePositiveReport(models.Model):
         on_delete=models.SET_NULL,
         blank=True,
         null=True,
-        related_name="false_positive_reviews"
+        related_name="false_positive_reviews",
     )
 
     reviewed_at = models.DateTimeField(blank=True, null=True)
@@ -281,10 +282,8 @@ class FalsePositiveReport(models.Model):
         self.reviewed_at = timezone.now()
         self.save()
 
-
     def __str__(self):
         return f"False Positive Report for Ban #{self.ban_id} - {self.get_status_display()}"
-
 
 
 class Warning(models.Model):
@@ -399,7 +398,7 @@ class WhitelistedProcess(models.Model):
 class ThreatFile(models.Model):
     file = models.FileField(upload_to="threat_files/")
     found_path = models.CharField(max_length=256)
-    hash = models.CharField(max_length=256)
+    hash = models.CharField(max_length=256, unique=True)
     note = models.CharField(max_length=256, blank=True, null=True)
     uploaded_by = models.ForeignKey(HWID, on_delete=models.CASCADE)
     uploaded_at = models.DateTimeField(auto_now_add=True)
@@ -431,3 +430,36 @@ class CrashReport(models.Model):
 
     def __str__(self):
         return f"Crash Report {self.exception_code} ({self.id}) - {self.crash_by.username if self.crash_by else 'Unknown'}"
+
+
+class AtomicEngineReleaseAsset(models.Model):
+    class ReleaseType(models.IntegerChoices):
+        DEBUG = 1, "Debug"
+        RELEASE = 2, "Release"
+
+    name = models.CharField(max_length=64, blank=True)
+    file = models.FileField(upload_to="engines/")
+    note = models.TextField(blank=True)
+    version = models.CharField(max_length=16, null=True)
+    release_type = models.IntegerField(choices=ReleaseType)
+    current_engine = models.BooleanField(default=False)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    history = HistoricalRecords()
+
+    @classmethod
+    def get_last_engine_record(cls, debug: bool = False):
+        qs = cls.objects.filter(
+            release_type=cls.ReleaseType.DEBUG if debug else cls.ReleaseType.RELEASE
+        )
+        engine = qs.filter(current_engine=True).first()
+        if engine:
+            return engine
+        return qs.order_by("-uploaded_at").first()
+
+    @classmethod
+    def get_last_engine(cls, debug: bool = False) -> Union[bytes, None]:
+        record = cls.get_last_engine_record(debug)
+        if not record or not record.file:
+            return None
+        with record.file.open("rb") as file:
+            return file.read()

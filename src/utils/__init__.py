@@ -73,6 +73,10 @@ def check_request_body_key(
 
 
 def represent_timedelta_string(time: timedelta) -> str:
+    # If time is an int, convert to timedelta (assume seconds)
+    if isinstance(time, int):
+        time = timedelta(seconds=time)
+
     result = ""
 
     days = time.days
@@ -147,7 +151,7 @@ def format_string(string: str, vars: Dict[str, str] = {}):
 
     for key, value in vars.items():
         for loaded_var in loaded_vars:
-            if loaded_var.lower().strip() == key.lower():
+            if loaded_var.lower().strip() == key.lower() and value is not None:
                 string = string.replace("{" + loaded_var + "}", value)
     
     return string

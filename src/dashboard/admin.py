@@ -1,6 +1,7 @@
 import json
 from django.db import models
 from django.db.models import Q
+from asgiref.sync import async_to_sync
 from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
@@ -33,7 +34,7 @@ from .models import Release, ReleaseAsset
 
 from unfold.admin import ModelAdmin, TabularInline
 from unfold.forms import AdminPasswordChangeForm, UserChangeForm, UserCreationForm
-from guards import fivem_guard
+from services.websocket import fivem_conn_manager
 
 
 admin.site.unregister(User)
@@ -53,12 +54,30 @@ class UserAdmin(BaseUserAdmin, ModelAdmin):
     list_display = ("username", "email", "date_joined", "last_login", "is_staff")
     list_display_links = list_display
 
+    autocomplete_fields = ["groups", "user_permissions"]
+    fieldsets = (
+        (_("Account Info"), {"fields": ("username", "email", "password", "date_joined", "last_login"), "classes": ("section", "tab-account")}),
+        (_("Permissions"), {"fields": ("is_staff", "is_active", "is_superuser", "groups", "user_permissions"), "classes": ("section", "tab-perms")}),
+
+        (_("Personal"), {"fields": ("first_name", "last_name"), "classes": ("section", "tab-personal")}),
+
+    )
+    list_filter_submit = True
+    list_filter_sheet = True
+
     def has_delete_permission(self, request, obj=...):
         return False
 
 
 @admin.register(Group)
-class GroupAdmin(BaseGroupAdmin, ModelAdmin): ...
+class GroupAdmin(BaseGroupAdmin, ModelAdmin):
+    autocomplete_fields = ["permissions"]
+    fieldsets = (
+        (_("Group Info"), {"fields": ("name", "permissions"), "classes": ("section", "tab-group")}),
+
+    )
+    list_filter_submit = True
+    list_filter_sheet = True
 
 
 class GameServerAdmin(ModelAdmin):
@@ -79,7 +98,7 @@ class GameServerAdmin(ModelAdmin):
                     id__in=[
                         record.id
                         for record in queryset
-                        if fivem_guard.get_server_by_ip(record.ip)
+                        if fivem_conn_manager.get_server_by_ip(record.ip)
                     ]
                 )
             elif filter_value == "offline":
@@ -87,7 +106,7 @@ class GameServerAdmin(ModelAdmin):
                     id__in=[
                         record.id
                         for record in queryset
-                        if not fivem_guard.get_server_by_ip(record.ip)
+                        if not fivem_conn_manager.get_server_by_ip(record.ip)
                     ]
                 )
             return queryset
@@ -98,6 +117,28 @@ class GameServerAdmin(ModelAdmin):
     exclude = ("port",)
 
     list_filter = [OnlineFilter, "type"]
+
+    actions = ["restart"]
+
+    def restart(self, request, queryset):
+        if request.method != "POST":
+            return
+        
+        for obj in queryset:
+            server = fivem_conn_manager.get_server_by_ip(obj.ip)
+            if server:
+                try:
+                    async_to_sync(server.close)(1000, "Restart")
+                    self.message_user(request, "Server Connection Reset", "success")
+                except Exception as e:
+                    logger.error(f"Error reseting connection: {e}")
+                    self.message_user(
+                        request, "Error reseting connection", "error"
+                    )
+            else:
+                self.message_user(
+                    request, f"{obj.name} is not online!", "error"
+                )
 
     @admin.display(description="Address")
     def address(self, obj: GameServer):
@@ -121,14 +162,17 @@ class GameServerAdmin(ModelAdmin):
 
     @admin.display(description="Online", boolean=True)
     def display_online(self, obj: GameServer):
-        return bool(fivem_guard.get_server_by_ip(obj.ip))
+        return bool(fivem_conn_manager.get_server_by_ip(obj.ip))
 
-    # def formfield_for_manytomany(self, db_field, request, **kwargs):
-    #     if db_field.name == "subscriptions":
-    #         kwargs["queryset"] = ServerSubscription.objects.filter(
-    #             Q(owner=self.owner) | Q(owner__isnull=True)
-    #         )
-    #     return super().formfield_for_manytomany(db_field, request, **kwargs)
+    autocomplete_fields = ["owner", "subscriptions"]
+    fieldsets = (
+        (_("General"), {"fields": ("name", "ip", "owner", "type"), "classes": ("section", "tab-general")}),
+
+        (_("Subscriptions"), {"fields": ("subscriptions",), "classes": ("section", "tab-subscriptions")}),
+
+    )
+    list_filter_submit = True
+    list_filter_sheet = True
 
 
 class AnnouncementAdmin(ModelAdmin):
@@ -154,6 +198,14 @@ class AnnouncementAdmin(ModelAdmin):
     def display_views(self, obj: Announcements):
         return obj.seens.count()
 
+    autocomplete_fields = ["author", "seens"]
+    fieldsets = (
+        (_("Announcement"), {"fields": ("title", "author", "announcement", "seens"), "classes": ("section", "tab-announcement")}),
+
+    )
+    list_filter_submit = True
+    list_filter_sheet = True
+
 
 class ReleaseAssetInline(TabularInline):
     model = ReleaseAsset
@@ -165,6 +217,7 @@ class ReleaseAssetInline(TabularInline):
 @admin.register(Release)
 class ReleaseAdmin(ModelAdmin):
     list_display = ("version", "release_date", "stability", "recommended")
+    list_display_links = list_display
     list_filter = ("stability", "recommended")  # removed 'secret'
     search_fields = ("version", "title", "description")
     inlines = [ReleaseAssetInline]
@@ -173,6 +226,7 @@ class ReleaseAdmin(ModelAdmin):
 @admin.register(ReleaseAsset)
 class ReleaseAssetAdmin(ModelAdmin):
     list_display = ("label", "release", "is_primary")
+    list_display_links = list_display
     list_filter = ("is_primary",)  # comma makes it a tuple
     search_fields = ("label",)
 
@@ -206,6 +260,14 @@ class PatchNotesAdmin(ModelAdmin):
     @admin.display(description="Viewed by")
     def display_views(self, obj: Announcements):
         return obj.seens.count()
+
+    autocomplete_fields = ["author", "seens"]
+    fieldsets = (
+        (_("Patch Notes"), {"fields": ("version", "author", "description", "seens"), "classes": ("section", "tab-patchnotes")}),
+
+    )
+    list_filter_submit = True
+    list_filter_sheet = True
 
 
 class ServerSubscriptionAdmin(ModelAdmin):
@@ -249,9 +311,18 @@ class ServerSubscriptionAdmin(ModelAdmin):
                 )
         super().save_model(request, obj, form, change)
 
+    autocomplete_fields = ["owner"]
+    fieldsets = (
+        (_("Subscription Info"), {"fields": ("name", "key", "owner", "plan", "remaining", "status", "type", "started_at"), "classes": ("section", "tab-subscription")}),
+
+    )
+    list_filter_submit = True
+    list_filter_sheet = True
+
 
 class GameServerModeratorAdmin(ModelAdmin):
     list_display = ("id", "user", "status", "last_login", "permission_summary")
+    list_display_links = list_display
     list_filter = ("status",)
     search_fields = ("user__username", "user__email")
 
@@ -280,6 +351,7 @@ class GameServerModeratorAdmin(ModelAdmin):
                 "fields": (
                     "can_kick_players",
                     "can_ban_players",
+                    "can_screenshot_players",
                     "can_view_anticheat_logs",
                 ),
             },
@@ -314,6 +386,22 @@ class GameServerModeratorAdmin(ModelAdmin):
 
     permission_summary.short_description = "Permissions"
 
+    autocomplete_fields = ["user", "game_server"]
+    fieldsets = (
+        (_("Platform Account"), {"fields": ("user", "status", "last_login", "game_server"), "classes": ("section", "tab-account")}),
+
+        (_("Dashboard Access"), {"fields": ("can_view_dashboard", "can_view_analytics"), "classes": ("collapse", "section", "tab-dashboard")}),
+
+        (_("Player Moderation"), {"fields": ("can_kick_players", "can_ban_players", "can_screenshot_players", "can_view_anticheat_logs"), "classes": ("collapse", "section", "tab-moderation")}),
+
+        (_("System Configuration"), {"fields": ("can_manage_configuration", "can_manage_webhook_settings"), "classes": ("collapse", "section", "tab-config")}),
+
+        (_("Advanced Features"), {"fields": ("can_access_interactive_map", "can_access_multi_stream", "can_manage_moderators"), "classes": ("collapse", "section", "tab-advanced")}),
+
+    )
+    list_filter_submit = True
+    list_filter_sheet = True
+
 
 @admin.register(ModeratorInviteToken)
 class ModeratorInviteTokenAdmin(ModelAdmin):
@@ -325,6 +413,7 @@ class ModeratorInviteTokenAdmin(ModelAdmin):
         "invited_at",
         "is_expired",
     )
+    list_display_links = list_display
     list_filter = (
         "status",
         "invited_at",
@@ -344,6 +433,14 @@ class ModeratorInviteTokenAdmin(ModelAdmin):
 
     permissions_display.short_description = "Permissions"
 
+    autocomplete_fields = ["invited_by", "to"]
+    fieldsets = (
+        (_("Invite Info"), {"fields": ("invited_by", "to", "permissions", "status", "invited_at", "is_expired"), "classes": ("section", "tab-invite")}),
+
+    )
+    list_filter_submit = True
+    list_filter_sheet = True
+
 
 @admin.register(AuditLogEntry)
 class AuditLogEntryAdmin(ModelAdmin):
@@ -356,6 +453,7 @@ class AuditLogEntryAdmin(ModelAdmin):
         "summary_snippet",
         "reviewed",
     )
+    list_display_links = list_display
 
     list_filter = ("action", "severity", "game_server", "source", "reviewed")
     search_fields = ("summary", "details", "actor_object_id", "game_server", "metadata")
@@ -375,7 +473,7 @@ class AuditLogEntryAdmin(ModelAdmin):
         "details",
         ("actor_display", "actor_object_id"),
         ("target_display", "target_object_id"),
-        "server_instance",
+        "game_server",
         "metadata_pretty",
         ("source", "reviewed"),
     )
@@ -499,7 +597,7 @@ class AuditLogEntryAdmin(ModelAdmin):
                     "actor_object_id": entry.actor_object_id,
                     "summary": entry.summary,
                     "details": entry.details,
-                    "server_instance": entry.server_instance,
+                    "game_server": entry.game_server,
                     "metadata": entry.metadata,
                     "source": entry.source,
                     "reviewed": entry.reviewed,

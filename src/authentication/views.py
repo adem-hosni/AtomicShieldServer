@@ -1,3 +1,4 @@
+import logging
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
@@ -16,7 +17,12 @@ import requests
 from django.conf import settings
 from django.shortcuts import redirect
 from django.http import JsonResponse
+from django_ratelimit.decorators import ratelimit
+from django.utils.decorators import method_decorator
 
+logger = logging.getLogger(__name__)
+
+@method_decorator(ratelimit(key='ip', rate='5/m', block=True), name='dispatch')
 class SignInView(APIView):
     permission_classes = [AllowAny]
 
@@ -41,6 +47,8 @@ class SignInView(APIView):
         refresh = RefreshToken.for_user(user)
         access = refresh.access_token
 
+        logger.info(f"{user.username} logged in")
+
         return Response({
             "success": True,
             "data": {
@@ -57,7 +65,7 @@ class SignInView(APIView):
             },
         })
 
-
+@method_decorator(ratelimit(key='ip', rate='5/m', block=True), name='dispatch')
 class SignUpView(APIView):
     permission_classes = [AllowAny]
 
@@ -76,11 +84,13 @@ class SignUpView(APIView):
 
         user = User.objects.create_user(username=username, email=email, password=password)
         user.last_login = timezone.now()
-        user.save(update_fields=["last_login"])
+        user.save()
 
         user = authenticate(username=user.username, password=password)
         if not user:
             return Response({"success": False, "message": "Authentication failed"}, status=401)
+        
+        logger.info(f"{username} just signed up")
 
         refresh = RefreshToken.for_user(user)
         access = refresh.access_token
@@ -107,7 +117,7 @@ class DiscordOAuthLoginView(APIView):
 
     def get(self, request):
         return_url = request.query_params.get("returnUrl", "/dashboard/overview")
-        redirect_uri = request.query_params.get("redirect") or "http://localhost:8000/api/auth/discord/callback"
+        redirect_uri = request.query_params.get("redirect") or "https://atomic-shield.com/api/auth/discord/callback"
 
         if not redirect_uri:
             return Response({"success": False, "message": "Missing redirect URI"}, status=400)
@@ -140,7 +150,7 @@ class DiscordOAuthCallbackView(APIView):
             "client_secret": "6_Ne6-v2aaYWHLzeSVXHBAtchTnnYD2W",
             "grant_type": "authorization_code",
             "code": code,
-            "redirect_uri": "http://localhost:8000/api/auth/discord/callback",
+            "redirect_uri": "https://atomic-shield.com/api/auth/discord/callback",
         }
         headers = {"Content-Type": "application/x-www-form-urlencoded"}
         token_res = requests.post(token_url, data=data, headers=headers)
@@ -172,6 +182,7 @@ class DiscordOAuthCallbackView(APIView):
 
         user.last_login = timezone.now()
         user.save(update_fields=["last_login"])
+        logger.info(f"{username} just signed in using discord")
 
         refresh = RefreshToken.for_user(user)
         access = refresh.access_token
@@ -190,7 +201,7 @@ class DiscordOAuthCallbackView(APIView):
         user_info_json = json.dumps(user_info)
         user_data_encoded = quote(user_info_json)
 
-        frontend_url = getattr(settings, "FRONTEND_URL", "http://localhost:8080")
+        frontend_url = getattr(settings, "FRONTEND_URL", "https://atomic-shield.com")
         redirect_path = state if state.startswith("/") else f"/{state}"
         redirect_url = f"{frontend_url}{redirect_path}?token={access}&user={user_data_encoded}"
 
@@ -252,6 +263,8 @@ def google_callback(request):
         user.set_unusable_password()
         user.save()
 
+    logger.info(f"{username} just signed up using google")
+
     user.last_login = timezone.now()
     user.save(update_fields=["last_login"])
 
@@ -272,7 +285,7 @@ def google_callback(request):
     user_info_json = json.dumps(user_info)
     user_data_encoded = quote(user_info_json)
 
-    frontend_url = getattr(settings, "FRONTEND_URL", "http://localhost:8080")
+    frontend_url = getattr(settings, "FRONTEND_URL", "https://atomic-shield.com")
     redirect_path = state if state.startswith("/") else f"/{state}"
     redirect_url = f"{frontend_url}{redirect_path}?token={access}&user={user_data_encoded}"
 

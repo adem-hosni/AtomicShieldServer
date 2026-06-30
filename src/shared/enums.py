@@ -2,7 +2,7 @@ from enum import Enum
 from django.db import models
 
 
-class SafeServerPacketID(Enum):
+class AtomicServerPacketID(Enum):
     NETWORK_JOIN = 1
     SYNC_ANTICHEAT_CONFIGS = 2
     REQUEST_STATUS = 3
@@ -13,9 +13,20 @@ class SafeServerPacketID(Enum):
     PLAYER_QUIT = 8
     MANAGE_ONLINE_PLAYER = 9
     ENGINE_CHECK = 10
+    HEARBEAT = 11
 
 
-class SafeEnginePacketID(Enum):
+class AtomicEngineHardKickReason(models.IntegerChoices):
+    GUARD_TIMEDOUT = 1, "Guard Timed Out"
+    PROCESS_TERMINATED = 2, "Process Terminated"
+    DEBUGGER_DETECTED = 3, "Debugger Detected"
+
+class AtomicHeartbeatType(models.IntegerChoices):
+    HEURISTIC_GUARD = 1, "Heuristic Guard"
+    PROCESS_GUARD = 2, "Process Guard"
+
+
+class AtomicEnginePacketID(Enum):
     NETWORK_JOIN = 1
     SYNC_SIGNATURES = 2
     MALICIOUS_SIGNATURE_DETECTION = 3
@@ -29,6 +40,8 @@ class SafeEnginePacketID(Enum):
     REQUEST_DEBUG_LOGS = 11
     REQUEST_FILEHASH = 12
     REQUEST_FILE_UPLOAD = 13
+    HEARTBEAT = 14
+    FORCE_HARD_KICK = 15
 
 
 class WebSocketGroupNames(Enum):
@@ -54,6 +67,7 @@ class DetectionType(models.IntegerChoices):
     MALICIOUS_PROCESS_HANDLE_OPEN = 9, "Malicious Process opened FiveM handle"
     MALICIOUS_DRIVER = 10, "Malicious Driver Found"
     THREAD_SHELLCODE = 11, "Thread Shell Code"
+    MEMORY_INTEGRITY_DISABLED = 12, "Memory Integrity Disabled"
 
 
 detection_messages = {
@@ -67,6 +81,7 @@ detection_messages = {
     DetectionType.MALICIOUS_PROCESS_HANDLE_OPEN: "External Cheat Detected",
     DetectionType.MALICIOUS_DRIVER: "Hacking Tools Found",
     DetectionType.THREAD_SHELLCODE: "Injected Windows DLL",
+    DetectionType.MEMORY_INTEGRITY_DISABLED: "Memory Integrity Disabled",
 }
 
 unstrict_detection_types = [
@@ -75,4 +90,5 @@ unstrict_detection_types = [
     DetectionType.DEBUG_MODE_ENABLED,
     DetectionType.SECURE_BOOT_DISABLED,
     DetectionType.DLL_FOUND,
+    DetectionType.MEMORY_INTEGRITY_DISABLED,
 ]

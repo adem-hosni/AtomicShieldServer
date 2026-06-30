@@ -1,10 +1,13 @@
 Table "announcements" {
   "id" bigint(20) [pk, not null]
-  "author" varchar(32) [not null]
-  "title" varchar(50) [default: NULL]
+  "author_id" int(11) [not null]
+  "title" varchar(256) [default: NULL]
   "announcement" longtext [not null]
   "mention_everyone" tinyint(1) [not null]
   "date" datetime(6) [default: NULL]
+  "category" varchar(32) [not null]
+  "is_pinned" tinyint(1) [not null]
+  "is_important" tinyint(1) [not null]
 }
 
 Table "announcements_seens" {
@@ -16,22 +19,148 @@ Table "announcements_seens" {
 Table "anticheat_configurations" {
   "id" bigint(20) [pk, not null]
   "config" longtext [not null]
+  "webhooks" longtext [not null]
+  "embeds" longtext [not null]
+  "server_image" varchar(100) [default: NULL]
 }
 
 Table "anticheat_configuration_categories" {
   "id" bigint(20) [pk, not null]
   "name" varchar(32) [not null]
   "description" longtext [not null]
+  "icon" varchar(32) [not null]
+  "server_type" int(11) [not null]
+}
+
+Table "anticheat_config_sections" {
+  "id" bigint(20) [pk, not null]
+  "category_id" bigint(20) [not null]
+  "title" varchar(64) [not null]
+  "subtitle" longtext [default: NULL]
+  "icon" varchar(64) [not null]
+  "tooltip" varchar(128) [not null]
 }
 
 Table "anticheat_config_templates" {
   "id" bigint(20) [pk, not null]
+  "section_id" bigint(20) [not null]
   "name" varchar(64) [not null]
-  "description" longtext [default: NULL]
+  "subtitle" longtext [default: NULL]
+  "icon" varchar(64) [not null]
+  "tip" longtext [default: NULL]
+  "pseudo_name" varchar(32) [not null, unique]
   "server_type" int(11) [not null]
-  "config_type" int(11) [not null]
-  "default_value" varchar(50) [not null]
-  "category_id" bigint(20) [default: NULL]
+  "config_type" longtext [not null]
+  "extra" longtext [not null]
+  "default_value" varchar(512) [not null]
+}
+
+Table "anticheat_version" {
+  "id" bigint(20) [pk, not null]
+  "major" int(11) [not null]
+  "minor" int(11) [not null]
+  "patch" int(11) [not null]
+  "type" int(11) [not null]
+  "entity" int(11) [not null]
+  "is_current_version" tinyint(1) [not null]
+}
+
+Table "anticheat_hwid" {
+  "id" bigint(20) [pk, not null]
+  "username" varchar(32) [not null]
+  "computer_name" varchar(64) [not null]
+  "disks" longtext [not null]
+  "cpuid" varchar(64) [not null]
+  "motherboard_serial" varchar(64) [not null]
+  "bios_version" varchar(32) [not null]
+  "pnp_device" varchar(512) [not null]
+  "fivem_license" varchar(64) [default: NULL]
+  "fivem_token" longtext [not null]
+  "steam" varchar(64) [default: NULL]
+  "discord_id" varchar(64) [default: NULL]
+}
+
+Table "detection_reports" {
+  "id" bigint(20) [pk, not null]
+  "hwid_id" bigint(20) [default: NULL]
+  "detection_type" int(11) [not null]
+  "detected_at" datetime(6) [not null]
+  "report" longtext [not null]
+  "screenshot" varchar(100) [not null]
+}
+
+Table "bans" {
+  "id" bigint(20) [pk, not null]
+  "hwid_id" bigint(20) [default: NULL]
+  "banned_at" datetime(6) [not null]
+  "duration" bigint(20) [default: NULL]
+  "game_server_id" bigint(20) [default: NULL]
+  "active" tinyint(1) [not null]
+  "reason" varchar(256) [default: NULL]
+  "report_id" bigint(20) [default: NULL]
+}
+
+Table "false_positive_reports" {
+  "id" bigint(20) [pk, not null]
+  "ban_id" bigint(20) [not null]
+  "reported_by_id" int(11) [not null]
+  "reason" longtext [not null]
+  "status" varchar(20) [not null]
+  "reviewed_by_id" int(11) [default: NULL]
+  "reviewed_at" datetime(6) [default: NULL]
+  "created_at" datetime(6) [not null]
+}
+
+Table "warnings" {
+  "id" bigint(20) [pk, not null]
+  "hwid_id" bigint(20) [not null]
+  "warns" smallint(5) [not null]
+}
+
+Table "whitelisted_processes" {
+  "id" bigint(20) [pk, not null]
+  "name" varchar(64) [not null, unique]
+  "type" int(11) [not null]
+}
+
+Table "threat_files" {
+  "id" bigint(20) [pk, not null]
+  "file" varchar(100) [not null]
+  "found_path" varchar(256) [not null]
+  "hash" varchar(256) [not null]
+  "note" varchar(256) [default: NULL]
+  "uploaded_by_id" bigint(20) [not null]
+  "uploaded_at" datetime(6) [not null]
+}
+
+Table "crash_reports" {
+  "id" bigint(20) [pk, not null]
+  "crash_by_id" bigint(20) [default: NULL]
+  "error" varchar(64) [default: NULL]
+  "module_base" varchar(64) [default: NULL]
+  "exception_code" varchar(32) [default: NULL]
+  "exception_address" varchar(32) [default: NULL]
+  "exception_flags" varchar(32) [default: NULL]
+  "registers" longtext [not null]
+  "crashed_at" datetime(6) [not null]
+}
+
+Table "malicious_signatures" {
+  "id" bigint(20) [pk, not null]
+  "name" varchar(64) [not null, unique]
+  "signatures" longtext [not null]
+  "type" int(11) [not null]
+  "priority" int(11) [default: NULL]
+  "ban_message" varchar(64) [default: NULL]
+  "ban_duaration" bigint(20) [not null]
+}
+
+Table "appreloader_application" {
+  "id" bigint(20) [pk, not null]
+  "name" varchar(255) [not null]
+  "label" varchar(255) [not null]
+  "path" varchar(255) [not null]
+  "module" varchar(255) [not null]
 }
 
 Table "auth_group" {
@@ -78,23 +207,73 @@ Table "auth_user_user_permissions" {
   "permission_id" int(11) [not null]
 }
 
-Table "client_hwids" {
+Table "dashboard_release" {
   "id" bigint(20) [pk, not null]
-  "username" varchar(32) [not null]
-  "mta_serial" varchar(32) [not null]
-  "disks" longtext [not null]
-  "cpuid" varchar(64) [not null]
-  "motherboard_serial" varchar(64) [not null]
-  "bios_version" varchar(32) [not null]
+  "version" varchar(32) [not null, unique]
+  "title" varchar(200) [not null]
+  "description" longtext [not null]
+  "release_date" datetime(6) [default: NULL]
+  "platform" varchar(50) [not null]
+  "format" varchar(20) [not null]
+  "stability" varchar(16) [not null]
+  "recommended" tinyint(1) [not null]
+  "changelog" longtext [not null]
 }
 
-Table "dashboard_whitelist" {
+Table "dashboard_releaseasset" {
   "id" bigint(20) [pk, not null]
-  "username" varchar(32) [not null]
-  "ip" varchar(49) [not null]
-  "serial" varchar(64) [not null]
-  "created_at" datetime(6) [default: NULL]
-  "last_update_at" datetime(6) [default: NULL]
+  "release_id" bigint(20) [not null]
+  "label" varchar(100) [not null]
+  "file" varchar(100) [default: NULL]
+  "external_url" longtext [not null]
+  "is_primary" tinyint(1) [not null]
+}
+
+Table "dashboard_gameservermoderator" {
+  "id" bigint(20) [pk, not null]
+  "user_id" int(11) [not null, unique]
+  "game_server_id" bigint(20) [not null]
+  "can_view_dashboard" tinyint(1) [not null]
+  "can_view_analytics" tinyint(1) [not null]
+  "can_kick_players" tinyint(1) [not null]
+  "can_ban_players" tinyint(1) [not null]
+  "can_view_anticheat_logs" tinyint(1) [not null]
+  "can_manage_configuration" tinyint(1) [not null]
+  "can_manage_webhook_settings" tinyint(1) [not null]
+  "can_access_interactive_map" tinyint(1) [not null]
+  "can_access_multi_stream" tinyint(1) [not null]
+  "can_manage_moderators" tinyint(1) [not null]
+  "status" varchar(10) [not null]
+  "added_at" datetime(6) [default: NULL]
+}
+
+Table "dashboard_moderatorinvitetoken" {
+  "id" bigint(20) [pk, not null]
+  "invited_by_id" int(11) [not null]
+  "to_id" int(11) [not null]
+  "game_server_id" bigint(20) [not null]
+  "permissions" longtext [not null]
+  "status" int(11) [not null]
+  "token" varchar(128) [not null, unique]
+  "invited_at" datetime(6) [default: NULL]
+}
+
+Table "dashboard_auditlogentry" {
+  "id" bigint(20) [pk, not null]
+  "timestamp" datetime(6) [not null]
+  "action" smallint(5) [not null]
+  "severity" smallint(5) [not null]
+  "actor_content_type_id" int(11) [default: NULL]
+  "actor_object_id" varchar(128) [default: NULL]
+  "category" int(11) [not null]
+  "summary" varchar(140) [not null]
+  "details" longtext [not null]
+  "game_server_id" bigint(20) [default: NULL]
+  "target_content_type_id" int(11) [default: NULL]
+  "target_object_id" varchar(128) [default: NULL]
+  "metadata" longtext [default: NULL]
+  "source" varchar(32) [not null]
+  "reviewed" tinyint(1) [not null]
 }
 
 Table "django_admin_log" {
@@ -131,11 +310,11 @@ Table "gameservers" {
   "id" bigint(20) [pk, not null]
   "ip" varchar(49) [not null]
   "port" int(11) [not null]
-  "key" varchar(16) [not null]
+  "name" varchar(32) [not null]
+  "owner_id" int(11) [not null]
+  "configurations_id" bigint(20) [not null]
   "type" int(11) [default: NULL]
   "status" int(11) [not null]
-  "configurations_id" bigint(20) [not null]
-  "owner_id" int(11) [not null]
 }
 
 Table "gameservers_subscriptions" {
@@ -144,28 +323,17 @@ Table "gameservers_subscriptions" {
   "serversubscription_id" bigint(20) [not null]
 }
 
-Table "gameservers_whitelists" {
-  "id" bigint(20) [pk, not null]
-  "gameserver_id" bigint(20) [not null]
-  "whitelist_id" bigint(20) [not null]
-}
-
-Table "malicious_signatures" {
-  "id" bigint(20) [pk, not null]
-  "name" varchar(64) [not null]
-  "signatures" longtext [not null]
-  "type" int(11) [not null]
-  "priority" int(11) [default: NULL]
-  "ban_message" varchar(64) [default: NULL]
-}
-
 Table "patchnotes" {
   "id" bigint(20) [pk, not null]
-  "author" varchar(32) [not null]
-  "title" varchar(32) [not null]
-  "patchnotes" longtext [not null]
+  "author" varchar(64) [not null]
+  "title" varchar(255) [not null]
+  "version" varchar(16) [not null]
+  "release_type" varchar(10) [not null]
+  "status_tags" longtext [not null]
+  "highlights" longtext [not null]
+  "description" longtext [not null]
   "mention_everyone" tinyint(1) [not null]
-  "date" datetime(6) [default: NULL]
+  "date" datetime(6) [not null]
 }
 
 Table "patchnotes_seens" {
@@ -174,54 +342,122 @@ Table "patchnotes_seens" {
   "user_id" int(11) [not null]
 }
 
-Table "subscriptions" {
+Table "payments" {
   "id" bigint(20) [pk, not null]
-  "name" longtext [default: NULL]
-  "started_at" datetime(6) [default: NULL]
-  "expires_at" int(11) [not null]
-  "type" int(11) [default: NULL]
-  "status" int(11) [not null]
-  "owner_id" int(11) [not null]
+  "tebex_payment_id" varchar(128) [not null, unique]
+  "transaction_id" varchar(512) [not null, unique]
+  "customer_id" varchar(64) [not null]
+  "customer_firstname" varchar(64) [not null]
+  "customer_lastname" varchar(64) [not null]
+  "customer_username" varchar(64) [not null]
+  "customer_email" longtext [not null]
+  "customer_country" varchar(16) [not null]
+  "customer_postalcode" varchar(16) [not null]
+  "customer_ip" varchar(49) [not null]
+  "tebex_date" varchar(32) [not null]
+  "status" int(11) [default: NULL]
+  "price" int(11) [not null]
+  "currency" varchar(16) [not null]
+  "payment_method" varchar(64) [not null]
+  "payment_refundable" tinyint(1) [default: NULL]
+  "tax" int(11) [not null]
+  "tax_currency" varchar(16) [not null]
+  "gateway_tax" int(11) [not null]
+  "creator_code" varchar(256) [default: NULL]
+  "coupons" longtext [not null]
+  "recurring_payment_refrence" longtext [default: NULL]
+  "paid_products" longtext [not null]
 }
 
-Ref "announcements_seens_announcements_id_a5557bf8_fk_announcem":"announcements"."id" < "announcements_seens"."announcements_id"
+Table "subscriptions" {
+  "id" bigint(20) [pk, not null]
+  "owner_id" int(11) [default: NULL]
+  "started_at" datetime(6) [default: NULL]
+  "key" varchar(32) [not null]
+  "payment_id" bigint(20) [default: NULL]
+  "plan" int(11) [not null]
+  "type" int(11) [default: NULL]
+  "status" int(11) [not null]
+}
 
-Ref "announcements_seens_user_id_da89cc1e_fk_auth_user_id":"auth_user"."id" < "announcements_seens"."user_id"
+Ref "announcements_author_id_fk_auth_user_id":"auth_user"."id" < "announcements"."author_id"
 
-Ref "anticheat_config_tem_category_id_c307ad9e_fk_anticheat":"anticheat_configuration_categories"."id" < "anticheat_config_templates"."category_id"
+Ref "announcements_seens_announcements_id_fk_announcements_id":"announcements"."id" < "announcements_seens"."announcements_id"
 
-Ref "auth_group_permissio_permission_id_84c5c92e_fk_auth_perm":"auth_permission"."id" < "auth_group_permissions"."permission_id"
+Ref "announcements_seens_user_id_fk_auth_user_id":"auth_user"."id" < "announcements_seens"."user_id"
 
-Ref "auth_group_permissions_group_id_b120cbf9_fk_auth_group_id":"auth_group"."id" < "auth_group_permissions"."group_id"
+Ref "anticheat_config_sections_category_id_fk_anticheat_configuration_categories_id":"anticheat_configuration_categories"."id" < "anticheat_config_sections"."category_id"
 
-Ref "auth_permission_content_type_id_2f476e4b_fk_django_co":"django_content_type"."id" < "auth_permission"."content_type_id"
+Ref "anticheat_config_templates_section_id_fk_anticheat_config_sections_id":"anticheat_config_sections"."id" < "anticheat_config_templates"."section_id"
 
-Ref "auth_user_groups_group_id_97559544_fk_auth_group_id":"auth_group"."id" < "auth_user_groups"."group_id"
+Ref "auth_group_permissions_permission_id_fk_auth_permission_id":"auth_permission"."id" < "auth_group_permissions"."permission_id"
 
-Ref "auth_user_groups_user_id_6a12ed8b_fk_auth_user_id":"auth_user"."id" < "auth_user_groups"."user_id"
+Ref "auth_group_permissions_group_id_fk_auth_group_id":"auth_group"."id" < "auth_group_permissions"."group_id"
 
-Ref "auth_user_user_permi_permission_id_1fbb5f2c_fk_auth_perm":"auth_permission"."id" < "auth_user_user_permissions"."permission_id"
+Ref "auth_permission_content_type_id_fk_django_content_type_id":"django_content_type"."id" < "auth_permission"."content_type_id"
 
-Ref "auth_user_user_permissions_user_id_a95ead1b_fk_auth_user_id":"auth_user"."id" < "auth_user_user_permissions"."user_id"
+Ref "auth_user_groups_group_id_fk_auth_group_id":"auth_group"."id" < "auth_user_groups"."group_id"
 
-Ref "django_admin_log_content_type_id_c4bce8eb_fk_django_co":"django_content_type"."id" < "django_admin_log"."content_type_id"
+Ref "auth_user_groups_user_id_fk_auth_user_id":"auth_user"."id" < "auth_user_groups"."user_id"
 
-Ref "django_admin_log_user_id_c564eba6_fk_auth_user_id":"auth_user"."id" < "django_admin_log"."user_id"
+Ref "auth_user_user_permissions_permission_id_fk_auth_permission_id":"auth_permission"."id" < "auth_user_user_permissions"."permission_id"
 
-Ref "gameservers_configurations_id_406c2782_fk_anticheat":"anticheat_configurations"."id" < "gameservers"."configurations_id"
+Ref "auth_user_user_permissions_user_id_fk_auth_user_id":"auth_user"."id" < "auth_user_user_permissions"."user_id"
 
-Ref "gameservers_owner_id_8c4e1b23_fk_auth_user_id":"auth_user"."id" < "gameservers"."owner_id"
+Ref "bans_hwid_id_fk_anticheat_hwid_id":"anticheat_hwid"."id" < "bans"."hwid_id"
 
-Ref "gameservers_subscrip_gameserver_id_712f06ea_fk_gameserve":"gameservers"."id" < "gameservers_subscriptions"."gameserver_id"
+Ref "bans_game_server_id_fk_gameservers_id":"gameservers"."id" < "bans"."game_server_id"
 
-Ref "gameservers_subscrip_serversubscription_i_c6ae268a_fk_subscript":"subscriptions"."id" < "gameservers_subscriptions"."serversubscription_id"
+Ref "bans_report_id_fk_detection_reports_id":"detection_reports"."id" < "bans"."report_id"
 
-Ref "gameservers_whitelis_whitelist_id_76bafac8_fk_dashboard":"dashboard_whitelist"."id" < "gameservers_whitelists"."whitelist_id"
+Ref "crash_reports_crash_by_id_fk_anticheat_hwid_id":"anticheat_hwid"."id" < "crash_reports"."crash_by_id"
 
-Ref "gameservers_whitelists_gameserver_id_fcdd5ba2_fk_gameservers_id":"gameservers"."id" < "gameservers_whitelists"."gameserver_id"
+Ref "dashboard_auditlogentry_actor_content_type_id_fk_django_content_type_id":"django_content_type"."id" < "dashboard_auditlogentry"."actor_content_type_id"
 
-Ref "patchnotes_seens_patchnotes_id_dd75bb03_fk_patchnotes_id":"patchnotes"."id" < "patchnotes_seens"."patchnotes_id"
+Ref "dashboard_auditlogentry_target_content_type_id_fk_django_content_type_id":"django_content_type"."id" < "dashboard_auditlogentry"."target_content_type_id"
 
-Ref "patchnotes_seens_user_id_1c37bf73_fk_auth_user_id":"auth_user"."id" < "patchnotes_seens"."user_id"
+Ref "dashboard_auditlogentry_game_server_id_fk_gameservers_id":"gameservers"."id" < "dashboard_auditlogentry"."game_server_id"
 
-Ref "subscriptions_owner_id_8d0396aa_fk_auth_user_id":"auth_user"."id" < "subscriptions"."owner_id"
+Ref "dashboard_gameservermoderator_user_id_fk_auth_user_id":"auth_user"."id" < "dashboard_gameservermoderator"."user_id"
+
+Ref "dashboard_gameservermoderator_game_server_id_fk_gameservers_id":"gameservers"."id" < "dashboard_gameservermoderator"."game_server_id"
+
+Ref "dashboard_moderatorinvitetoken_invited_by_id_fk_auth_user_id":"auth_user"."id" < "dashboard_moderatorinvitetoken"."invited_by_id"
+
+Ref "dashboard_moderatorinvitetoken_to_id_fk_auth_user_id":"auth_user"."id" < "dashboard_moderatorinvitetoken"."to_id"
+
+Ref "dashboard_moderatorinvitetoken_game_server_id_fk_gameservers_id":"gameservers"."id" < "dashboard_moderatorinvitetoken"."game_server_id"
+
+Ref "dashboard_releaseasset_release_id_fk_dashboard_release_id":"dashboard_release"."id" < "dashboard_releaseasset"."release_id"
+
+Ref "detection_reports_hwid_id_fk_anticheat_hwid_id":"anticheat_hwid"."id" < "detection_reports"."hwid_id"
+
+Ref "django_admin_log_content_type_id_fk_django_content_type_id":"django_content_type"."id" < "django_admin_log"."content_type_id"
+
+Ref "django_admin_log_user_id_fk_auth_user_id":"auth_user"."id" < "django_admin_log"."user_id"
+
+Ref "false_positive_reports_ban_id_fk_bans_id":"bans"."id" < "false_positive_reports"."ban_id"
+
+Ref "false_positive_reports_reported_by_id_fk_auth_user_id":"auth_user"."id" < "false_positive_reports"."reported_by_id"
+
+Ref "false_positive_reports_reviewed_by_id_fk_auth_user_id":"auth_user"."id" < "false_positive_reports"."reviewed_by_id"
+
+Ref "gameservers_configurations_id_fk_anticheat_configurations_id":"anticheat_configurations"."id" < "gameservers"."configurations_id"
+
+Ref "gameservers_owner_id_fk_auth_user_id":"auth_user"."id" < "gameservers"."owner_id"
+
+Ref "gameservers_subscriptions_gameserver_id_fk_gameservers_id":"gameservers"."id" < "gameservers_subscriptions"."gameserver_id"
+
+Ref "gameservers_subscriptions_serversubscription_id_fk_subscriptions_id":"subscriptions"."id" < "gameservers_subscriptions"."serversubscription_id"
+
+Ref "patchnotes_seens_patchnotes_id_fk_patchnotes_id":"patchnotes"."id" < "patchnotes_seens"."patchnotes_id"
+
+Ref "patchnotes_seens_user_id_fk_auth_user_id":"auth_user"."id" < "patchnotes_seens"."user_id"
+
+Ref "subscriptions_owner_id_fk_auth_user_id":"auth_user"."id" < "subscriptions"."owner_id"
+
+Ref "subscriptions_payment_id_fk_payments_id":"payments"."id" < "subscriptions"."payment_id"
+
+Ref "threat_files_uploaded_by_id_fk_anticheat_hwid_id":"anticheat_hwid"."id" < "threat_files"."uploaded_by_id"
+
+Ref "warnings_hwid_id_fk_anticheat_hwid_id":"anticheat_hwid"."id" < "warnings"."hwid_id"

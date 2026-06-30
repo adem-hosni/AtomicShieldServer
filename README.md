@@ -274,15 +274,17 @@ Internal project. Contributions are managed by the AtomicShield team.
 
 ---
 
+## 📬 Contact
+
+- **Email:** hosniadem400@gmail.com & aifaouiameen@gmail.com
+
+---
+
 ## 📄 License
 
 Proprietary. All rights reserved.
 
 ---
-
-## 📬 Contact
-
-- **Email:** hosniadem400@gmail.com & aifaouiameen@gmail.com
 
 ## Related Repositories
 

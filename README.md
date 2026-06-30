@@ -7,7 +7,6 @@
 [![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python)](https://python.org)
 [![Django](https://img.shields.io/badge/Django-5.0%2B-092E20?logo=django)](https://djangoproject.com)
 [![License](https://img.shields.io/badge/License-Proprietary-red)](#license)
-[![Discord](https://img.shields.io/badge/Discord-Join-5865F2?logo=discord)](https://discord.gg/YFCRffsZKK)
 [![Client Repo](https://img.shields.io/badge/Client-AtomicShieldClient-181717?logo=github)](https://github.com/adem-hosni/AtomicShieldClient)
 
 ---

@@ -308,3 +308,8 @@ Proprietary. All rights reserved.
 ## 📬 Contact
 
 - **Email:** hosniadem400@gmail.com & aifaouiameen@gmail.com
+
+## Related Repositories
+
+- [AtomicShield Client](https://github.com/adem-hosni/AtomicShieldServer) — Backend API and WebSocket server
+- [AtomicShield Platform](https://github.com/adem-hosni/atomicshield-platform) — Management dashboard UI

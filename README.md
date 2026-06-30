@@ -1,6 +1,6 @@
 # ⚛️ AtomicShield Server
 
-> **Advanced Game AntiCheat Master Server** — The backend powering the AtomicShield anti-cheat ecosystem for FiveM and MTA:SA game servers.
+> **Advanced Game AntiCheat Master Server** — The backend powering the AtomicShield anti-cheat ecosystem.
 >
 > 💰 **Note: This project has been sold.**
 
@@ -14,14 +14,14 @@
 
 ## 📋 Overview
 
-AtomicShield Server is the **central command hub** for the AtomicShield anti-cheat platform. It manages real-time WebSocket connections with game servers (FxServer/FiveM) and client-side agents, processes cheat detections, issues bans, handles HWID fingerprinting, and provides a full-featured **Django Admin** dashboard plus a **React SPA** frontend for server owners.
+AtomicShield Server is the **central command hub** for the AtomicShield anti-cheat platform. It manages real-time WebSocket connections with game servers and client-side agents, processes cheat detections, issues bans, handles HWID fingerprinting, and provides a full-featured **Django Admin** dashboard plus a **React SPA** frontend for server owners.
 
 **Key capabilities:**
 - 🛡️ **Real-time cheat detection** via encrypted WebSocket communication
 - 🔐 **Hardware ID (HWID) fingerprinting** with historical tracking
 - ⚡ **Low-latency AES-encrypted packet protocol** between server ↔ agent
 - 📊 **Full admin dashboard** (Django Unfold + React SPA)
-- 💳 **Subscription & payment system** (Tebex integration)
+- 💳 **Subscription & payment system**
 - 👥 **Moderator role management** with granular permissions
 - 📝 **Comprehensive audit logging** for all actions
 - 🔔 **Discord webhook notifications** for detections, bans, and alerts
@@ -48,7 +48,7 @@ AtomicShield Server is the **central command hub** for the AtomicShield anti-che
 │                                                      │
 │  ┌──────────────┐  ┌──────────────┐                 │
 │  │   Guards     │  │     Core     │                 │
-│  │  (Fivem/MTA) │  │  (AES Crypto)│                 │
+│  │              │  │  (AES Crypto)│                 │
 │  └──────────────┘  └──────────────┘                 │
 │                                                      │
 │  ┌──────────┐  ┌──────────┐  ┌──────────┐          │
@@ -56,15 +56,15 @@ AtomicShield Server is the **central command hub** for the AtomicShield anti-che
 │  │(Discord, │  │(Enums,   │  │(Charts,  │          │
 │  │ ASE, etc)│  │ Flags)   │  │ Stats)   │          │
 │  └──────────┘  └──────────┘  └──────────┘          │
-└─────────────────────────────┬───────────────────────┘
-                              │
-        ┌─────────────────────┼─────────────────────┐
-        │                     │                     │
-  ┌─────┴──────┐       ┌─────┴──────┐       ┌──────┴──────┐
-  │  FxServer  │       │   Agent    │       │  React SPA  │
-  │ (Resource) │       │  (Engine)  │       │  (Frontend) │
-  │  WS Client │       │  WS Client │       │  HTTP/JWT   │
-  └────────────┘       └────────────┘       └─────────────┘
+└───────────────────────────────┬───────────────────────┘
+                                │
+        ┌───────────────────────┼─────────────────────┐
+        │                       │                     │
+  ┌─────┴─────────┐       ┌─────┴──────┐       ┌──────┴──────┐
+  │  Game Server  │       │   Agent    │       │  React SPA  │
+  │ (Resource)    │       │  (Engine)  │       │  (Frontend) │
+  │  WS Client    │       │  WS Client │       │  HTTP/JWT   │
+  └───────────────┘       └────────────┘       └─────────────┘
 ```
 
 ---
@@ -301,5 +301,4 @@ Proprietary. All rights reserved.
 
 ## 📬 Contact
 
-- **Website:** [https://atomic-shield.com](https://atomic-shield.com)
 - **Email:** hosniadem400@gmail.com & aifaouiameen@gmail.com

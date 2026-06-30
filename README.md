@@ -34,29 +34,29 @@ AtomicShield Server is the **central command hub** for the AtomicShield anti-che
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│                   AtomicShield Server                │
-│                                                      │
+│                   AtomicShield Server               │
+│                                                     │
 │  ┌──────────┐  ┌──────────┐  ┌───────────────────┐  │
-│  │  Django   │  │  Django  │  │  WebSocket        │  │
-│  │  REST API │  │  Admin   │  │  (Channels/Daphne)│  │
-│  │  (JWT)    │  │(Unfold)  │  │                   │  │
+│  │  Django  │  │  Django  │  │  WebSocket        │  │
+│  │  REST API│  │  Admin   │  │  (Channels/Daphne)│  │
+│  │  (JWT)   │  │ (Unfold) │  │                   │  │
 │  └──────────┘  └──────────┘  └────────┬──────────┘  │
-│       │              │                │              │
+│       │              │                │             │
 │  ┌────┴──────────────┴────────────────┴──────────┐  │
-│  │              MySQL Database                    │  │
+│  │              MySQL Database                   │  │
 │  └───────────────────────────────────────────────┘  │
-│                                                      │
+│                                                     │
 │  ┌──────────────┐  ┌──────────────┐                 │
 │  │   Guards     │  │     Core     │                 │
 │  │              │  │  (AES Crypto)│                 │
 │  └──────────────┘  └──────────────┘                 │
-│                                                      │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐          │
-│  │ Utils    │  │ Shared   │  │Analytics │          │
-│  │(Discord, │  │(Enums,   │  │(Charts,  │          │
-│  │ ASE, etc)│  │ Flags)   │  │ Stats)   │          │
-│  └──────────┘  └──────────┘  └──────────┘          │
-└───────────────────────────────┬───────────────────────┘
+│                                                     │
+│   ┌──────────┐  ┌──────────┐  ┌──────────┐          │
+│   │ Utils    │  │ Shared   │  │Analytics │          │
+│   │(Discord, │  │(Enums,   │  │(Charts,  │          │
+│   │ ASE, etc)│  │ Flags)   │  │ Stats)   │          │
+│   └──────────┘  └──────────┘  └──────────┘          │
+└───────────────────────────────┬─────────────────────┘
                                 │
         ┌───────────────────────┼─────────────────────┐
         │                       │                     │
@@ -274,13 +274,19 @@ See [`database.dbml`](./database.dbml) for the full DBML schema. Key tables:
 
 ---
 
-## 👥 Client Repository
+## 📦 Related Repositories
 
-The AtomicShield Agent (game client-side component) is maintained in a separate repository:
+The AtomicShield ecosystem consists of several repositories:
 
-[![AtomicShieldClient](https://img.shields.io/badge/AtomicShieldClient-View_on_GitHub-181717?logo=github)](https://github.com/adem-hosni/AtomicShieldClient)
+| Repository | Description |
+|------------|-------------|
+| [![AtomicShield Server](https://img.shields.io/badge/AtomicShield_Server-181717?logo=github)](https://github.com/AtomicShieldServer) | Backend API and WebSocket server (this repo) |
+| [![AtomicShield Platform](https://img.shields.io/badge/AtomicShield_Platform-181717?logo=github)](https://github.com/atomicshield-platform) | Management dashboard UI |
+| [![AtomicShieldClient](https://img.shields.io/badge/AtomicShieldClient-181717?logo=github)](https://github.com/adem-hosni/AtomicShieldClient) | Client-side anti-cheat engine agent |
 
-This repository contains:
+### AtomicShieldClient
+
+The AtomicShield Agent (game client-side component) is maintained in a separate repository and contains:
 - **AtomicShield Agent** — The client-side anti-cheat engine that connects to this server
 - **Game integration libraries** for FiveM and other platforms
 - **Client-side detection scanners**

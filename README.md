@@ -236,30 +236,6 @@ The server communicates with game servers and agents via **AES-256-CBC encrypted
 
 ---
 
-## 🗄️ Database Schema
-
-See [`database.dbml`](./database.dbml) for the full DBML schema. Key tables:
-
-| Table | Description |
-|-------|-------------|
-| `gameservers` | Registered game servers |
-| `subscriptions` | Server subscription plans |
-| `hwid` | Hardware ID fingerprints |
-| `detection_reports` | Cheat detection evidence |
-| `bans` | Player ban records |
-| `malicious_signatures` | Known cheat signatures |
-| `anticheat_configurations` | Per-server config (JSON) |
-| `audit_log_entries` | Comprehensive audit trail |
-| `announcements` | System announcements |
-| `patchnotes` | Version changelogs |
-| `payments` | Tebex payment records |
-| `threat_files` | Uploaded threat samples |
-| `crash_reports` | Engine crash dumps |
-| `releases` | Software release versions |
-| `false_positive_reports` | Ban appeal reports |
-
----
-
 ## 🔐 Security
 
 - **AES-256-CBC encryption** for all WebSocket communication

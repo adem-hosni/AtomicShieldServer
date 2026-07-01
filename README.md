@@ -249,16 +249,6 @@ The server communicates with game servers and agents via **AES-256-CBC encrypted
 
 ---
 
-## 📦 Related Repositories
-
-The AtomicShield ecosystem consists of several repositories:
-
-| Repository | Description |
-|------------|-------------|
-| [![AtomicShield Server](https://img.shields.io/badge/AtomicShield_Server-181717?logo=github)](https://github.com/AtomicShieldServer) | Backend API and WebSocket server (this repo) |
-| [![AtomicShield Platform](https://img.shields.io/badge/AtomicShield_Platform-181717?logo=github)](https://github.com/atomicshield-platform) | Management dashboard UI |
-| [![AtomicShieldClient](https://img.shields.io/badge/AtomicShieldClient-181717?logo=github)](https://github.com/adem-hosni/AtomicShieldClient) | Client-side anti-cheat engine agent |
-
 ### AtomicShieldClient
 
 The AtomicShield Agent (game client-side component) is maintained in a separate repository and contains:
